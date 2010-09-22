@@ -1,0 +1,9 @@
+; $Id$
+name = Daily Digest 
+description = Sends digest of posts from the past day.
+dependencies[] = announcement
+dependencies[] = daily_digest
+dependencies[] = classifieds
+package = NUSL
+core = 6.x
+

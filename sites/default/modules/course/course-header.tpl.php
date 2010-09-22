@@ -1,0 +1,23 @@
+<div id="course-header" >
+  <table width = 100%>
+  <tr>
+    <td align='center'>
+      <p><?php print $instructor1 ?>
+      <p><?php print $instructor2 ?>
+    </td>
+    <td width=150>
+      <table id="course-info" width=100% >
+      <tr><td><?php print $semester_name ?></td></tr>
+      <tr><td><?php print $course_number ?></td></tr>
+      <tr><td><?php print $credits ?> credits</td></tr>
+      </table>
+     </td>
+  </tr>
+  <tr>
+    <td colspan=2 id="course-description">
+      <?php print $description ?>
+    </td>
+  </tr>
+  </table>
+ 
+</div>

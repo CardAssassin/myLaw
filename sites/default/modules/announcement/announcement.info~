@@ -1,0 +1,7 @@
+; $Id$
+
+name = Announcement
+description = "Announcement node"
+package = "NUSL"
+dependencies[] = event
+core = 6.x

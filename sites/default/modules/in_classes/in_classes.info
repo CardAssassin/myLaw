@@ -1,0 +1,5 @@
+name = In Classes
+description = "Designates whether a nodes audience is directed to those in classes, not in classes, or everyone"
+dependencies[] = course
+core = 6.x
+

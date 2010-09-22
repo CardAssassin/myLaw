@@ -1,0 +1,290 @@
+<?php
+
+
+
+/**
+ * Implementation of hook_node_info().
+*/
+function class_year_node_info(){
+  return array(
+    'class_year' => array(
+      'name'   => t('Class Year'),
+      'module' => 'class_year',
+      'description' => "class year group",
+      'has_title'   => TRUE,
+      'title_label' => t('Class Year name'),
+      'has_teaser'  => FALSE,
+      'has_body'    => FALSE
+    )
+  );
+}
+
+
+/**
+ *  Implementation of hook_menu().
+*/
+function class_year_menu(){
+  $items = array();
+
+  $items['class_year'] = array(
+    'title' => 'Class Year',
+    'page callback' => 'class_year_listing_page',
+    'access callback' => user_access('view class year')
+  );
+  return $items;
+}
+
+
+
+
+/**
+ * Implementation of hook_perm
+*/
+function class_year_perm(){
+  return array('view class year', 'create class year');
+}
+
+
+/**
+ * Implementation of hook_access().
+ */
+function class_year_access($op, $node) {
+  if ($op == 'create') {
+    return user_access('create class year');
+  }
+  if ($op == 'view') {
+    return user_access('view class year');
+  }
+}
+
+
+/**
+ * Implementation of hook_form().
+ */
+function class_year_form(&$node) {
+  $type = node_get_types('type', $node);
+  
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => check_plain($type->title_label),
+    '#required' => TRUE,
+    '#default_value' => $node->title,
+    '#weight' => -5
+  );
+  
+
+ // $form['og_website'] = array();
+
+  $form['og_register'] = array('#type' => 'value', '#value' => 0);
+  $form['og_directory'] = array('#type' => 'value', '#value' => 1);
+
+  $form['og_selective'] = array(
+    '#type' => 'value', 
+    '#value' => $node->og_selective ? $node->og_selective : variable_get('og_content_type_selective_class_year', OG_INVITE_ONLY), 
+  );
+
+  return $form;
+}
+
+
+
+function class_year_get_active(){
+  $query = "SELECT nid, title FROM {node} WHERE type = 'class_year' order by title desc";
+  $result = db_query($query);
+  $active_classes = array();
+  while($class_year = db_fetch_object($result)){
+    $active_classes[$class_year->nid] = $class_year->title; 
+  }
+  return $active_classes;
+}
+
+
+// page listing all class_years
+function class_year_listing_page(){
+  $header = array(
+    array(
+      'data'  => 'Name',
+      'field' => 'title',
+    ),
+  );//header
+ 
+  $query = "SELECT n.nid, n.title FROM {node} n INNER JOIN {class_year} d ON n.nid = d.nid";
+  $query .= tablesort_sql($header);
+  $result = db_query($query);
+
+  while($class_year = db_fetch_object($result)){
+    $rows[] = array(
+      l($class_year->title, "node/$class_year->nid"),
+    ); 
+  }  
+
+  // If we have rows for a table, theme the table
+  //    otherwise set output to a message
+  if ( count($rows) ) {
+    $output = theme('table', $header, $rows);
+  }
+  else {
+    $output = "No class years were found";
+  }
+   
+  // And finally, produce the page
+  print theme('page', $output);
+}
+
+
+/**
+ * Implementation of hook_form_alter()
+*/
+function class_year_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form['#node']) && $form_id == $form['#node']->type .'_node_form') {
+    $node = $form['#node'];
+    if($node->type == 'class_year'){
+      unset($form['menu']);
+      unset($form['comment_settings']);
+      unset($form['revision_information']);
+      unset($form['author']);
+      $form['author']['name'] = array(
+        '#type'  => 'value',
+        '#value' => $node->name ? $node->name : '',
+      );
+      $form['author']['date'] = array(
+        '#type'  => 'value',
+        '#value' => $node->date ? $node->date : '',
+      );
+      unset($form['options']);
+      $form['options']['status'] = array(
+        '#type'  => 'value',
+        '#value' => $node->status,
+      );
+      $form['options']['promote'] = array(
+        '#type'  => 'value',
+        '#value' => $node->promote,
+      );
+      $form['options']['sticky'] = array(
+        '#type'  => 'value',
+        '#value' => $node->sticky,
+      );
+
+      $form['og_private'] = array('#type' => 'value', '#value' => 0);
+      
+    }//class_year
+  }
+}
+
+
+function class_year_form_node_type_form_alter(&$form, &$form_state) {
+  if (isset($form['#node_type']) && $form['#node_type']->type == 'class_year') {  
+    $form['og'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Organic groups'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#access' => user_access('administer organic groups'),
+    );
+    $form['og']['og_content_type_usage'] = array(
+      '#type' => 'value',
+      '#value' => 'group'
+    );
+
+
+    $options = array(
+      t('open - membership requests are accepted immediately.'), 
+      t('moderated - membership requests must be approved.'), 
+      t('invite only - membership must be created by an administrator.'), 
+      t('closed - membership is exclusively managed by an administrator.'),
+    );
+    $form['og']['og_content_type_selective'] = array(
+      '#type' => 'radios', 
+      '#title' => t('Membership requests'), 
+      '#required' => TRUE,
+      '#default_value' => variable_get('og_content_type_selective_class_year', OG_INVITE_ONLY),
+      '#options' => $options, 
+      '#description' => t('How should membership requests be handled in this group? When you select <em>closed</em>, users will not be able to join <strong>or</strong> leave.')
+    );
+
+  } 
+}
+
+
+
+/**
+ * Implementation of hook_insert().
+*/
+function class_year_insert($node){
+  $query = "INSERT INTO {class_year} (nid) VALUES (%d)";
+  db_query($query, $node->nid);
+  
+}
+
+
+
+/**
+ * Implement hook_enable()
+*/
+function class_year_enable(){
+  //set class_year nodes as group type
+  //putting this here, because it is not working in hook_install
+  variable_set('og_content_type_usage_class_year', 'group');
+}
+
+
+
+function class_year_update_class_years(){
+  $banner_class_years = array();
+  db_set_active('banner');
+  $query = "SELECT DISTINCT(CLASS_YEAR) FROM {studentinfo}";
+  $result = db_query($query);
+  db_set_active('default');
+  while($data = db_fetch_object($result)){
+    $banner_class_years[] = $data->CLASS_YEAR; 
+    //get divisions
+    db_set_active('banner');
+    $query = "SELECT DISTINCT(STU_PATTERNOFATTENDANCE) FROM {studentinfo} WHERE CLASS_YEAR = '%s'";
+    $result_division = db_query($query, $data->CLASS_YEAR);
+    db_set_active('default');
+    while($data_division = db_fetch_object($result_division)){
+      switch($data_division->STU_PATTERNOFATTENDANCE){
+        case 'JA':
+          $banner_class_years[] = $data->CLASS_YEAR . ' Winter/Summer';
+          break;
+        case 'JB':
+          $banner_class_years[] = $data->CLASS_YEAR . ' Fall/Spring';
+          break;
+      }
+    }
+  }
+
+
+  $active_class_years = array();
+  $query = "SELECT title, nid FROM {node} WHERE type = 'class_year'";
+  $result = db_query($query);
+  while($data = db_fetch_object($result)){
+    $active_class_years[$data->nid] = $data->title;
+  }
+
+
+
+  foreach($active_class_years as $nid => $active_class_year){
+    if(!in_array($active_class_year, $banner_class_years)){
+      //delete class_year
+      node_delete($nid);
+    }
+  }
+
+  foreach($banner_class_years as $banner_class_year){
+    if(!in_array($banner_class_year, $active_class_years)){
+      //create new class_year
+      module_load_include('inc', 'node', 'node.pages');
+      $create_node = array('type' => 'class_year');
+      $create_object = (object)$create_node;
+      
+      $form_state = array();
+      $form_state['values'] = array(
+        'title'           => $banner_class_year,
+        'og_description'  => $banner_class_year,
+        'op'              => t('Save'),
+      );
+      drupal_execute('class_year_node_form', $form_state, $create_object);
+    }
+  }
+}

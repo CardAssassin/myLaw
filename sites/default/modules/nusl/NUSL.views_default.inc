@@ -1,0 +1,6544 @@
+<?php
+//$Id$
+
+function NUSL_views_default_views(){
+
+
+///////////////////////////////////////////////////////////
+//        calendar_master
+///////////////////////////////////////////////////////////
+$view = new view;
+$view->name = 'calendar_master';
+$view->description = 'A multi-dimensional calendar view with back/next navigation.';
+$view->tag = 'Calendar - Master';
+$view->view_php = '';
+$view->base_table = 'node';
+$view->is_cacheable = FALSE;
+$view->api_version = 2;
+$view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+$handler = $view->new_display('default', 'Defaults', 'default');
+$handler->override_option('fields', array(
+  'title' => array(
+    'label' => '',
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'field' => 'title',
+    'table' => 'node',
+    'relationship' => 'none',
+  ),
+  'end' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'target' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'empty' => '',
+    'hide_empty' => 0,
+    'empty_zero' => 0,
+    'date_format' => 'custom',
+    'custom_date_format' => 'g:i A',
+    'exclude' => 0,
+    'id' => 'end',
+    'table' => 'calendar_event',
+    'field' => 'end',
+    'relationship' => 'none',
+  ),
+  'start' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'target' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'empty' => '',
+    'hide_empty' => 0,
+    'empty_zero' => 0,
+    'date_format' => 'custom',
+    'custom_date_format' => 'g:i A',
+    'exclude' => 0,
+    'id' => 'start',
+    'table' => 'calendar_event',
+    'field' => 'start',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('sorts', array(
+  'start' => array(
+    'order' => 'ASC',
+    'granularity' => 'second',
+    'id' => 'start',
+    'table' => 'calendar_event',
+    'field' => 'start',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('arguments', array(
+  'date_argument' => array(
+    'default_action' => 'default',
+    'style_plugin' => 'default_summary',
+    'style_options' => array(),
+    'wildcard' => 'all',
+    'wildcard_substitution' => 'All',
+    'title' => '',
+    'breadcrumb' => '',
+    'default_argument_type' => 'date',
+    'default_argument' => '',
+    'validate_type' => 'none',
+    'validate_fail' => 'not found',
+    'date_fields' => array(
+      'calendar_event.start' => 'calendar_event.start',
+    ),
+    'year_range' => '-3:+3',
+    'date_method' => 'OR',
+    'granularity' => 'month',
+    'id' => 'date_argument',
+    'table' => 'node',
+    'field' => 'date_argument',
+    'relationship' => 'none',
+    'default_argument_user' => 0,
+    'default_argument_fixed' => '',
+    'default_argument_php' => '',
+    'validate_argument_node_type' => array(
+      'announcement' => 0,
+      'classifieds' => 0,
+      'class_year' => 0,
+      'community' => 0,
+      'evaluation' => 0,
+      'discussion_topic' => 0,
+      'faq' => 0,
+      'important_announcement' => 0,
+      'group_book' => 0,
+      'OSD_writing_competition' => 0,
+      'public_interest' => 0,
+      'course' => 0,
+      'department' => 0,
+      'student_group' => 0,
+      'student_program' => 0,
+      'page' => 0,
+      'story' => 0,
+    ),
+    'validate_argument_node_access' => 0,
+    'validate_argument_nid_type' => 'nid',
+    'validate_argument_vocabulary' => array(),
+    'validate_argument_type' => 'tid',
+    'validate_argument_php' => '',
+    'override' => array(
+      'button' => 'Override',
+    ),
+    'default_options_div_prefix' => '',
+    'validate_user_argument_type' => 'uid',
+    'validate_user_roles' => array(
+      '2' => 0,
+      '3' => 0,
+      '4' => 0,
+      '5' => 0,
+      '6' => 0,
+      '8' => 0,
+      '7' => 0,
+    ),
+    'validate_user_restrict_roles' => 0,
+    'validate_argument_is_member' => 0,
+  ),
+));
+$handler->override_option('filters', array(
+  'status' => array(
+    'operator' => '=',
+    'value' => 1,
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'status',
+    'table' => 'node',
+    'field' => 'status',
+    'relationship' => 'none',
+  ),
+  'hide' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'hide',
+    'table' => 'hide_nodes',
+    'field' => 'hide',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('access', array(
+  'type' => 'none',
+  'role' => array(),
+  'perm' => '',
+));
+$handler->override_option('cache', array(
+  'type' => 'none',
+));
+$handler->override_option('title', 'All Announcements Calendar');
+$handler->override_option('header_empty', 1);
+$handler->override_option('items_per_page', 0);
+$handler->override_option('use_more', 0);
+$handler->override_option('link_display', 'calendar_1');
+$handler->override_option('style_plugin', 'calendar_nav');
+$handler = $view->new_display('calendar', 'Calendar page', 'calendar_1');
+$handler->override_option('path', 'calendar');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+));
+$handler->override_option('calendar_colors', array(
+  '0' => array(),
+));
+$handler->override_option('calendar_colors_vocabulary', array());
+$handler->override_option('calendar_colors_taxonomy', array());
+$handler->override_option('calendar_popup', 0);
+$handler->override_option('calendar_date_link', '');
+$handler = $view->new_display('calendar_block', 'Calendar block', 'calendar_block_1');
+$handler->override_option('block_description', 'Calendar - Master');
+$handler->override_option('block_caching', -1);
+$handler = $view->new_display('calendar_period', 'Year view', 'calendar_period_1');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'display_type' => 'year',
+  'name_size' => 1,
+  'max_items' => 0,
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('inherit_pager', FALSE);
+$handler->override_option('render_pager', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+));
+$handler->override_option('calendar_type', 'year');
+$handler = $view->new_display('calendar_period', 'Month view', 'calendar_period_2');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'display_type' => 'month',
+  'name_size' => '99',
+  'with_weekno' => '1',
+  'date_fields' => NULL,
+  'max_items' => 0,
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('inherit_pager', FALSE);
+$handler->override_option('render_pager', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+));
+$handler->override_option('calendar_type', 'month');
+$handler = $view->new_display('calendar_period', 'Day view', 'calendar_period_3');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'name_size' => '99',
+  'with_weekno' => 0,
+  'max_items' => 0,
+  'max_items_behavior' => 'more',
+  'groupby_times' => 'hour',
+  'groupby_times_custom' => '',
+  'groupby_field' => '',
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('inherit_pager', FALSE);
+$handler->override_option('render_pager', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+));
+$handler->override_option('calendar_type', 'day');
+$handler = $view->new_display('calendar_period', 'Week view', 'calendar_period_4');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'name_size' => '99',
+  'with_weekno' => 0,
+  'max_items' => 0,
+  'max_items_behavior' => 'more',
+  'groupby_times' => 'hour',
+  'groupby_times_custom' => '',
+  'groupby_field' => '',
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('inherit_pager', FALSE);
+$handler->override_option('render_pager', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+));
+$handler->override_option('calendar_type', 'week');
+$handler = $view->new_display('calendar_period', 'Block view', 'calendar_period_5');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'display_type' => 'month',
+  'name_size' => '1',
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('inherit_pager', FALSE);
+$handler->override_option('render_pager', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 0,
+  'default' => 0,
+  'calendar_block_1' => 'calendar_block_1',
+));
+$handler->override_option('calendar_type', 'month');
+$handler = $view->new_display('calendar_ical', 'iCal feed', 'calendar_ical_1');
+$handler->override_option('arguments', array());
+$handler->override_option('filters', array(
+  'status' => array(
+    'operator' => '=',
+    'value' => 1,
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'status',
+    'table' => 'node',
+    'field' => 'status',
+    'relationship' => 'none',
+  ),
+  'date_filter' => array(
+    'operator' => '>=',
+    'value' => array(
+      'value' => NULL,
+      'min' => NULL,
+      'max' => NULL,
+      'default_date' => 'now',
+      'default_to_date' => '',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'date_fields' => array(
+      'node.changed' => 'node.changed',
+    ),
+    'granularity' => 'day',
+    'form_type' => 'date_select',
+    'default_date' => 'now',
+    'default_to_date' => '',
+    'id' => 'date_filter',
+    'table' => 'node',
+    'field' => 'date_filter',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('style_plugin', 'ical');
+$handler->override_option('style_options', array(
+  'mission_description' => FALSE,
+  'description' => '',
+  'summary_field' => 'title',
+  'description_field' => '',
+  'location_field' => '',
+));
+$handler->override_option('row_plugin', '');
+$handler->override_option('path', 'calendar/ical');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+));
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+  'block_1' => 0,
+));
+$handler->override_option('sitename_title', FALSE);
+$handler = $view->new_display('block', 'Upcoming', 'block_1');
+$handler->override_option('fields', array(
+  'title' => array(
+    'label' => '',
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'field' => 'title',
+    'table' => 'node',
+    'relationship' => 'none',
+    'format' => 'default',
+  ),
+  'changed' => array(
+    'label' => '',
+    'link_to_node' => 0,
+    'exclude' => 0,
+    'id' => 'changed',
+    'field' => 'changed',
+    'table' => 'node',
+    'relationship' => 'none',
+    'date_format' => 'small',
+    'format' => 'default',
+  ),
+));
+$handler->override_option('arguments', array());
+$handler->override_option('filters', array(
+  'status' => array(
+    'operator' => '=',
+    'value' => 1,
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'status',
+    'table' => 'node',
+    'field' => 'status',
+    'relationship' => 'none',
+  ),
+  'date_filter' => array(
+    'operator' => '>=',
+    'value' => array(
+      'value' => NULL,
+      'min' => NULL,
+      'max' => NULL,
+      'default_date' => 'now',
+      'default_to_date' => '',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'date_fields' => array(
+      'node.changed' => 'node.changed',
+    ),
+    'granularity' => 'day',
+    'form_type' => 'date_select',
+    'default_date' => 'now',
+    'default_to_date' => '',
+    'id' => 'date_filter',
+    'table' => 'node',
+    'field' => 'date_filter',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('title', 'Upcoming');
+$handler->override_option('items_per_page', 5);
+$handler->override_option('use_more', 1);
+$handler->override_option('style_plugin', 'list');
+$handler->override_option('style_options', array(
+  'grouping' => '',
+  'type' => 'ul',
+));
+$handler->override_option('block_description', 'Upcoming');
+$handler->override_option('block_caching', -1);
+
+
+  $views[$view->name] = $view;
+
+
+///////////////////////////////////////////////////////////
+//        calendar_group
+///////////////////////////////////////////////////////////
+
+
+$view = new view;
+$view->name = 'calendar_group';
+$view->description = 'A multi-dimensional calendar view with back/next navigation.';
+$view->tag = 'Group Calendar';
+$view->view_php = '';
+$view->base_table = 'node';
+$view->is_cacheable = FALSE;
+$view->api_version = 2;
+$view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+$handler = $view->new_display('default', 'Defaults', 'default');
+$handler->override_option('fields', array(
+  'title' => array(
+    'label' => '',
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'field' => 'title',
+    'table' => 'node',
+    'relationship' => 'none',
+  ),
+  'start' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'date_format' => 'custom',
+    'custom_date_format' => 'g:i A',
+    'exclude' => 0,
+    'id' => 'start',
+    'table' => 'calendar_event',
+    'field' => 'start',
+    'relationship' => 'none',
+  ),
+  'end' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'date_format' => 'custom',
+    'custom_date_format' => 'g:i A',
+    'exclude' => 0,
+    'id' => 'end',
+    'table' => 'calendar_event',
+    'field' => 'end',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('sorts', array(
+  'start' => array(
+    'order' => 'ASC',
+    'granularity' => 'second',
+    'id' => 'start',
+    'table' => 'calendar_event',
+    'field' => 'start',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('arguments', array(
+  'author_group_nid' => array(
+    'default_action' => 'default',
+    'style_plugin' => 'default_summary',
+    'style_options' => array(),
+    'wildcard' => 'all',
+    'wildcard_substitution' => 'All',
+    'title' => '',
+    'default_argument_type' => 'php',
+    'default_argument' => '',
+    'validate_type' => 'none',
+    'validate_fail' => 'not found',
+    'break_phrase' => 0,
+    'not' => 0,
+    'id' => 'author_group_nid',
+    'table' => 'og_author',
+    'field' => 'author_group_nid',
+    'validate_user_argument_type' => 'uid',
+    'validate_user_roles' => array(
+      '2' => 0,
+      '8' => 0,
+      '7' => 0,
+      '4' => 0,
+      '5' => 0,
+      '6' => 0,
+      '3' => 0,
+    ),
+    'relationship' => 'none',
+    'default_options_div_prefix' => '',
+    'default_argument_user' => 0,
+    'default_argument_fixed' => '',
+    'default_argument_php' => '$group = og_get_group_context();
+return $group->nid;',
+    'validate_argument_node_type' => array(
+      'announcement' => 0,
+      'classifieds' => 0,
+      'class_year' => 0,
+      'course' => 0,
+      'evaluation' => 0,
+      'exam' => 0,
+      'department' => 0,
+      'discussion_topic' => 0,
+      'group_book' => 0,
+      'student_group' => 0,
+      'book' => 0,
+      'page' => 0,
+      'story' => 0,
+    ),
+    'validate_argument_node_access' => 0,
+    'validate_argument_nid_type' => 'nid',
+    'validate_argument_vocabulary' => array(),
+    'validate_argument_type' => 'tid',
+    'validate_argument_transform' => 0,
+    'validate_user_restrict_roles' => 0,
+    'validate_argument_is_member' => 0,
+    'validate_argument_php' => '',
+  ),
+  'date_argument' => array(
+    'default_action' => 'default',
+    'style_plugin' => 'default_summary',
+    'style_options' => array(),
+    'wildcard' => 'all',
+    'wildcard_substitution' => 'All',
+    'title' => '',
+    'default_argument_type' => 'date',
+    'default_argument' => '',
+    'validate_type' => 'none',
+    'validate_fail' => 'not found',
+    'date_fields' => array(
+      'calendar_event.start' => 'calendar_event.start',
+    ),
+    'year_range' => '-3:+3',
+    'date_method' => 'OR',
+    'granularity' => 'month',
+    'id' => 'date_argument',
+    'table' => 'node',
+    'field' => 'date_argument',
+    'relationship' => 'none',
+    'default_argument_user' => 0,
+    'default_argument_fixed' => '',
+    'default_argument_php' => '',
+    'validate_argument_node_type' => array(
+      'announcement' => 0,
+      'classifieds' => 0,
+      'class_year' => 0,
+      'course' => 0,
+      'evaluation' => 0,
+      'exam' => 0,
+      'department' => 0,
+      'discussion_topic' => 0,
+      'group_book' => 0,
+      'student_group' => 0,
+      'book' => 0,
+      'page' => 0,
+      'story' => 0,
+    ),
+    'validate_argument_node_access' => 0,
+    'validate_argument_nid_type' => 'nid',
+    'validate_argument_vocabulary' => array(),
+    'validate_argument_type' => 'tid',
+    'validate_argument_php' => '',
+    'override' => array(
+      'button' => 'Override',
+    ),
+    'default_options_div_prefix' => '',
+    'validate_user_argument_type' => 'uid',
+    'validate_user_roles' => array(
+      '2' => 0,
+      '8' => 0,
+      '7' => 0,
+      '4' => 0,
+      '5' => 0,
+      '6' => 0,
+      '3' => 0,
+    ),
+    'validate_argument_transform' => 0,
+    'validate_user_restrict_roles' => 0,
+    'validate_argument_is_member' => 0,
+  ),
+));
+$handler->override_option('filters', array(
+  'moderate' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'moderate',
+    'table' => 'node',
+    'field' => 'moderate',
+    'relationship' => 'none',
+  ),
+  'hide' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'hide',
+    'table' => 'hide_nodes',
+    'field' => 'hide',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('access', array(
+  'type' => 'none',
+  'role' => array(),
+  'perm' => '',
+));
+$handler->override_option('cache', array(
+  'type' => 'none',
+));
+$handler->override_option('title', '%1 Calendar');
+$handler->override_option('header_empty', 1);
+$handler->override_option('items_per_page', 0);
+$handler->override_option('use_more', 0);
+$handler->override_option('style_plugin', 'calendar_nav');
+$handler = $view->new_display('calendar', 'Calendar page', 'calendar_1');
+$handler->override_option('path', 'node/%/og/calendar');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+));
+$handler->override_option('calendar_colors', array(
+  '0' => array(),
+));
+$handler->override_option('calendar_colors_vocabulary', array());
+$handler->override_option('calendar_colors_taxonomy', array());
+$handler->override_option('calendar_popup', 0);
+$handler->override_option('calendar_date_link', '');
+$handler = $view->new_display('calendar_block', 'Calendar block', 'calendar_block_1');
+$handler->override_option('block_description', 'Calendar - Group');
+$handler->override_option('block_caching', -1);
+$handler = $view->new_display('calendar_period', 'Year view', 'calendar_period_1');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'display_type' => 'year',
+  'name_size' => 1,
+  'max_items' => 0,
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+));
+$handler->override_option('calendar_type', 'year');
+$handler = $view->new_display('calendar_period', 'Month view', 'calendar_period_2');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'display_type' => 'month',
+  'name_size' => '99',
+  'with_weekno' => '1',
+  'date_fields' => NULL,
+  'max_items' => 0,
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+));
+$handler->override_option('calendar_type', 'month');
+$handler = $view->new_display('calendar_period', 'Day view', 'calendar_period_3');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'name_size' => '99',
+  'with_weekno' => 0,
+  'max_items' => 0,
+  'max_items_behavior' => 'more',
+  'groupby_times' => 'hour',
+  'groupby_times_custom' => '',
+  'groupby_field' => '',
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+));
+$handler->override_option('calendar_type', 'day');
+$handler = $view->new_display('calendar_period', 'Week view', 'calendar_period_4');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'name_size' => '99',
+  'with_weekno' => 0,
+  'max_items' => 0,
+  'max_items_behavior' => 'more',
+  'groupby_times' => 'hour',
+  'groupby_times_custom' => '',
+  'groupby_field' => '',
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+));
+$handler->override_option('calendar_type', 'week');
+$handler = $view->new_display('calendar_period', 'Block view', 'calendar_period_5');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'display_type' => 'month',
+  'name_size' => '1',
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 0,
+  'default' => 0,
+  'calendar_block_1' => 'calendar_block_1',
+));
+$handler->override_option('calendar_type', 'month');
+$handler = $view->new_display('calendar_ical', 'iCal feed', 'calendar_ical_1');
+$handler->override_option('arguments', array());
+$handler->override_option('filters', array(
+  'status' => array(
+    'operator' => '=',
+    'value' => 1,
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'status',
+    'table' => 'node',
+    'field' => 'status',
+    'relationship' => 'none',
+  ),
+  'date_filter' => array(
+    'operator' => '>=',
+    'value' => array(
+      'value' => NULL,
+      'min' => NULL,
+      'max' => NULL,
+      'default_date' => 'now',
+      'default_to_date' => '',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'date_fields' => array(
+      'node.changed' => 'node.changed',
+    ),
+    'granularity' => 'day',
+    'form_type' => 'date_select',
+    'default_date' => 'now',
+    'default_to_date' => '',
+    'id' => 'date_filter',
+    'table' => 'node',
+    'field' => 'date_filter',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('style_plugin', 'ical');
+$handler->override_option('style_options', array(
+  'mission_description' => FALSE,
+  'description' => '',
+  'summary_field' => 'title',
+  'description_field' => '',
+  'location_field' => '',
+));
+$handler->override_option('row_plugin', '');
+$handler->override_option('path', 'node/%/og/calendar/ical');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+));
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+  'block_1' => 0,
+));
+$handler->override_option('sitename_title', FALSE);
+$handler = $view->new_display('block', 'Upcoming', 'block_1');
+$handler->override_option('fields', array(
+  'title' => array(
+    'label' => '',
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'field' => 'title',
+    'table' => 'node',
+    'relationship' => 'none',
+    'format' => 'default',
+  ),
+  'changed' => array(
+    'label' => '',
+    'link_to_node' => 0,
+    'exclude' => 0,
+    'id' => 'changed',
+    'field' => 'changed',
+    'table' => 'node',
+    'relationship' => 'none',
+    'date_format' => 'small',
+    'format' => 'default',
+  ),
+));
+$handler->override_option('arguments', array());
+$handler->override_option('filters', array(
+  'status' => array(
+    'operator' => '=',
+    'value' => 1,
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'status',
+    'table' => 'node',
+    'field' => 'status',
+    'relationship' => 'none',
+  ),
+  'date_filter' => array(
+    'operator' => '>=',
+    'value' => array(
+      'value' => NULL,
+      'min' => NULL,
+      'max' => NULL,
+      'default_date' => 'now',
+      'default_to_date' => '',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'date_fields' => array(
+      'node.changed' => 'node.changed',
+    ),
+    'granularity' => 'day',
+    'form_type' => 'date_select',
+    'default_date' => 'now',
+    'default_to_date' => '',
+    'id' => 'date_filter',
+    'table' => 'node',
+    'field' => 'date_filter',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('title', 'Upcoming');
+$handler->override_option('items_per_page', 5);
+$handler->override_option('use_more', 1);
+$handler->override_option('style_plugin', 'list');
+$handler->override_option('style_options', array(
+  'grouping' => '',
+  'type' => 'ul',
+));
+$handler->override_option('block_description', 'Upcoming - Group');
+$handler->override_option('block_caching', -1);
+
+  $views[$view->name] = $view;
+
+
+///////////////////////////////////////////////////////////
+//        calendar_courses
+///////////////////////////////////////////////////////////
+  
+$view = new view;
+$view->name = 'calendar_courses';
+$view->description = 'A multi-dimensional calendar view with back/next navigation.';
+$view->tag = 'Calendar - Courses';
+$view->view_php = '';
+$view->base_table = 'node';
+$view->is_cacheable = FALSE;
+$view->api_version = 2;
+$view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+$handler = $view->new_display('default', 'Defaults', 'default');
+$handler->override_option('relationships', array(
+  'author_group_nid' => array(
+    'label' => 'Group node (post)',
+    'required' => 0,
+    'id' => 'author_group_nid',
+    'table' => 'og_author',
+    'field' => 'author_group_nid',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('fields', array(
+  'title' => array(
+    'label' => '',
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'field' => 'title',
+    'table' => 'node',
+    'relationship' => 'none',
+  ),
+  'start' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'date_format' => 'custom',
+    'custom_date_format' => 'g:i A',
+    'exclude' => 0,
+    'id' => 'start',
+    'table' => 'calendar_event',
+    'field' => 'start',
+    'relationship' => 'none',
+  ),
+  'end' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'date_format' => 'custom',
+    'custom_date_format' => 'g:i A',
+    'exclude' => 0,
+    'id' => 'end',
+    'table' => 'calendar_event',
+    'field' => 'end',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('sorts', array(
+  'start' => array(
+    'order' => 'ASC',
+    'granularity' => 'minute',
+    'id' => 'start',
+    'table' => 'calendar_event',
+    'field' => 'start',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('arguments', array(
+  'date_argument' => array(
+    'default_action' => 'default',
+    'style_plugin' => 'default_summary',
+    'style_options' => array(),
+    'wildcard' => 'all',
+    'wildcard_substitution' => 'All',
+    'title' => '',
+    'breadcrumb' => '',
+    'default_argument_type' => 'date',
+    'default_argument' => '',
+    'validate_type' => 'none',
+    'validate_fail' => 'not found',
+    'date_fields' => array(
+      'calendar_event.start' => 'calendar_event.start',
+    ),
+    'year_range' => '-3:+3',
+    'date_method' => 'OR',
+    'granularity' => 'month',
+    'id' => 'date_argument',
+    'table' => 'node',
+    'field' => 'date_argument',
+    'relationship' => 'none',
+    'default_argument_user' => 0,
+    'default_argument_fixed' => '',
+    'default_argument_php' => '',
+    'validate_argument_node_type' => array(
+      'announcement' => 0,
+      'classifieds' => 0,
+      'class_year' => 0,
+      'community' => 0,
+      'evaluation' => 0,
+      'discussion_topic' => 0,
+      'faq' => 0,
+      'important_announcement' => 0,
+      'group_book' => 0,
+      'course' => 0,
+      'department' => 0,
+      'student_group' => 0,
+      'student_program' => 0,
+      'book' => 0,
+      'page' => 0,
+      'story' => 0,
+    ),
+    'validate_argument_node_access' => 0,
+    'validate_argument_nid_type' => 'nid',
+    'validate_argument_vocabulary' => array(),
+    'validate_argument_type' => 'tid',
+    'validate_argument_php' => '',
+    'override' => array(
+      'button' => 'Override',
+    ),
+    'default_options_div_prefix' => '',
+    'validate_user_argument_type' => 'uid',
+    'validate_user_roles' => array(
+      '2' => 0,
+      '3' => 0,
+      '4' => 0,
+      '5' => 0,
+      '6' => 0,
+      '7' => 0,
+      '8' => 0,
+    ),
+    'validate_argument_transform' => 0,
+    'validate_user_restrict_roles' => 0,
+    'validate_argument_is_member' => 0,
+  ),
+));
+$handler->override_option('filters', array(
+  'type' => array(
+    'operator' => 'in',
+    'value' => array(
+      'course' => 'course',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'type',
+    'table' => 'node',
+    'field' => 'type',
+    'relationship' => 'author_group_nid',
+  ),
+  'moderate' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'moderate',
+    'table' => 'node',
+    'field' => 'moderate',
+    'relationship' => 'none',
+  ),
+  'hide' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'hide',
+    'table' => 'hide_nodes',
+    'field' => 'hide',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('access', array(
+  'type' => 'none',
+  'role' => array(),
+  'perm' => '',
+));
+$handler->override_option('cache', array(
+  'type' => 'none',
+));
+$handler->override_option('title', 'Courses Calendar');
+$handler->override_option('header_empty', 1);
+$handler->override_option('items_per_page', 0);
+$handler->override_option('use_more', 0);
+$handler->override_option('style_plugin', 'calendar_nav');
+$handler = $view->new_display('calendar', 'Calendar page', 'calendar_1');
+$handler->override_option('path', 'calendar/calendar');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+));
+$handler->override_option('calendar_colors', array(
+  '0' => array(),
+));
+$handler->override_option('calendar_colors_vocabulary', array());
+$handler->override_option('calendar_colors_taxonomy', array());
+$handler->override_option('calendar_popup', 0);
+$handler->override_option('calendar_date_link', '');
+$handler = $view->new_display('calendar_block', 'Calendar block', 'calendar_block_1');
+$handler->override_option('block_description', 'Calendar - Courses');
+$handler->override_option('block_caching', -1);
+$handler = $view->new_display('calendar_period', 'Year view', 'calendar_period_1');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'display_type' => 'year',
+  'name_size' => 1,
+  'max_items' => 0,
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+));
+$handler->override_option('calendar_type', 'year');
+$handler = $view->new_display('calendar_period', 'Month view', 'calendar_period_2');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'display_type' => 'month',
+  'name_size' => '99',
+  'with_weekno' => '1',
+  'date_fields' => NULL,
+  'max_items' => 0,
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+));
+$handler->override_option('calendar_type', 'month');
+$handler = $view->new_display('calendar_period', 'Day view', 'calendar_period_3');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'name_size' => '99',
+  'with_weekno' => 0,
+  'max_items' => 0,
+  'max_items_behavior' => 'more',
+  'groupby_times' => 'hour',
+  'groupby_times_custom' => '',
+  'groupby_field' => '',
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+));
+$handler->override_option('calendar_type', 'day');
+$handler = $view->new_display('calendar_period', 'Week view', 'calendar_period_4');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'name_size' => '99',
+  'with_weekno' => 0,
+  'max_items' => 0,
+  'max_items_behavior' => 'more',
+  'groupby_times' => 'hour',
+  'groupby_times_custom' => '',
+  'groupby_field' => '',
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+));
+$handler->override_option('calendar_type', 'week');
+$handler = $view->new_display('calendar_period', 'Block view', 'calendar_period_5');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'display_type' => 'month',
+  'name_size' => '1',
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 0,
+  'default' => 0,
+  'calendar_block_1' => 'calendar_block_1',
+));
+$handler->override_option('calendar_type', 'month');
+$handler = $view->new_display('calendar_ical', 'iCal feed', 'calendar_ical_1');
+$handler->override_option('arguments', array());
+$handler->override_option('filters', array(
+  'status' => array(
+    'operator' => '=',
+    'value' => 1,
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'status',
+    'table' => 'node',
+    'field' => 'status',
+    'relationship' => 'none',
+  ),
+  'date_filter' => array(
+    'operator' => '>=',
+    'value' => array(
+      'value' => NULL,
+      'min' => NULL,
+      'max' => NULL,
+      'default_date' => 'now',
+      'default_to_date' => '',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'date_fields' => array(
+      'node.changed' => 'node.changed',
+    ),
+    'granularity' => 'day',
+    'form_type' => 'date_select',
+    'default_date' => 'now',
+    'default_to_date' => '',
+    'id' => 'date_filter',
+    'table' => 'node',
+    'field' => 'date_filter',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('style_plugin', 'ical');
+$handler->override_option('style_options', array(
+  'mission_description' => FALSE,
+  'description' => '',
+  'summary_field' => 'title',
+  'description_field' => '',
+  'location_field' => '',
+));
+$handler->override_option('row_plugin', '');
+$handler->override_option('path', 'courses/calendar/ical');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+));
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+  'block_1' => 0,
+));
+$handler->override_option('sitename_title', FALSE);
+
+
+$handler = $view->new_display('block', 'Upcoming', 'block_1');
+$handler->override_option('fields', array(
+  'title' => array(
+    'label' => '',
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'field' => 'title',
+    'table' => 'node',
+    'relationship' => 'none',
+    'format' => 'default',
+  ),
+  'changed' => array(
+    'label' => '',
+    'link_to_node' => 0,
+    'exclude' => 0,
+    'id' => 'changed',
+    'field' => 'changed',
+    'table' => 'node',
+    'relationship' => 'none',
+    'date_format' => 'small',
+    'format' => 'default',
+  ),
+));
+$handler->override_option('arguments', array());
+$handler->override_option('filters', array(
+  'status' => array(
+    'operator' => '=',
+    'value' => 1,
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'status',
+    'table' => 'node',
+    'field' => 'status',
+    'relationship' => 'none',
+  ),
+  'date_filter' => array(
+    'operator' => '>=',
+    'value' => array(
+      'value' => NULL,
+      'min' => NULL,
+      'max' => NULL,
+      'default_date' => 'now',
+      'default_to_date' => '',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'date_fields' => array(
+      'node.changed' => 'node.changed',
+    ),
+    'granularity' => 'day',
+    'form_type' => 'date_select',
+    'default_date' => 'now',
+    'default_to_date' => '',
+    'id' => 'date_filter',
+    'table' => 'node',
+    'field' => 'date_filter',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('title', 'Upcoming');
+$handler->override_option('items_per_page', 5);
+$handler->override_option('use_more', 1);
+$handler->override_option('style_plugin', 'list');
+$handler->override_option('style_options', array(
+  'grouping' => '',
+  'type' => 'ul',
+));
+$handler->override_option('block_description', 'Upcoming - Courses');
+$handler->override_option('block_caching', -1);
+
+
+
+$views[$view->name] = $view;
+
+///////////////////////////////////////////////////////////
+//        calendar_departments
+///////////////////////////////////////////////////////////
+  
+$view = new view;
+$view->name = 'calendar_department';
+$view->description = 'A multi-dimensional calendar view with back/next navigation.';
+$view->tag = 'Calendar - Department';
+$view->view_php = '';
+$view->base_table = 'node';
+$view->is_cacheable = FALSE;
+$view->api_version = 2;
+$view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+$handler = $view->new_display('default', 'Defaults', 'default');
+$handler->override_option('relationships', array(
+  'author_group_nid' => array(
+    'label' => 'Group node (post)',
+    'required' => 1,
+    'id' => 'author_group_nid',
+    'table' => 'og_author',
+    'field' => 'author_group_nid',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('fields', array(
+  'title' => array(
+    'label' => '',
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'field' => 'title',
+    'table' => 'node',
+    'relationship' => 'none',
+  ),
+  'start' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'date_format' => 'custom',
+    'custom_date_format' => 'g:i A',
+    'exclude' => 0,
+    'id' => 'start',
+    'table' => 'calendar_event',
+    'field' => 'start',
+    'relationship' => 'none',
+  ),
+  'end' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'date_format' => 'custom',
+    'custom_date_format' => 'g:i A',
+    'exclude' => 0,
+    'id' => 'end',
+    'table' => 'calendar_event',
+    'field' => 'end',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('sorts', array(
+  'start' => array(
+    'order' => 'ASC',
+    'granularity' => 'minute',
+    'id' => 'start',
+    'table' => 'calendar_event',
+    'field' => 'start',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('arguments', array(
+  'date_argument' => array(
+    'default_action' => 'default',
+    'style_plugin' => 'default_summary',
+    'style_options' => array(),
+    'wildcard' => 'all',
+    'wildcard_substitution' => 'All',
+    'title' => '',
+    'breadcrumb' => '',
+    'default_argument_type' => 'date',
+    'default_argument' => '',
+    'validate_type' => 'none',
+    'validate_fail' => 'not found',
+    'date_fields' => array(
+      'calendar_event.start' => 'calendar_event.start',
+    ),
+    'year_range' => '-3:+3',
+    'date_method' => 'OR',
+    'granularity' => 'month',
+    'id' => 'date_argument',
+    'table' => 'node',
+    'field' => 'date_argument',
+    'relationship' => 'none',
+    'default_argument_user' => 0,
+    'default_argument_fixed' => '',
+    'default_argument_php' => '',
+    'validate_argument_node_type' => array(
+      'announcement' => 0,
+      'classifieds' => 0,
+      'class_year' => 0,
+      'community' => 0,
+      'evaluation' => 0,
+      'discussion_topic' => 0,
+      'faq' => 0,
+      'important_announcement' => 0,
+      'group_book' => 0,
+      'course' => 0,
+      'department' => 0,
+      'student_group' => 0,
+      'student_program' => 0,
+      'book' => 0,
+      'page' => 0,
+      'story' => 0,
+    ),
+    'validate_argument_node_access' => 0,
+    'validate_argument_nid_type' => 'nid',
+    'validate_argument_vocabulary' => array(),
+    'validate_argument_type' => 'tid',
+    'validate_argument_php' => '',
+    'override' => array(
+      'button' => 'Override',
+    ),
+    'default_options_div_prefix' => '',
+    'validate_user_argument_type' => 'uid',
+    'validate_user_roles' => array(
+      '2' => 0,
+      '3' => 0,
+      '4' => 0,
+      '5' => 0,
+      '6' => 0,
+      '7' => 0,
+      '8' => 0,
+    ),
+    'validate_argument_transform' => 0,
+    'validate_user_restrict_roles' => 0,
+    'validate_argument_is_member' => 0,
+  ),
+));
+$handler->override_option('filters', array(
+  'type' => array(
+    'operator' => 'in',
+    'value' => array(
+      'department' => 'department',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'type',
+    'table' => 'node',
+    'field' => 'type',
+    'relationship' => 'author_group_nid',
+  ),
+  'moderate' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'moderate',
+    'table' => 'node',
+    'field' => 'moderate',
+    'relationship' => 'none',
+  ),
+  'hide' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'hide',
+    'table' => 'hide_nodes',
+    'field' => 'hide',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('access', array(
+  'type' => 'none',
+  'role' => array(),
+  'perm' => '',
+));
+$handler->override_option('cache', array(
+  'type' => 'none',
+));
+$handler->override_option('title', 'Department Calendar');
+$handler->override_option('header_empty', 1);
+$handler->override_option('items_per_page', 0);
+$handler->override_option('use_more', 0);
+$handler->override_option('style_plugin', 'calendar_nav');
+$handler = $view->new_display('calendar', 'Calendar page', 'calendar_1');
+$handler->override_option('path', 'departments/calendar');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+));
+$handler->override_option('calendar_colors', array(
+  '0' => array(),
+));
+$handler->override_option('calendar_colors_vocabulary', array());
+$handler->override_option('calendar_colors_taxonomy', array());
+$handler->override_option('calendar_popup', 0);
+$handler->override_option('calendar_date_link', '');
+$handler = $view->new_display('calendar_block', 'Calendar block', 'calendar_block_1');
+$handler->override_option('block_description', 'Calendar - Departments');
+$handler->override_option('block_caching', -1);
+$handler = $view->new_display('calendar_period', 'Year view', 'calendar_period_1');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'display_type' => 'year',
+  'name_size' => 1,
+  'max_items' => 0,
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+));
+$handler->override_option('calendar_type', 'year');
+$handler = $view->new_display('calendar_period', 'Month view', 'calendar_period_2');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'display_type' => 'month',
+  'name_size' => '99',
+  'with_weekno' => '1',
+  'date_fields' => NULL,
+  'max_items' => 0,
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+));
+$handler->override_option('calendar_type', 'month');
+$handler = $view->new_display('calendar_period', 'Day view', 'calendar_period_3');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'name_size' => '99',
+  'with_weekno' => 0,
+  'max_items' => 0,
+  'max_items_behavior' => 'more',
+  'groupby_times' => 'hour',
+  'groupby_times_custom' => '',
+  'groupby_field' => '',
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+));
+$handler->override_option('calendar_type', 'day');
+$handler = $view->new_display('calendar_period', 'Week view', 'calendar_period_4');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'name_size' => '99',
+  'with_weekno' => 0,
+  'max_items' => 0,
+  'max_items_behavior' => 'more',
+  'groupby_times' => 'hour',
+  'groupby_times_custom' => '',
+  'groupby_field' => '',
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+));
+$handler->override_option('calendar_type', 'week');
+$handler = $view->new_display('calendar_period', 'Block view', 'calendar_period_5');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'display_type' => 'month',
+  'name_size' => '1',
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 0,
+  'default' => 0,
+  'calendar_block_1' => 'calendar_block_1',
+));
+$handler->override_option('calendar_type', 'month');
+$handler = $view->new_display('calendar_ical', 'iCal feed', 'calendar_ical_1');
+$handler->override_option('arguments', array());
+$handler->override_option('filters', array(
+  'status' => array(
+    'operator' => '=',
+    'value' => 1,
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'status',
+    'table' => 'node',
+    'field' => 'status',
+    'relationship' => 'none',
+  ),
+  'date_filter' => array(
+    'operator' => '>=',
+    'value' => array(
+      'value' => NULL,
+      'min' => NULL,
+      'max' => NULL,
+      'default_date' => 'now',
+      'default_to_date' => '',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'date_fields' => array(
+      'node.changed' => 'node.changed',
+    ),
+    'granularity' => 'day',
+    'form_type' => 'date_select',
+    'default_date' => 'now',
+    'default_to_date' => '',
+    'id' => 'date_filter',
+    'table' => 'node',
+    'field' => 'date_filter',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('style_plugin', 'ical');
+$handler->override_option('style_options', array(
+  'mission_description' => FALSE,
+  'description' => '',
+  'summary_field' => 'title',
+  'description_field' => '',
+  'location_field' => '',
+));
+$handler->override_option('row_plugin', '');
+$handler->override_option('path', 'departments/calendar/ical');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+));
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+  'block_1' => 0,
+));
+$handler->override_option('sitename_title', FALSE);
+
+
+$handler = $view->new_display('block', 'Upcoming', 'block_1');
+$handler->override_option('fields', array(
+  'title' => array(
+    'label' => '',
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'field' => 'title',
+    'table' => 'node',
+    'relationship' => 'none',
+    'format' => 'default',
+  ),
+  'changed' => array(
+    'label' => '',
+    'link_to_node' => 0,
+    'exclude' => 0,
+    'id' => 'changed',
+    'field' => 'changed',
+    'table' => 'node',
+    'relationship' => 'none',
+    'date_format' => 'small',
+    'format' => 'default',
+  ),
+));
+$handler->override_option('arguments', array());
+$handler->override_option('filters', array(
+  'status' => array(
+    'operator' => '=',
+    'value' => 1,
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'status',
+    'table' => 'node',
+    'field' => 'status',
+    'relationship' => 'none',
+  ),
+  'date_filter' => array(
+    'operator' => '>=',
+    'value' => array(
+      'value' => NULL,
+      'min' => NULL,
+      'max' => NULL,
+      'default_date' => 'now',
+      'default_to_date' => '',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'date_fields' => array(
+      'node.changed' => 'node.changed',
+    ),
+    'granularity' => 'day',
+    'form_type' => 'date_select',
+    'default_date' => 'now',
+    'default_to_date' => '',
+    'id' => 'date_filter',
+    'table' => 'node',
+    'field' => 'date_filter',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('title', 'Upcoming');
+$handler->override_option('items_per_page', 5);
+$handler->override_option('use_more', 1);
+$handler->override_option('style_plugin', 'list');
+$handler->override_option('style_options', array(
+  'grouping' => '',
+  'type' => 'ul',
+));
+$handler->override_option('block_description', 'Upcoming - Departments');
+$handler->override_option('block_caching', -1);
+
+
+
+$views[$view->name] = $view;
+
+///////////////////////////////////////////////////////////
+//        calendar_student_programs
+///////////////////////////////////////////////////////////
+  
+$view = new view;
+$view->name = 'calendar_student_programs';
+$view->description = 'A multi-dimensional calendar view with back/next navigation.';
+$view->tag = 'Calendar - Student Programs';
+$view->view_php = '';
+$view->base_table = 'node';
+$view->is_cacheable = FALSE;
+$view->api_version = 2;
+$view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+$handler = $view->new_display('default', 'Defaults', 'default');
+$handler->override_option('relationships', array(
+  'author_group_nid' => array(
+    'label' => 'Group node (post)',
+    'required' => 0,
+    'id' => 'author_group_nid',
+    'table' => 'og_author',
+    'field' => 'author_group_nid',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('fields', array(
+  'title' => array(
+    'label' => '',
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'field' => 'title',
+    'table' => 'node',
+    'relationship' => 'none',
+  ),
+  'start' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'date_format' => 'custom',
+    'custom_date_format' => 'g:i A',
+    'exclude' => 0,
+    'id' => 'start',
+    'table' => 'calendar_event',
+    'field' => 'start',
+    'relationship' => 'none',
+  ),
+  'end' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'date_format' => 'custom',
+    'custom_date_format' => 'g:i A',
+    'exclude' => 0,
+    'id' => 'end',
+    'table' => 'calendar_event',
+    'field' => 'end',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('sorts', array(
+  'start' => array(
+    'order' => 'ASC',
+    'granularity' => 'minute',
+    'id' => 'start',
+    'table' => 'calendar_event',
+    'field' => 'start',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('arguments', array(
+  'date_argument' => array(
+    'default_action' => 'default',
+    'style_plugin' => 'default_summary',
+    'style_options' => array(),
+    'wildcard' => 'all',
+    'wildcard_substitution' => 'All',
+    'title' => '',
+    'breadcrumb' => '',
+    'default_argument_type' => 'date',
+    'default_argument' => '',
+    'validate_type' => 'none',
+    'validate_fail' => 'not found',
+    'date_fields' => array(
+      'calendar_event.start' => 'calendar_event.start',
+    ),
+    'year_range' => '-3:+3',
+    'date_method' => 'OR',
+    'granularity' => 'month',
+    'id' => 'date_argument',
+    'table' => 'node',
+    'field' => 'date_argument',
+    'relationship' => 'none',
+    'default_argument_user' => 0,
+    'default_argument_fixed' => '',
+    'default_argument_php' => '',
+    'validate_argument_node_type' => array(
+      'announcement' => 0,
+      'classifieds' => 0,
+      'class_year' => 0,
+      'community' => 0,
+      'evaluation' => 0,
+      'discussion_topic' => 0,
+      'faq' => 0,
+      'important_announcement' => 0,
+      'group_book' => 0,
+      'course' => 0,
+      'department' => 0,
+      'student_group' => 0,
+      'student_program' => 0,
+      'book' => 0,
+      'page' => 0,
+      'story' => 0,
+    ),
+    'validate_argument_node_access' => 0,
+    'validate_argument_nid_type' => 'nid',
+    'validate_argument_vocabulary' => array(),
+    'validate_argument_type' => 'tid',
+    'validate_argument_php' => '',
+    'override' => array(
+      'button' => 'Override',
+    ),
+    'default_options_div_prefix' => '',
+    'validate_user_argument_type' => 'uid',
+    'validate_user_roles' => array(
+      '2' => 0,
+      '3' => 0,
+      '4' => 0,
+      '5' => 0,
+      '6' => 0,
+      '7' => 0,
+      '8' => 0,
+    ),
+    'validate_argument_transform' => 0,
+    'validate_user_restrict_roles' => 0,
+    'validate_argument_is_member' => 0,
+  ),
+));
+$handler->override_option('filters', array(
+  'moderate' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'moderate',
+    'table' => 'node',
+    'field' => 'moderate',
+    'relationship' => 'none',
+  ),
+  'hide' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'hide',
+    'table' => 'hide_nodes',
+    'field' => 'hide',
+    'relationship' => 'none',
+  ),
+  'type' => array(
+    'operator' => 'in',
+    'value' => array(
+      'student_program' => 'student_program',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'type',
+    'table' => 'node',
+    'field' => 'type',
+    'relationship' => 'author_group_nid',
+  ),
+));
+$handler->override_option('access', array(
+  'type' => 'none',
+  'role' => array(),
+  'perm' => '',
+));
+$handler->override_option('cache', array(
+  'type' => 'none',
+));
+$handler->override_option('title', 'Student Programs Calendar');
+$handler->override_option('header_empty', 1);
+$handler->override_option('items_per_page', 0);
+$handler->override_option('use_more', 0);
+$handler->override_option('style_plugin', 'calendar_nav');
+$handler = $view->new_display('calendar', 'Calendar page', 'calendar_1');
+$handler->override_option('path', 'student-programs/calendar');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+));
+$handler->override_option('calendar_colors', array(
+  '0' => array(),
+));
+$handler->override_option('calendar_colors_vocabulary', array());
+$handler->override_option('calendar_colors_taxonomy', array());
+$handler->override_option('calendar_popup', 0);
+$handler->override_option('calendar_date_link', '');
+$handler = $view->new_display('calendar_block', 'Calendar block', 'calendar_block_1');
+$handler->override_option('block_description', 'Calendar - Student Programs');
+$handler->override_option('block_caching', -1);
+$handler = $view->new_display('calendar_period', 'Year view', 'calendar_period_1');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'display_type' => 'year',
+  'name_size' => 1,
+  'max_items' => 0,
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+));
+$handler->override_option('calendar_type', 'year');
+$handler = $view->new_display('calendar_period', 'Month view', 'calendar_period_2');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'display_type' => 'month',
+  'name_size' => '99',
+  'with_weekno' => '1',
+  'date_fields' => NULL,
+  'max_items' => 0,
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+));
+$handler->override_option('calendar_type', 'month');
+$handler = $view->new_display('calendar_period', 'Day view', 'calendar_period_3');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'name_size' => '99',
+  'with_weekno' => 0,
+  'max_items' => 0,
+  'max_items_behavior' => 'more',
+  'groupby_times' => 'hour',
+  'groupby_times_custom' => '',
+  'groupby_field' => '',
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+));
+$handler->override_option('calendar_type', 'day');
+$handler = $view->new_display('calendar_period', 'Week view', 'calendar_period_4');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'name_size' => '99',
+  'with_weekno' => 0,
+  'max_items' => 0,
+  'max_items_behavior' => 'more',
+  'groupby_times' => 'hour',
+  'groupby_times_custom' => '',
+  'groupby_field' => '',
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+));
+$handler->override_option('calendar_type', 'week');
+$handler = $view->new_display('calendar_period', 'Block view', 'calendar_period_5');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'display_type' => 'month',
+  'name_size' => '1',
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 0,
+  'default' => 0,
+  'calendar_block_1' => 'calendar_block_1',
+));
+$handler->override_option('calendar_type', 'month');
+$handler = $view->new_display('calendar_ical', 'iCal feed', 'calendar_ical_1');
+$handler->override_option('arguments', array());
+$handler->override_option('filters', array(
+  'status' => array(
+    'operator' => '=',
+    'value' => 1,
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'status',
+    'table' => 'node',
+    'field' => 'status',
+    'relationship' => 'none',
+  ),
+  'date_filter' => array(
+    'operator' => '>=',
+    'value' => array(
+      'value' => NULL,
+      'min' => NULL,
+      'max' => NULL,
+      'default_date' => 'now',
+      'default_to_date' => '',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'date_fields' => array(
+      'node.changed' => 'node.changed',
+    ),
+    'granularity' => 'day',
+    'form_type' => 'date_select',
+    'default_date' => 'now',
+    'default_to_date' => '',
+    'id' => 'date_filter',
+    'table' => 'node',
+    'field' => 'date_filter',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('style_plugin', 'ical');
+$handler->override_option('style_options', array(
+  'mission_description' => FALSE,
+  'description' => '',
+  'summary_field' => 'title',
+  'description_field' => '',
+  'location_field' => '',
+));
+$handler->override_option('row_plugin', '');
+$handler->override_option('path', 'student-programs/calendar/ical');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+));
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+  'block_1' => 0,
+));
+$handler->override_option('sitename_title', FALSE);
+
+
+$handler = $view->new_display('block', 'Upcoming', 'block_1');
+$handler->override_option('fields', array(
+  'title' => array(
+    'label' => '',
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'field' => 'title',
+    'table' => 'node',
+    'relationship' => 'none',
+    'format' => 'default',
+  ),
+  'changed' => array(
+    'label' => '',
+    'link_to_node' => 0,
+    'exclude' => 0,
+    'id' => 'changed',
+    'field' => 'changed',
+    'table' => 'node',
+    'relationship' => 'none',
+    'date_format' => 'small',
+    'format' => 'default',
+  ),
+));
+$handler->override_option('arguments', array());
+$handler->override_option('filters', array(
+  'status' => array(
+    'operator' => '=',
+    'value' => 1,
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'status',
+    'table' => 'node',
+    'field' => 'status',
+    'relationship' => 'none',
+  ),
+  'date_filter' => array(
+    'operator' => '>=',
+    'value' => array(
+      'value' => NULL,
+      'min' => NULL,
+      'max' => NULL,
+      'default_date' => 'now',
+      'default_to_date' => '',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'date_fields' => array(
+      'node.changed' => 'node.changed',
+    ),
+    'granularity' => 'day',
+    'form_type' => 'date_select',
+    'default_date' => 'now',
+    'default_to_date' => '',
+    'id' => 'date_filter',
+    'table' => 'node',
+    'field' => 'date_filter',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('title', 'Upcoming');
+$handler->override_option('items_per_page', 5);
+$handler->override_option('use_more', 1);
+$handler->override_option('style_plugin', 'list');
+$handler->override_option('style_options', array(
+  'grouping' => '',
+  'type' => 'ul',
+));
+$handler->override_option('block_description', 'Upcoming - Student Programs');
+$handler->override_option('block_caching', -1);
+
+
+
+$views[$view->name] = $view;
+
+///////////////////////////////////////////////////////////
+//        calendar_student_groups
+///////////////////////////////////////////////////////////
+  
+$view = new view;
+$view->name = 'calendar_student_groups';
+$view->description = 'A multi-dimensional calendar view with back/next navigation.';
+$view->tag = 'Calendar - Student Groups';
+$view->view_php = '';
+$view->base_table = 'node';
+$view->is_cacheable = FALSE;
+$view->api_version = 2;
+$view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+$handler = $view->new_display('default', 'Defaults', 'default');
+$handler->override_option('relationships', array(
+  'author_group_nid' => array(
+    'label' => 'Group node (post)',
+    'required' => 0,
+    'id' => 'author_group_nid',
+    'table' => 'og_author',
+    'field' => 'author_group_nid',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('fields', array(
+  'title' => array(
+    'label' => '',
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'field' => 'title',
+    'table' => 'node',
+    'relationship' => 'none',
+  ),
+  'start' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'date_format' => 'custom',
+    'custom_date_format' => 'g:i A',
+    'exclude' => 0,
+    'id' => 'start',
+    'table' => 'calendar_event',
+    'field' => 'start',
+    'relationship' => 'none',
+  ),
+  'end' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'date_format' => 'custom',
+    'custom_date_format' => 'g:i A',
+    'exclude' => 0,
+    'id' => 'end',
+    'table' => 'calendar_event',
+    'field' => 'end',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('sorts', array(
+  'start' => array(
+    'order' => 'ASC',
+    'granularity' => 'minute',
+    'id' => 'start',
+    'table' => 'calendar_event',
+    'field' => 'start',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('arguments', array(
+  'date_argument' => array(
+    'default_action' => 'default',
+    'style_plugin' => 'default_summary',
+    'style_options' => array(),
+    'wildcard' => 'all',
+    'wildcard_substitution' => 'All',
+    'title' => '',
+    'breadcrumb' => '',
+    'default_argument_type' => 'date',
+    'default_argument' => '',
+    'validate_type' => 'none',
+    'validate_fail' => 'not found',
+    'date_fields' => array(
+      'calendar_event.start' => 'calendar_event.start',
+    ),
+    'year_range' => '-3:+3',
+    'date_method' => 'OR',
+    'granularity' => 'month',
+    'id' => 'date_argument',
+    'table' => 'node',
+    'field' => 'date_argument',
+    'relationship' => 'none',
+    'default_argument_user' => 0,
+    'default_argument_fixed' => '',
+    'default_argument_php' => '',
+    'validate_argument_node_type' => array(
+      'announcement' => 0,
+      'classifieds' => 0,
+      'class_year' => 0,
+      'community' => 0,
+      'evaluation' => 0,
+      'discussion_topic' => 0,
+      'faq' => 0,
+      'important_announcement' => 0,
+      'group_book' => 0,
+      'course' => 0,
+      'department' => 0,
+      'student_group' => 0,
+      'student_program' => 0,
+      'book' => 0,
+      'page' => 0,
+      'story' => 0,
+    ),
+    'validate_argument_node_access' => 0,
+    'validate_argument_nid_type' => 'nid',
+    'validate_argument_vocabulary' => array(),
+    'validate_argument_type' => 'tid',
+    'validate_argument_php' => '',
+    'override' => array(
+      'button' => 'Override',
+    ),
+    'default_options_div_prefix' => '',
+    'validate_user_argument_type' => 'uid',
+    'validate_user_roles' => array(
+      '2' => 0,
+      '3' => 0,
+      '4' => 0,
+      '5' => 0,
+      '6' => 0,
+      '7' => 0,
+      '8' => 0,
+    ),
+    'validate_argument_transform' => 0,
+    'validate_user_restrict_roles' => 0,
+    'validate_argument_is_member' => 0,
+  ),
+));
+$handler->override_option('filters', array(
+  'moderate' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'moderate',
+    'table' => 'node',
+    'field' => 'moderate',
+    'relationship' => 'none',
+  ),
+  'hide' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'hide',
+    'table' => 'hide_nodes',
+    'field' => 'hide',
+    'relationship' => 'none',
+  ),
+  'type' => array(
+    'operator' => 'in',
+    'value' => array(
+      'student_group' => 'student_group',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'type',
+    'table' => 'node',
+    'field' => 'type',
+    'relationship' => 'author_group_nid',
+  ),
+));
+$handler->override_option('access', array(
+  'type' => 'none',
+  'role' => array(),
+  'perm' => '',
+));
+$handler->override_option('cache', array(
+  'type' => 'none',
+));
+$handler->override_option('title', 'Student Groups Calendar');
+$handler->override_option('header_empty', 1);
+$handler->override_option('items_per_page', 0);
+$handler->override_option('use_more', 0);
+$handler->override_option('style_plugin', 'calendar_nav');
+$handler = $view->new_display('calendar', 'Calendar page', 'calendar_1');
+$handler->override_option('path', 'student-groups/calendar');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+));
+$handler->override_option('calendar_colors', array(
+  '0' => array(),
+));
+$handler->override_option('calendar_colors_vocabulary', array());
+$handler->override_option('calendar_colors_taxonomy', array());
+$handler->override_option('calendar_popup', 0);
+$handler->override_option('calendar_date_link', '');
+$handler = $view->new_display('calendar_block', 'Calendar block', 'calendar_block_1');
+$handler->override_option('block_description', 'Calendar - Student Groups');
+$handler->override_option('block_caching', -1);
+$handler = $view->new_display('calendar_period', 'Year view', 'calendar_period_1');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'display_type' => 'year',
+  'name_size' => 1,
+  'max_items' => 0,
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+));
+$handler->override_option('calendar_type', 'year');
+$handler = $view->new_display('calendar_period', 'Month view', 'calendar_period_2');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'display_type' => 'month',
+  'name_size' => '99',
+  'with_weekno' => '1',
+  'date_fields' => NULL,
+  'max_items' => 0,
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+));
+$handler->override_option('calendar_type', 'month');
+$handler = $view->new_display('calendar_period', 'Day view', 'calendar_period_3');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'name_size' => '99',
+  'with_weekno' => 0,
+  'max_items' => 0,
+  'max_items_behavior' => 'more',
+  'groupby_times' => 'hour',
+  'groupby_times_custom' => '',
+  'groupby_field' => '',
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+));
+$handler->override_option('calendar_type', 'day');
+$handler = $view->new_display('calendar_period', 'Week view', 'calendar_period_4');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'name_size' => '99',
+  'with_weekno' => 0,
+  'max_items' => 0,
+  'max_items_behavior' => 'more',
+  'groupby_times' => 'hour',
+  'groupby_times_custom' => '',
+  'groupby_field' => '',
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+));
+$handler->override_option('calendar_type', 'week');
+$handler = $view->new_display('calendar_period', 'Block view', 'calendar_period_5');
+$handler->override_option('style_plugin', 'calendar_style');
+$handler->override_option('style_options', array(
+  'display_type' => 'month',
+  'name_size' => '1',
+));
+$handler->override_option('attachment_position', 'after');
+$handler->override_option('inherit_arguments', TRUE);
+$handler->override_option('inherit_exposed_filters', TRUE);
+$handler->override_option('displays', array(
+  'calendar_1' => 0,
+  'default' => 0,
+  'calendar_block_1' => 'calendar_block_1',
+));
+$handler->override_option('calendar_type', 'month');
+$handler = $view->new_display('calendar_ical', 'iCal feed', 'calendar_ical_1');
+$handler->override_option('arguments', array());
+$handler->override_option('filters', array(
+  'status' => array(
+    'operator' => '=',
+    'value' => 1,
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'status',
+    'table' => 'node',
+    'field' => 'status',
+    'relationship' => 'none',
+  ),
+  'date_filter' => array(
+    'operator' => '>=',
+    'value' => array(
+      'value' => NULL,
+      'min' => NULL,
+      'max' => NULL,
+      'default_date' => 'now',
+      'default_to_date' => '',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'date_fields' => array(
+      'node.changed' => 'node.changed',
+    ),
+    'granularity' => 'day',
+    'form_type' => 'date_select',
+    'default_date' => 'now',
+    'default_to_date' => '',
+    'id' => 'date_filter',
+    'table' => 'node',
+    'field' => 'date_filter',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('style_plugin', 'ical');
+$handler->override_option('style_options', array(
+  'mission_description' => FALSE,
+  'description' => '',
+  'summary_field' => 'title',
+  'description_field' => '',
+  'location_field' => '',
+));
+$handler->override_option('row_plugin', '');
+$handler->override_option('path', 'student-groups/calendar/ical');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+));
+$handler->override_option('displays', array(
+  'calendar_1' => 'calendar_1',
+  'default' => 0,
+  'calendar_block_1' => 0,
+  'block_1' => 0,
+));
+$handler->override_option('sitename_title', FALSE);
+
+
+$handler = $view->new_display('block', 'Upcoming', 'block_1');
+$handler->override_option('fields', array(
+  'title' => array(
+    'label' => '',
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'field' => 'title',
+    'table' => 'node',
+    'relationship' => 'none',
+    'format' => 'default',
+  ),
+  'changed' => array(
+    'label' => '',
+    'link_to_node' => 0,
+    'exclude' => 0,
+    'id' => 'changed',
+    'field' => 'changed',
+    'table' => 'node',
+    'relationship' => 'none',
+    'date_format' => 'small',
+    'format' => 'default',
+  ),
+));
+$handler->override_option('arguments', array());
+$handler->override_option('filters', array(
+  'status' => array(
+    'operator' => '=',
+    'value' => 1,
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'status',
+    'table' => 'node',
+    'field' => 'status',
+    'relationship' => 'none',
+  ),
+  'date_filter' => array(
+    'operator' => '>=',
+    'value' => array(
+      'value' => NULL,
+      'min' => NULL,
+      'max' => NULL,
+      'default_date' => 'now',
+      'default_to_date' => '',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'date_fields' => array(
+      'node.changed' => 'node.changed',
+    ),
+    'granularity' => 'day',
+    'form_type' => 'date_select',
+    'default_date' => 'now',
+    'default_to_date' => '',
+    'id' => 'date_filter',
+    'table' => 'node',
+    'field' => 'date_filter',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('title', 'Upcoming');
+$handler->override_option('items_per_page', 5);
+$handler->override_option('use_more', 1);
+$handler->override_option('style_plugin', 'list');
+$handler->override_option('style_options', array(
+  'grouping' => '',
+  'type' => 'ul',
+));
+$handler->override_option('block_description', 'Upcoming - Student Groups');
+$handler->override_option('block_caching', -1);
+
+
+
+$views[$view->name] = $view;
+
+///////////////////////////////////////////////////////////
+//        all_announcements
+///////////////////////////////////////////////////////////
+
+$view = new view;
+$view->name = 'all_announcements';
+$view->description = '';
+$view->tag = 'All Announcements';
+$view->view_php = '';
+$view->base_table = 'node';
+$view->is_cacheable = FALSE;
+$view->api_version = 2;
+$view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+$handler = $view->new_display('default', 'Defaults', 'default');
+$handler->override_option('relationships', array(
+  'author_group_nid' => array(
+    'label' => 'Group node (post)',
+    'required' => 1,
+    'id' => 'author_group_nid',
+    'table' => 'og_author',
+    'field' => 'author_group_nid',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('fields', array(
+  'created' => array(
+    'id' => 'created',
+    'table' => 'node',
+    'field' => 'created',
+  ),
+  'title' => array(
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+  ),
+  'title_1' => array(
+    'id' => 'title_1',
+    'table' => 'node',
+    'field' => 'title',
+  ),
+));
+$handler->override_option('sorts', array(
+  'created' => array(
+    'order' => 'DESC',
+    'granularity' => 'second',
+    'id' => 'created',
+    'table' => 'node',
+    'field' => 'created',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('filters', array(
+  'type' => array(
+    'operator' => 'in',
+    'value' => array(
+      'announcement' => 'announcement',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'type',
+    'table' => 'node',
+    'field' => 'type',
+    'relationship' => 'none',
+    'override' => array(
+      'button' => 'Override',
+    ),
+  ),
+  'moderate' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'moderate',
+    'table' => 'node',
+    'field' => 'moderate',
+    'relationship' => 'none',
+  ),
+  'status' => array(
+    'operator' => '=',
+    'value' => '1',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'status',
+    'table' => 'node',
+    'field' => 'status',
+    'relationship' => 'none',
+  ),
+  'hide' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'hide',
+    'table' => 'hide_nodes',
+    'field' => 'hide',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('access', array(
+  'type' => 'none',
+));
+$handler->override_option('cache', array(
+  'type' => 'none',
+));
+$handler->override_option('title', 'All Announcements');
+$handler->override_option('footer', '<?php
+$group = og_get_group_context();
+if(og_group_access_get_access(\'create announcement\', $group)){
+  print \'<a href="node/\'.$group->nid.\'/og/announcement/add">Create Announcement</a>\';
+}
+?>');
+$handler->override_option('footer_format', '3');
+$handler->override_option('footer_empty', 1);
+$handler->override_option('empty', 'No Announcements');
+$handler->override_option('empty_format', '1');
+$handler->override_option('distinct', 1);
+$handler->override_option('row_plugin', 'node');
+$handler->override_option('row_options', array(
+  'relationship' => 'none',
+  'build_mode' => 'teaser',
+  'links' => 1,
+  'comments' => 0,
+));
+$handler = $view->new_display('page', 'Page', 'page_1');
+$handler->override_option('use_pager', '1');
+$handler->override_option('path', 'announcements');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+));
+$handler = $view->new_display('block_link', 'Block (title link)', 'block_link_1');
+$handler->override_option('fields', array(
+  'created' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'date_format' => 'custom',
+    'custom_date_format' => 'm/d/y',
+    'exclude' => 0,
+    'id' => 'created',
+    'table' => 'node',
+    'field' => 'created',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+  'title' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '[title]',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('items_per_page', 5);
+$handler->override_option('style_plugin', 'table');
+$handler->override_option('style_options', array(
+  'grouping' => '',
+  'override' => 1,
+  'sticky' => 0,
+  'order' => 'asc',
+  'columns' => array(
+    'created' => 'created',
+    'title' => 'title',
+  ),
+  'info' => array(
+    'created' => array(
+      'sortable' => 0,
+      'separator' => '',
+    ),
+    'title' => array(
+      'sortable' => 0,
+      'separator' => '',
+    ),
+  ),
+  'default' => '-1',
+));
+$handler->override_option('row_plugin', 'fields');
+$handler->override_option('row_options', array());
+$handler->override_option('block_description', 'Announcements - Department');
+$handler->override_option('block_caching', -1);
+$handler->override_option('subject_link', 'page_1');
+$handler = $view->new_display('panel_pane', 'Content pane', 'panel_pane_1');
+$handler->override_option('fields', array(
+  'nid' => array(
+    'label' => 'Nid',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 0,
+    'exclude' => 1,
+    'id' => 'nid',
+    'table' => 'node',
+    'field' => 'nid',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'author_group_nid',
+  ),
+  'title_1' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 1,
+      'path' => 'node/[nid]/og/announcements',
+      'link_class' => 'group-heading',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 1,
+    'exclude' => 1,
+    'id' => 'title_1',
+    'table' => 'node',
+    'field' => 'title',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'author_group_nid',
+  ),
+  'title' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 1,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('filters', array(
+  'type' => array(
+    'operator' => 'in',
+    'value' => array(
+      'announcement' => 'announcement',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'type',
+    'table' => 'node',
+    'field' => 'type',
+    'relationship' => 'none',
+    'override' => array(
+      'button' => 'Override',
+    ),
+  ),
+  'moderate' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'moderate',
+    'table' => 'node',
+    'field' => 'moderate',
+    'relationship' => 'none',
+  ),
+  'status' => array(
+    'operator' => '=',
+    'value' => '1',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'status',
+    'table' => 'node',
+    'field' => 'status',
+    'relationship' => 'none',
+  ),
+  'hide' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'hide',
+    'table' => 'hide_nodes',
+    'field' => 'hide',
+    'relationship' => 'none',
+  ),
+  'nid' => array(
+    'operator' => 'empty',
+    'value' => array(
+      'value' => '',
+      'min' => '',
+      'max' => '',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'nid',
+    'table' => 'node',
+    'field' => 'nid',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('footer', '');
+$handler->override_option('empty', ' ');
+$handler->override_option('items_per_page', 1);
+$handler->override_option('use_more', 0);
+$handler->override_option('style_plugin', 'list');
+$handler->override_option('style_options', array(
+  'grouping' => 'title_1',
+  'type' => 'ul',
+));
+$handler->override_option('row_plugin', 'fields');
+$handler->override_option('row_options', array(
+  'inline' => array(),
+  'separator' => '',
+));
+$handler->override_option('pane_title', '');
+$handler->override_option('pane_description', '');
+$handler->override_option('pane_category', array(
+  'name' => 'View panes',
+  'weight' => 0,
+));
+$handler->override_option('allow', array(
+  'use_pager' => 0,
+  'items_per_page' => 0,
+  'offset' => 0,
+  'link_to_view' => 0,
+  'more_link' => 0,
+  'path_override' => 0,
+  'title_override' => 0,
+  'exposed_form' => FALSE,
+));
+$handler->override_option('argument_input', array());
+$handler->override_option('link_to_view', '1');
+$handler->override_option('inherit_panels_path', 0);
+$handler = $view->new_display('feed', 'Feed', 'feed_1');
+$handler->override_option('style_plugin', 'rss');
+$handler->override_option('style_options', array(
+  'mission_description' => FALSE,
+  'description' => '',
+));
+$handler->override_option('row_plugin', 'node_rss');
+$handler->override_option('row_options', array(
+  'relationship' => 'none',
+  'item_length' => 'default',
+));
+$handler->override_option('path', 'announcements/feed');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+));
+$handler->override_option('displays', array(
+  'page_1' => 'page_1',
+  'default' => 0,
+  'block_link_1' => 0,
+  'panel_pane_1' => 0,
+));
+$handler->override_option('sitename_title', FALSE);
+
+
+$views[$view->name] = $view;
+
+///////////////////////////////////////////////////////////
+//        course_announcements
+///////////////////////////////////////////////////////////
+
+$view = new view;
+$view->name = 'course_announcements';
+$view->description = '';
+$view->tag = 'Course Announcements';
+$view->view_php = '';
+$view->base_table = 'node';
+$view->is_cacheable = FALSE;
+$view->api_version = 2;
+$view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+$handler = $view->new_display('default', 'Defaults', 'default');
+$handler->override_option('relationships', array(
+  'author_group_nid' => array(
+    'label' => 'Group node (post)',
+    'required' => 1,
+    'id' => 'author_group_nid',
+    'table' => 'og_author',
+    'field' => 'author_group_nid',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('fields', array(
+  'created' => array(
+    'id' => 'created',
+    'table' => 'node',
+    'field' => 'created',
+  ),
+  'title' => array(
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+  ),
+  'title_1' => array(
+    'id' => 'title_1',
+    'table' => 'node',
+    'field' => 'title',
+  ),
+));
+$handler->override_option('sorts', array(
+  'created' => array(
+    'order' => 'DESC',
+    'granularity' => 'second',
+    'id' => 'created',
+    'table' => 'node',
+    'field' => 'created',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('filters', array(
+  'type' => array(
+    'operator' => 'in',
+    'value' => array(
+      'announcement' => 'announcement',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'type',
+    'table' => 'node',
+    'field' => 'type',
+    'relationship' => 'none',
+    'override' => array(
+      'button' => 'Override',
+    ),
+  ),
+  'moderate' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'moderate',
+    'table' => 'node',
+    'field' => 'moderate',
+    'relationship' => 'none',
+  ),
+  'status' => array(
+    'operator' => '=',
+    'value' => '1',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'status',
+    'table' => 'node',
+    'field' => 'status',
+    'relationship' => 'none',
+  ),
+  'hide' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'hide',
+    'table' => 'hide_nodes',
+    'field' => 'hide',
+    'relationship' => 'none',
+  ),
+  'type_1' => array(
+    'operator' => 'in',
+    'value' => array(
+      'course' => 'course',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'type_1',
+    'table' => 'node',
+    'field' => 'type',
+    'relationship' => 'author_group_nid',
+    'override' => array(
+      'button' => 'Override',
+    ),
+  ),
+));
+$handler->override_option('access', array(
+  'type' => 'none',
+));
+$handler->override_option('cache', array(
+  'type' => 'none',
+));
+$handler->override_option('title', 'Announcements - Course');
+$handler->override_option('footer_format', '3');
+$handler->override_option('footer_empty', 1);
+$handler->override_option('empty', 'No Announcements');
+$handler->override_option('empty_format', '1');
+$handler->override_option('distinct', 1);
+$handler->override_option('row_plugin', 'node');
+$handler->override_option('row_options', array(
+  'relationship' => 'none',
+  'build_mode' => 'teaser',
+  'links' => 1,
+  'comments' => 0,
+));
+$handler = $view->new_display('page', 'Page', 'page_1');
+$handler->override_option('use_pager', '1');
+$handler->override_option('path', 'course-announcements');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler = $view->new_display('block_link', 'Block (title link)', 'block_link_1');
+$handler->override_option('fields', array(
+  'created' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'date_format' => 'custom',
+    'custom_date_format' => 'm/d/y',
+    'exclude' => 0,
+    'id' => 'created',
+    'table' => 'node',
+    'field' => 'created',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+  'title' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('items_per_page', 5);
+$handler->override_option('style_plugin', 'table');
+$handler->override_option('style_options', array(
+  'grouping' => '',
+  'override' => 1,
+  'sticky' => 0,
+  'order' => 'asc',
+  'columns' => array(
+    'created' => 'created',
+    'title' => 'title',
+  ),
+  'info' => array(
+    'created' => array(
+      'sortable' => 0,
+      'separator' => '',
+    ),
+    'title' => array(
+      'sortable' => 0,
+      'separator' => '',
+    ),
+  ),
+  'default' => '-1',
+));
+$handler->override_option('row_plugin', 'fields');
+$handler->override_option('row_options', array());
+$handler->override_option('block_description', 'Announcements');
+$handler->override_option('block_caching', -1);
+$handler->override_option('subject_link', 'page_1');
+$handler = $view->new_display('panel_pane', 'Content pane', 'panel_pane_1');
+$handler->override_option('fields', array(
+  'title' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 1,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+  'title_1' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => 'node/[title]/og/announcements',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 1,
+    'exclude' => 1,
+    'id' => 'title_1',
+    'table' => 'node',
+    'field' => 'title',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'author_group_nid',
+  ),
+  'read_count' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 1,
+      'text' => ' ',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'target' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'html' => 0,
+      'strip_tags' => 0,
+    ),
+    'empty' => '',
+    'hide_empty' => 0,
+    'empty_zero' => 0,
+    'set_precision' => FALSE,
+    'precision' => 0,
+    'decimal' => '.',
+    'separator' => ',',
+    'prefix' => '',
+    'suffix' => '',
+    'exclude' => 0,
+    'id' => 'read_count',
+    'table' => 'nodes_read',
+    'field' => 'read_count',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('title', 'Course Announcements');
+$handler->override_option('items_per_page', 5);
+$handler->override_option('style_plugin', 'list');
+$handler->override_option('style_options', array(
+  'grouping' => 'title_1',
+  'type' => 'ul',
+));
+$handler->override_option('row_plugin', 'fields');
+$handler->override_option('row_options', array(
+  'inline' => array(
+    'created' => 'created',
+    'title' => 'title',
+  ),
+  'separator' => '',
+));
+$handler->override_option('pane_title', '');
+$handler->override_option('pane_description', '');
+$handler->override_option('pane_category', array(
+  'name' => 'View panes',
+  'weight' => 0,
+));
+$handler->override_option('allow', array(
+  'use_pager' => FALSE,
+  'items_per_page' => FALSE,
+  'offset' => FALSE,
+  'link_to_view' => FALSE,
+  'more_link' => FALSE,
+  'path_override' => FALSE,
+  'title_override' => FALSE,
+  'exposed_form' => FALSE,
+  'fields_override' => FALSE,
+));
+$handler->override_option('argument_input', array());
+$handler->override_option('link_to_view', '1');
+$handler->override_option('inherit_panels_path', 0);
+$handler = $view->new_display('feed', 'Feed', 'feed_1');
+$handler->override_option('style_plugin', 'rss');
+$handler->override_option('style_options', array(
+  'mission_description' => FALSE,
+  'description' => '',
+));
+$handler->override_option('row_plugin', 'node_rss');
+$handler->override_option('row_options', array(
+  'relationship' => 'none',
+  'item_length' => 'default',
+));
+$handler->override_option('path', 'course-announcements/feed');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('displays', array(
+  'page_1' => 'page_1',
+  'default' => 0,
+  'block_link_1' => 0,
+  'panel_pane_1' => 0,
+));
+$handler->override_option('sitename_title', FALSE);
+
+
+  $views[$view->name] = $view;
+
+
+///////////////////////////////////////////////////////////
+//        department_announcements
+///////////////////////////////////////////////////////////
+$view = new view;
+$view->name = 'department_announcements';
+$view->description = '';
+$view->tag = 'Department Announcements';
+$view->view_php = '';
+$view->base_table = 'node';
+$view->is_cacheable = FALSE;
+$view->api_version = 2;
+$view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+$handler = $view->new_display('default', 'Defaults', 'default');
+$handler->override_option('relationships', array(
+  'author_group_nid' => array(
+    'label' => 'Group node (post)',
+    'required' => 1,
+    'id' => 'author_group_nid',
+    'table' => 'og_author',
+    'field' => 'author_group_nid',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('fields', array(
+  'created' => array(
+    'id' => 'created',
+    'table' => 'node',
+    'field' => 'created',
+  ),
+  'title' => array(
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+  ),
+  'title_1' => array(
+    'id' => 'title_1',
+    'table' => 'node',
+    'field' => 'title',
+  ),
+));
+$handler->override_option('sorts', array(
+  'created' => array(
+    'order' => 'DESC',
+    'granularity' => 'second',
+    'id' => 'created',
+    'table' => 'node',
+    'field' => 'created',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('filters', array(
+  'type' => array(
+    'operator' => 'in',
+    'value' => array(
+      'announcement' => 'announcement',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'type',
+    'table' => 'node',
+    'field' => 'type',
+    'relationship' => 'none',
+    'override' => array(
+      'button' => 'Override',
+    ),
+  ),
+  'moderate' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'moderate',
+    'table' => 'node',
+    'field' => 'moderate',
+    'relationship' => 'none',
+  ),
+  'status' => array(
+    'operator' => '=',
+    'value' => '1',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'status',
+    'table' => 'node',
+    'field' => 'status',
+    'relationship' => 'none',
+  ),
+  'hide' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'hide',
+    'table' => 'hide_nodes',
+    'field' => 'hide',
+    'relationship' => 'none',
+  ),
+  'type_1' => array(
+    'operator' => 'in',
+    'value' => array(
+      'department' => 'department',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'type_1',
+    'table' => 'node',
+    'field' => 'type',
+    'relationship' => 'author_group_nid',
+  ),
+));
+$handler->override_option('access', array(
+  'type' => 'none',
+));
+$handler->override_option('cache', array(
+  'type' => 'none',
+));
+$handler->override_option('title', 'Department Announcements');
+$handler->override_option('footer', '<?php
+$group = og_get_group_context();
+if(og_group_access_get_access(\'create announcement\', $group)){
+  print \'<a href="node/\'.$group->nid.\'/og/announcement/add">Create Announcement</a>\';
+}
+?>');
+$handler->override_option('footer_format', '3');
+$handler->override_option('footer_empty', 1);
+$handler->override_option('empty', 'No Announcements');
+$handler->override_option('empty_format', '1');
+$handler->override_option('distinct', 1);
+$handler->override_option('row_plugin', 'node');
+$handler->override_option('row_options', array(
+  'relationship' => 'none',
+  'build_mode' => 'teaser',
+  'links' => 1,
+  'comments' => 0,
+));
+$handler = $view->new_display('page', 'Page', 'page_1');
+$handler->override_option('use_pager', '1');
+$handler->override_option('path', 'department-announcements');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler = $view->new_display('block_link', 'Block (title link)', 'block_link_1');
+$handler->override_option('fields', array(
+  'created' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'date_format' => 'custom',
+    'custom_date_format' => 'm/d/y',
+    'exclude' => 0,
+    'id' => 'created',
+    'table' => 'node',
+    'field' => 'created',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+  'title' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '[title]',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('items_per_page', 5);
+$handler->override_option('style_plugin', 'table');
+$handler->override_option('style_options', array(
+  'grouping' => '',
+  'override' => 1,
+  'sticky' => 0,
+  'order' => 'asc',
+  'columns' => array(
+    'created' => 'created',
+    'title' => 'title',
+  ),
+  'info' => array(
+    'created' => array(
+      'sortable' => 0,
+      'separator' => '',
+    ),
+    'title' => array(
+      'sortable' => 0,
+      'separator' => '',
+    ),
+  ),
+  'default' => '-1',
+));
+$handler->override_option('row_plugin', 'fields');
+$handler->override_option('row_options', array());
+$handler->override_option('block_description', 'Announcements - Department');
+$handler->override_option('block_caching', -1);
+$handler->override_option('subject_link', 'page_1');
+$handler = $view->new_display('panel_pane', 'Content pane', 'panel_pane_1');
+$handler->override_option('fields', array(
+  'nid' => array(
+    'label' => 'Nid',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 0,
+    'exclude' => 1,
+    'id' => 'nid',
+    'table' => 'node',
+    'field' => 'nid',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'author_group_nid',
+  ),
+  'title_1' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 1,
+      'path' => 'node/[nid]/og/announcements',
+      'link_class' => 'group-heading',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 1,
+    'exclude' => 1,
+    'id' => 'title_1',
+    'table' => 'node',
+    'field' => 'title',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'author_group_nid',
+  ),
+  'title' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 1,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+  'read_count' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 1,
+      'text' => ' ',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'target' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'html' => 0,
+      'strip_tags' => 0,
+    ),
+    'empty' => '',
+    'hide_empty' => 0,
+    'empty_zero' => 0,
+    'set_precision' => FALSE,
+    'precision' => 0,
+    'decimal' => '.',
+    'separator' => ',',
+    'prefix' => '',
+    'suffix' => '',
+    'exclude' => 0,
+    'id' => 'read_count',
+    'table' => 'nodes_read',
+    'field' => 'read_count',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('footer', '');
+$handler->override_option('items_per_page', 20);
+$handler->override_option('use_more', 0);
+$handler->override_option('style_plugin', 'list');
+$handler->override_option('style_options', array(
+  'grouping' => 'title_1',
+  'type' => 'ul',
+));
+$handler->override_option('row_plugin', 'fields');
+$handler->override_option('row_options', array(
+  'inline' => array(),
+  'separator' => '',
+));
+$handler->override_option('pane_title', '');
+$handler->override_option('pane_description', '');
+$handler->override_option('pane_category', array(
+  'name' => 'View panes',
+  'weight' => 0,
+));
+$handler->override_option('allow', array(
+  'use_pager' => 0,
+  'items_per_page' => 0,
+  'offset' => 0,
+  'link_to_view' => 0,
+  'more_link' => 0,
+  'path_override' => 0,
+  'title_override' => 0,
+  'exposed_form' => FALSE,
+  'fields_override' => FALSE,
+));
+$handler->override_option('argument_input', array());
+$handler->override_option('link_to_view', '1');
+$handler->override_option('inherit_panels_path', 0);
+$handler = $view->new_display('feed', 'Feed', 'feed_1');
+$handler->override_option('style_plugin', 'rss');
+$handler->override_option('style_options', array(
+  'mission_description' => FALSE,
+  'description' => '',
+));
+$handler->override_option('row_plugin', 'node_rss');
+$handler->override_option('row_options', array(
+  'relationship' => 'none',
+  'item_length' => 'default',
+));
+$handler->override_option('path', 'department-announcements/feed');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('displays', array(
+  'page_1' => 'page_1',
+  'default' => 0,
+  'block_link_1' => 0,
+  'panel_pane_1' => 0,
+));
+$handler->override_option('sitename_title', FALSE);
+
+
+
+
+
+  $views[$view->name] = $view;
+
+
+///////////////////////////////////////////////////////////
+//        discussion_topics
+///////////////////////////////////////////////////////////
+$view = new view;
+$view->name = 'discussion_topics';
+$view->description = '';
+$view->tag = 'Discussion Topics';
+$view->view_php = '';
+$view->base_table = 'node';
+$view->is_cacheable = FALSE;
+$view->api_version = 2;
+$view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+$handler = $view->new_display('default', 'Defaults', 'default');
+$handler->override_option('fields', array(
+  'title' => array(
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+  ),
+));
+$handler->override_option('sorts', array(
+  'created' => array(
+    'order' => 'DESC',
+    'granularity' => 'second',
+    'id' => 'created',
+    'table' => 'node',
+    'field' => 'created',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('filters', array(
+  'type' => array(
+    'operator' => 'in',
+    'value' => array(
+      'discussion_topic' => 'discussion_topic',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'type',
+    'table' => 'node',
+    'field' => 'type',
+    'relationship' => 'none',
+  ),
+  'moderate' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'moderate',
+    'table' => 'node',
+    'field' => 'moderate',
+    'relationship' => 'none',
+  ),
+  'status' => array(
+    'operator' => '=',
+    'value' => '1',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'status',
+    'table' => 'node',
+    'field' => 'status',
+    'relationship' => 'none',
+  ),
+  'hide' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'hide',
+    'table' => 'hide_nodes',
+    'field' => 'hide',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('access', array(
+  'type' => 'none',
+));
+$handler->override_option('cache', array(
+  'type' => 'none',
+));
+$handler->override_option('title', 'Discussion Topics');
+$handler->override_option('footer_format', '3');
+$handler->override_option('footer_empty', 1);
+$handler->override_option('empty', 'No Discussion Topics');
+$handler->override_option('empty_format', '1');
+$handler->override_option('row_plugin', 'node');
+$handler->override_option('row_options', array(
+  'relationship' => 'none',
+  'build_mode' => 'teaser',
+  'links' => 1,
+  'comments' => 0,
+));
+$handler = $view->new_display('page', 'Page', 'page_1');
+$handler->override_option('use_pager', '1');
+$handler->override_option('path', 'discussion-topics');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler = $view->new_display('block_link', 'Block (title link)', 'block_link_1');
+$handler->override_option('fields', array(
+  'created' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'date_format' => 'custom',
+    'custom_date_format' => 'm/d/y',
+    'exclude' => 0,
+    'id' => 'created',
+    'table' => 'node',
+    'field' => 'created',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+  'title' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('style_plugin', 'table');
+$handler->override_option('style_options', array(
+  'grouping' => '',
+  'override' => 1,
+  'sticky' => 0,
+  'order' => 'asc',
+  'columns' => array(
+    'created' => 'created',
+    'title' => 'title',
+  ),
+  'info' => array(
+    'created' => array(
+      'sortable' => 0,
+      'separator' => '',
+    ),
+    'title' => array(
+      'sortable' => 0,
+      'separator' => '',
+    ),
+  ),
+  'default' => '-1',
+));
+$handler->override_option('row_plugin', 'fields');
+$handler->override_option('row_options', array());
+$handler->override_option('block_description', 'Discussion Topics');
+$handler->override_option('block_caching', -1);
+$handler->override_option('subject_link', 'page_1');
+$handler = $view->new_display('panel_pane', 'Content pane', 'panel_pane_1');
+$handler->override_option('fields', array(
+  'title' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+  'comment_count' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'target' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'empty' => '',
+    'hide_empty' => 1,
+    'empty_zero' => 1,
+    'set_precision' => FALSE,
+    'precision' => 0,
+    'decimal' => '.',
+    'separator' => ',',
+    'prefix' => '(',
+    'suffix' => ')',
+    'exclude' => 0,
+    'id' => 'comment_count',
+    'table' => 'node_comment_statistics',
+    'field' => 'comment_count',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+  'read_count' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 1,
+      'text' => ' ',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'target' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'html' => 0,
+      'strip_tags' => 0,
+    ),
+    'empty' => '',
+    'hide_empty' => 0,
+    'empty_zero' => 0,
+    'set_precision' => FALSE,
+    'precision' => 0,
+    'decimal' => '.',
+    'separator' => ',',
+    'prefix' => '',
+    'suffix' => '',
+    'exclude' => 0,
+    'id' => 'read_count',
+    'table' => 'nodes_read',
+    'field' => 'read_count',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('style_plugin', 'list');
+$handler->override_option('style_options', array(
+  'grouping' => '',
+  'type' => 'ul',
+));
+$handler->override_option('row_plugin', 'fields');
+$handler->override_option('row_options', array(
+  'inline' => array(
+    'title' => 'title',
+    'comment_count' => 'comment_count',
+  ),
+  'separator' => '',
+  'hide_empty' => 0,
+));
+$handler->override_option('pane_title', '');
+$handler->override_option('pane_description', '');
+$handler->override_option('pane_category', array(
+  'name' => 'View panes',
+  'weight' => 0,
+));
+$handler->override_option('allow', array(
+  'use_pager' => FALSE,
+  'items_per_page' => FALSE,
+  'offset' => FALSE,
+  'link_to_view' => FALSE,
+  'more_link' => FALSE,
+  'path_override' => FALSE,
+  'title_override' => FALSE,
+  'exposed_form' => FALSE,
+  'fields_override' => FALSE,
+));
+$handler->override_option('argument_input', array());
+$handler->override_option('link_to_view', '1');
+$handler->override_option('inherit_panels_path', 0);
+$handler = $view->new_display('feed', 'Feed', 'feed_1');
+$handler->override_option('style_plugin', 'rss');
+$handler->override_option('style_options', array(
+  'mission_description' => FALSE,
+  'description' => '',
+));
+$handler->override_option('row_plugin', 'node_rss');
+$handler->override_option('row_options', array(
+  'relationship' => 'none',
+  'item_length' => 'default',
+));
+$handler->override_option('path', 'discussion-topics/feed');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('displays', array(
+  'page_1' => 'page_1',
+  'default' => 0,
+  'block_link_1' => 0,
+  'panel_pane_1' => 0,
+));
+$handler->override_option('sitename_title', FALSE);
+
+
+  $views[$view->name] = $view;
+
+
+///////////////////////////////////////////////////////////
+//        recent_comments
+///////////////////////////////////////////////////////////
+$view = new view;
+$view->name = 'recent_comments';
+$view->description = '';
+$view->tag = 'Recent Comments';
+$view->view_php = '';
+$view->base_table = 'node';
+$view->is_cacheable = FALSE;
+$view->api_version = 2;
+$view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+$handler = $view->new_display('default', 'Defaults', 'default');
+$handler->override_option('fields', array(
+  'title' => array(
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+  ),
+));
+$handler->override_option('sorts', array(
+  'last_comment_timestamp' => array(
+    'order' => 'DESC',
+    'granularity' => 'second',
+    'id' => 'last_comment_timestamp',
+    'table' => 'node_comment_statistics',
+    'field' => 'last_comment_timestamp',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('filters', array(
+  'type' => array(
+    'operator' => 'in',
+    'value' => array(
+      'announcement' => 'announcement',
+      'discussion_topic' => 'discussion_topic',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'type',
+    'table' => 'node',
+    'field' => 'type',
+    'relationship' => 'none',
+  ),
+  'moderate' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'moderate',
+    'table' => 'node',
+    'field' => 'moderate',
+    'relationship' => 'none',
+  ),
+  'status' => array(
+    'operator' => '=',
+    'value' => '1',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'status',
+    'table' => 'node',
+    'field' => 'status',
+    'relationship' => 'none',
+  ),
+  'hide' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'hide',
+    'table' => 'hide_nodes',
+    'field' => 'hide',
+    'relationship' => 'none',
+  ),
+  'comment_count' => array(
+    'operator' => '>',
+    'value' => array(
+      'value' => '0',
+      'min' => '',
+      'max' => '',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'comment_count',
+    'table' => 'node_comment_statistics',
+    'field' => 'comment_count',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('access', array(
+  'type' => 'none',
+));
+$handler->override_option('cache', array(
+  'type' => 'none',
+));
+$handler->override_option('title', 'Recently Commented');
+$handler->override_option('footer_format', '3');
+$handler->override_option('footer_empty', 1);
+$handler->override_option('empty', 'No Discussion Topics');
+$handler->override_option('empty_format', '1');
+$handler->override_option('items_per_page', 5);
+$handler->override_option('row_plugin', 'node');
+$handler->override_option('row_options', array(
+  'relationship' => 'none',
+  'build_mode' => 'teaser',
+  'links' => 1,
+  'comments' => 0,
+));
+$handler = $view->new_display('page', 'Page', 'page_1');
+$handler->override_option('items_per_page', 10);
+$handler->override_option('use_pager', '1');
+$handler->override_option('path', 'recently-commented');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler = $view->new_display('block_link', 'Block (title link)', 'block_link_1');
+$handler->override_option('fields', array(
+  'created' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'date_format' => 'custom',
+    'custom_date_format' => 'm/d/y',
+    'exclude' => 0,
+    'id' => 'created',
+    'table' => 'node',
+    'field' => 'created',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+  'title' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('style_plugin', 'table');
+$handler->override_option('style_options', array(
+  'grouping' => '',
+  'override' => 1,
+  'sticky' => 0,
+  'order' => 'asc',
+  'columns' => array(
+    'created' => 'created',
+    'title' => 'title',
+  ),
+  'info' => array(
+    'created' => array(
+      'sortable' => 0,
+      'separator' => '',
+    ),
+    'title' => array(
+      'sortable' => 0,
+      'separator' => '',
+    ),
+  ),
+  'default' => '-1',
+));
+$handler->override_option('row_plugin', 'fields');
+$handler->override_option('row_options', array());
+$handler->override_option('block_description', 'Recent Comments');
+$handler->override_option('block_caching', -1);
+$handler->override_option('subject_link', 'page_1');
+$handler = $view->new_display('panel_pane', 'Content pane', 'panel_pane_1');
+$handler->override_option('fields', array(
+  'title' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+  'comment_count' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'target' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'empty' => '',
+    'hide_empty' => 0,
+    'empty_zero' => 0,
+    'set_precision' => FALSE,
+    'precision' => 0,
+    'decimal' => '.',
+    'separator' => ',',
+    'prefix' => '(',
+    'suffix' => ')',
+    'exclude' => 0,
+    'id' => 'comment_count',
+    'table' => 'node_comment_statistics',
+    'field' => 'comment_count',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+  'read_count' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 1,
+      'text' => ' ',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'target' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'html' => 0,
+      'strip_tags' => 0,
+    ),
+    'empty' => '',
+    'hide_empty' => 0,
+    'empty_zero' => 0,
+    'set_precision' => FALSE,
+    'precision' => 0,
+    'decimal' => '.',
+    'separator' => ',',
+    'prefix' => '',
+    'suffix' => '',
+    'exclude' => 0,
+    'id' => 'read_count',
+    'table' => 'nodes_read',
+    'field' => 'read_count',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('style_plugin', 'list');
+$handler->override_option('style_options', array(
+  'grouping' => '',
+  'type' => 'ul',
+));
+$handler->override_option('row_plugin', 'fields');
+$handler->override_option('row_options', array(
+  'inline' => array(
+    'title' => 'title',
+    'comment_count' => 'comment_count',
+  ),
+  'separator' => '',
+  'hide_empty' => 0,
+));
+$handler->override_option('pane_title', '');
+$handler->override_option('pane_description', '');
+$handler->override_option('pane_category', array(
+  'name' => 'View panes',
+  'weight' => 0,
+));
+$handler->override_option('allow', array(
+  'use_pager' => FALSE,
+  'items_per_page' => FALSE,
+  'offset' => FALSE,
+  'link_to_view' => FALSE,
+  'more_link' => FALSE,
+  'path_override' => FALSE,
+  'title_override' => FALSE,
+  'exposed_form' => FALSE,
+  'fields_override' => FALSE,
+));
+$handler->override_option('argument_input', array());
+$handler->override_option('link_to_view', '1');
+$handler->override_option('inherit_panels_path', 0);
+$handler = $view->new_display('feed', 'Feed', 'feed_1');
+$handler->override_option('style_plugin', 'rss');
+$handler->override_option('style_options', array(
+  'mission_description' => FALSE,
+  'description' => '',
+));
+$handler->override_option('row_plugin', 'node_rss');
+$handler->override_option('row_options', array(
+  'relationship' => 'none',
+  'item_length' => 'default',
+));
+$handler->override_option('path', 'recently-commented/feed');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('displays', array(
+  'page_1' => 'page_1',
+  'default' => 0,
+  'block_link_1' => 0,
+  'panel_pane_1' => 0,
+));
+$handler->override_option('sitename_title', FALSE);
+
+
+
+
+  $views[$view->name] = $view;
+
+
+///////////////////////////////////////////////////////////
+//        moderated
+///////////////////////////////////////////////////////////
+
+
+$view = new view;
+$view->name = 'moderated';
+$view->description = '';
+$view->tag = 'Posts in moderation';
+$view->view_php = '';
+$view->base_table = 'node';
+$view->is_cacheable = FALSE;
+$view->api_version = 2;
+$view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+$handler = $view->new_display('default', 'Defaults', 'default');
+$handler->override_option('fields', array(
+  'created' => array(
+    'id' => 'created',
+    'table' => 'node',
+    'field' => 'created',
+  ),
+  'title' => array(
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+  ),
+));
+$handler->override_option('arguments', array(
+  'uid_touch' => array(
+    'default_action' => 'default',
+    'style_plugin' => 'default_summary',
+    'style_options' => array(),
+    'wildcard' => 'all',
+    'wildcard_substitution' => 'All',
+    'title' => 'Moderated posts for %1',
+    'breadcrumb' => '',
+    'default_argument_type' => 'current_user',
+    'default_argument' => '',
+    'validate_type' => 'user',
+    'validate_fail' => 'not found',
+    'id' => 'uid_touch',
+    'table' => 'node',
+    'field' => 'uid_touch',
+    'validate_user_argument_type' => 'uid',
+    'validate_user_roles' => array(
+      '2' => 0,
+      '8' => 0,
+      '7' => 0,
+      '4' => 0,
+      '5' => 0,
+      '6' => 0,
+      '3' => 0,
+    ),
+    'relationship' => 'none',
+    'default_options_div_prefix' => '',
+    'default_argument_user' => 0,
+    'default_argument_fixed' => '',
+    'default_argument_php' => '',
+    'validate_argument_node_type' => array(
+      'announcement' => 0,
+      'classifieds' => 0,
+      'class_year' => 0,
+      'course' => 0,
+      'evaluation' => 0,
+      'department' => 0,
+      'discussion_topic' => 0,
+      'group_book' => 0,
+      'student_group' => 0,
+      'book' => 0,
+      'page' => 0,
+      'story' => 0,
+    ),
+    'validate_argument_node_access' => 0,
+    'validate_argument_nid_type' => 'nid',
+    'validate_argument_vocabulary' => array(),
+    'validate_argument_type' => 'tid',
+    'validate_argument_transform' => 0,
+    'validate_user_restrict_roles' => 0,
+    'validate_argument_is_member' => 0,
+    'validate_argument_php' => '',
+  ),
+));
+$handler->override_option('filters', array(
+  'moderate' => array(
+    'operator' => '=',
+    'value' => '1',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'moderate',
+    'table' => 'node',
+    'field' => 'moderate',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('access', array(
+  'type' => 'none',
+));
+$handler->override_option('cache', array(
+  'type' => 'none',
+));
+$handler->override_option('title', 'Posts In Moderation');
+$handler->override_option('use_pager', '1');
+$handler->override_option('row_plugin', 'node');
+$handler->override_option('row_options', array(
+  'relationship' => 'none',
+  'build_mode' => 'teaser',
+  'links' => 1,
+  'comments' => 0,
+));
+$handler = $view->new_display('page', 'Page', 'page_1');
+$handler->override_option('path', 'moderated');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+));
+$handler = $view->new_display('block_link', 'Block (title link)', 'block_link_1');
+$handler->override_option('fields', array(
+  'created' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'date_format' => 'custom',
+    'custom_date_format' => 'm/d/y',
+    'exclude' => 0,
+    'id' => 'created',
+    'table' => 'node',
+    'field' => 'created',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+  'title' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('header_format', '3');
+$handler->override_option('header_empty', 0);
+$handler->override_option('use_pager', '0');
+$handler->override_option('style_plugin', 'table');
+$handler->override_option('style_options', array(
+  'grouping' => '',
+  'override' => 1,
+  'sticky' => 0,
+  'order' => 'asc',
+  'columns' => array(
+    'created' => 'created',
+    'title' => 'title',
+  ),
+  'info' => array(
+    'created' => array(
+      'sortable' => 0,
+      'separator' => '',
+    ),
+    'title' => array(
+      'sortable' => 0,
+      'separator' => '',
+    ),
+  ),
+  'default' => '-1',
+));
+$handler->override_option('row_plugin', 'fields');
+$handler->override_option('row_options', array(
+  'inline' => array(),
+  'separator' => '',
+));
+$handler->override_option('block_description', '');
+$handler->override_option('block_caching', -1);
+$handler->override_option('subject_link', 'page_1');
+
+  $views[$view->name] = $view;
+
+
+
+
+///////////////////////////////////////////////////////////
+//        og_announcements
+///////////////////////////////////////////////////////////
+$view = new view;
+$view->name = 'og_announcements';
+$view->description = '';
+$view->tag = 'Announcements';
+$view->view_php = '';
+$view->base_table = 'node';
+$view->is_cacheable = FALSE;
+$view->api_version = 2;
+$view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+$handler = $view->new_display('default', 'Defaults', 'default');
+$handler->override_option('fields', array(
+  'created' => array(
+    'id' => 'created',
+    'table' => 'node',
+    'field' => 'created',
+  ),
+  'title' => array(
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+  ),
+));
+$handler->override_option('sorts', array(
+  'publish_on' => array(
+    'order' => 'DESC',
+    'granularity' => 'second',
+    'id' => 'publish_on',
+    'table' => 'scheduler',
+    'field' => 'publish_on',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('arguments', array(
+  'author_group_nid' => array(
+    'default_action' => 'default',
+    'style_plugin' => 'default_summary',
+    'style_options' => array(),
+    'wildcard' => 'all',
+    'wildcard_substitution' => 'All',
+    'title' => '',
+    'default_argument_type' => 'php',
+    'default_argument' => '',
+    'validate_type' => 'none',
+    'validate_fail' => 'not found',
+    'break_phrase' => 0,
+    'not' => 0,
+    'id' => 'author_group_nid',
+    'table' => 'og_author',
+    'field' => 'author_group_nid',
+    'validate_user_argument_type' => 'uid',
+    'validate_user_roles' => array(
+      '2' => 0,
+      '8' => 0,
+      '7' => 0,
+      '4' => 0,
+      '5' => 0,
+      '6' => 0,
+      '3' => 0,
+    ),
+    'relationship' => 'none',
+    'default_options_div_prefix' => '',
+    'default_argument_user' => 0,
+    'default_argument_fixed' => '',
+    'default_argument_php' => '$group = og_get_group_context();
+return $group->nid;',
+    'validate_argument_node_type' => array(
+      'announcement' => 0,
+      'classifieds' => 0,
+      'class_year' => 0,
+      'course' => 0,
+      'evaluation' => 0,
+      'exam' => 0,
+      'department' => 0,
+      'discussion_topic' => 0,
+      'group_book' => 0,
+      'student_group' => 0,
+      'book' => 0,
+      'page' => 0,
+      'story' => 0,
+    ),
+    'validate_argument_node_access' => 0,
+    'validate_argument_nid_type' => 'nid',
+    'validate_argument_vocabulary' => array(),
+    'validate_argument_type' => 'tid',
+    'validate_argument_transform' => 0,
+    'validate_user_restrict_roles' => 0,
+    'validate_argument_is_member' => 0,
+    'validate_argument_php' => '',
+  ),
+));
+$handler->override_option('filters', array(
+  'type' => array(
+    'operator' => 'in',
+    'value' => array(
+      'announcement' => 'announcement',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'type',
+    'table' => 'node',
+    'field' => 'type',
+    'relationship' => 'none',
+    'override' => array(
+      'button' => 'Override',
+    ),
+  ),
+  'moderate' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'moderate',
+    'table' => 'node',
+    'field' => 'moderate',
+    'relationship' => 'none',
+  ),
+  'status' => array(
+    'operator' => '=',
+    'value' => '1',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'status',
+    'table' => 'node',
+    'field' => 'status',
+    'relationship' => 'none',
+  ),
+  'hide' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'hide',
+    'table' => 'hide_nodes',
+    'field' => 'hide',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('access', array(
+  'type' => 'none',
+));
+$handler->override_option('cache', array(
+  'type' => 'none',
+));
+$handler->override_option('title', 'Announcements');
+$handler->override_option('footer', '<?php
+$group = og_get_group_context();
+if(og_group_access_get_access(\'create announcement\', $group)){
+  print l(\'Create Announcement\', \'node/\'.$group->nid.\'/og/announcement/add\');
+}
+?>');
+$handler->override_option('footer_format', '3');
+$handler->override_option('footer_empty', 1);
+$handler->override_option('empty', 'No Announcements');
+$handler->override_option('empty_format', '1');
+$handler->override_option('use_pager', '1');
+$handler->override_option('distinct', 1);
+$handler->override_option('row_plugin', 'node');
+$handler->override_option('row_options', array(
+  'relationship' => 'none',
+  'build_mode' => 'teaser',
+  'links' => 1,
+  'comments' => 0,
+));
+$handler = $view->new_display('page', 'Page', 'page_1');
+$handler->override_option('sorts', array(
+  'publish_on' => array(
+    'order' => 'DESC',
+    'granularity' => 'second',
+    'id' => 'publish_on',
+    'table' => 'scheduler',
+    'field' => 'publish_on',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('path', 'node/%/og/announcements');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler = $view->new_display('block_link', 'Block (title link)', 'block_link_1');
+$handler->override_option('fields', array(
+  'created' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'date_format' => 'custom',
+    'custom_date_format' => 'm/d/y',
+    'exclude' => 0,
+    'id' => 'created',
+    'table' => 'node',
+    'field' => 'created',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+  'title' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+  'read_count' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 1,
+      'text' => ' ',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'target' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'html' => 0,
+      'strip_tags' => 0,
+    ),
+    'empty' => '',
+    'hide_empty' => 0,
+    'empty_zero' => 0,
+    'set_precision' => FALSE,
+    'precision' => 0,
+    'decimal' => '.',
+    'separator' => ',',
+    'prefix' => '',
+    'suffix' => '',
+    'exclude' => 0,
+    'id' => 'read_count',
+    'table' => 'nodes_read',
+    'field' => 'read_count',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('items_per_page', 5);
+$handler->override_option('use_pager', FALSE);
+$handler->override_option('style_plugin', 'list');
+$handler->override_option('row_plugin', 'fields');
+$handler->override_option('row_options', array(
+  'inline' => array(
+    'created' => 'created',
+    'title' => 'title',
+  ),
+  'separator' => ' ',
+  'hide_empty' => 0,
+));
+$handler->override_option('block_description', 'Announcements - Group');
+$handler->override_option('block_caching', -1);
+$handler->override_option('subject_link', 'page_1');
+
+
+
+  $views[$view->name] = $view;
+
+///////////////////////////////////////////////////////////
+//        og_discussion_topics
+///////////////////////////////////////////////////////////
+$view = new view;
+$view->name = 'og_discussion_topics';
+$view->description = '';
+$view->tag = 'Discussion Topics';
+$view->view_php = '';
+$view->base_table = 'node';
+$view->is_cacheable = FALSE;
+$view->api_version = 2;
+$view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+$handler = $view->new_display('default', 'Defaults', 'default');
+$handler->override_option('fields', array(
+  'created' => array(
+    'id' => 'created',
+    'table' => 'node',
+    'field' => 'created',
+  ),
+  'title' => array(
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+  ),
+));
+$handler->override_option('sorts', array(
+  'created' => array(
+    'order' => 'DESC',
+    'granularity' => 'second',
+    'id' => 'created',
+    'table' => 'node',
+    'field' => 'created',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('arguments', array(
+  'group_nid' => array(
+    'default_action' => 'default',
+    'style_plugin' => 'default_summary',
+    'style_options' => array(),
+    'wildcard' => 'all',
+    'wildcard_substitution' => 'All',
+    'title' => '',
+    'default_argument_type' => 'php',
+    'default_argument' => '',
+    'validate_type' => 'none',
+    'validate_fail' => 'not found',
+    'break_phrase' => 0,
+    'not' => 0,
+    'id' => 'group_nid',
+    'table' => 'og_ancestry',
+    'field' => 'group_nid',
+    'validate_user_argument_type' => 'uid',
+    'validate_user_roles' => array(
+      '2' => 0,
+      '8' => 0,
+      '7' => 0,
+      '4' => 0,
+      '5' => 0,
+      '6' => 0,
+      '3' => 0,
+    ),
+    'relationship' => 'none',
+    'default_options_div_prefix' => '',
+    'default_argument_user' => 0,
+    'default_argument_fixed' => '',
+    'default_argument_php' => '$group = og_get_group_context();
+return $group->nid;',
+    'validate_argument_node_type' => array(
+      'announcement' => 0,
+      'classifieds' => 0,
+      'class_year' => 0,
+      'course' => 0,
+      'evaluation' => 0,
+      'exam' => 0,
+      'department' => 0,
+      'discussion_topic' => 0,
+      'group_book' => 0,
+      'student_group' => 0,
+      'book' => 0,
+      'page' => 0,
+      'story' => 0,
+    ),
+    'validate_argument_node_access' => 0,
+    'validate_argument_nid_type' => 'nid',
+    'validate_argument_vocabulary' => array(),
+    'validate_argument_type' => 'tid',
+    'validate_argument_transform' => 0,
+    'validate_user_restrict_roles' => 0,
+    'validate_argument_is_member' => 0,
+    'validate_argument_php' => '',
+  ),
+));
+$handler->override_option('filters', array(
+  'type' => array(
+    'operator' => 'in',
+    'value' => array(
+      'discussion_topic' => 'discussion_topic',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'type',
+    'table' => 'node',
+    'field' => 'type',
+    'relationship' => 'none',
+  ),
+  'moderate' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'moderate',
+    'table' => 'node',
+    'field' => 'moderate',
+    'relationship' => 'none',
+  ),
+  'status' => array(
+    'operator' => '=',
+    'value' => '1',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'status',
+    'table' => 'node',
+    'field' => 'status',
+    'relationship' => 'none',
+  ),
+  'hide' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'hide',
+    'table' => 'hide_nodes',
+    'field' => 'hide',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('access', array(
+  'type' => 'none',
+));
+$handler->override_option('cache', array(
+  'type' => 'none',
+));
+$handler->override_option('title', 'Discussion Topics');
+$handler->override_option('footer', '<?php
+$group = og_get_group_context();
+if(og_group_access_get_access(\'create user to group posts\', $group) && user_access(\'create discussion topic\')){
+  print l(\'Create Discussion Topic\', \'node/\'.$group->nid.\'/og/discussion-topic/add\');
+}
+?>');
+$handler->override_option('footer_format', '3');
+$handler->override_option('footer_empty', 1);
+$handler->override_option('empty', 'No Discussion Topics');
+$handler->override_option('empty_format', '1');
+$handler->override_option('row_plugin', 'node');
+$handler->override_option('row_options', array(
+  'relationship' => 'none',
+  'build_mode' => 'teaser',
+  'links' => 1,
+  'comments' => 0,
+));
+$handler = $view->new_display('page', 'Page', 'page_1');
+$handler->override_option('path', 'node/%/og/discussion-topics');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler = $view->new_display('block_link', 'Block (title link)', 'block_link_1');
+$handler->override_option('fields', array(
+  'created' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'date_format' => 'custom',
+    'custom_date_format' => 'm/d/y',
+    'exclude' => 0,
+    'id' => 'created',
+    'table' => 'node',
+    'field' => 'created',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+  'title' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+  'read_count' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 1,
+      'text' => ' ',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'target' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'html' => 0,
+      'strip_tags' => 0,
+    ),
+    'empty' => '',
+    'hide_empty' => 0,
+    'empty_zero' => 0,
+    'set_precision' => FALSE,
+    'precision' => 0,
+    'decimal' => '.',
+    'separator' => ',',
+    'prefix' => '',
+    'suffix' => '',
+    'exclude' => 0,
+    'id' => 'read_count',
+    'table' => 'nodes_read',
+    'field' => 'read_count',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('items_per_page', 5);
+$handler->override_option('style_plugin', 'list');
+$handler->override_option('style_options', array(
+  'grouping' => '',
+  'type' => 'ul',
+));
+$handler->override_option('row_plugin', 'fields');
+$handler->override_option('row_options', array(
+  'inline' => array(
+    'created' => 'created',
+    'title' => 'title',
+  ),
+  'separator' => '',
+  'hide_empty' => 0,
+));
+$handler->override_option('block_description', 'Discussion Topics - Group');
+$handler->override_option('block_caching', -1);
+$handler->override_option('subject_link', 'page_1');
+
+
+  $views[$view->name] = $view;
+
+
+///////////////////////////////////////////////////////////
+//        student_announcements
+///////////////////////////////////////////////////////////
+$view = new view;
+$view->name = 'student_announcements';
+$view->description = '';
+$view->tag = 'Student Group Announcements';
+$view->view_php = '';
+$view->base_table = 'node';
+$view->is_cacheable = FALSE;
+$view->api_version = 2;
+$view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+$handler = $view->new_display('default', 'Defaults', 'default');
+$handler->override_option('relationships', array(
+  'author_group_nid' => array(
+    'label' => 'Group node (post)',
+    'required' => 1,
+    'id' => 'author_group_nid',
+    'table' => 'og_author',
+    'field' => 'author_group_nid',
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('fields', array(
+  'created' => array(
+    'id' => 'created',
+    'table' => 'node',
+    'field' => 'created',
+  ),
+  'title' => array(
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+  ),
+  'title_1' => array(
+    'id' => 'title_1',
+    'table' => 'node',
+    'field' => 'title',
+  ),
+));
+$handler->override_option('sorts', array(
+  'publish_on' => array(
+    'order' => 'DESC',
+    'granularity' => 'second',
+    'id' => 'publish_on',
+    'table' => 'scheduler',
+    'field' => 'publish_on',
+    'override' => array(
+      'button' => 'Override',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('filters', array(
+  'type' => array(
+    'operator' => 'in',
+    'value' => array(
+      'announcement' => 'announcement',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'type',
+    'table' => 'node',
+    'field' => 'type',
+    'relationship' => 'none',
+    'override' => array(
+      'button' => 'Override',
+    ),
+  ),
+  'moderate' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'moderate',
+    'table' => 'node',
+    'field' => 'moderate',
+    'relationship' => 'none',
+  ),
+  'status' => array(
+    'operator' => '=',
+    'value' => '1',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'status',
+    'table' => 'node',
+    'field' => 'status',
+    'relationship' => 'none',
+  ),
+  'hide' => array(
+    'operator' => '=',
+    'value' => '0',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'hide',
+    'table' => 'hide_nodes',
+    'field' => 'hide',
+    'relationship' => 'none',
+  ),
+  'type_1' => array(
+    'operator' => 'in',
+    'value' => array(
+      'student_program' => 'student_program',
+      'student_group' => 'student_group',
+    ),
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'type_1',
+    'table' => 'node',
+    'field' => 'type',
+    'relationship' => 'author_group_nid',
+    'override' => array(
+      'button' => 'Override',
+    ),
+  ),
+));
+$handler->override_option('access', array(
+  'type' => 'none',
+));
+$handler->override_option('cache', array(
+  'type' => 'none',
+));
+$handler->override_option('title', 'Student Group Announcements');
+$handler->override_option('footer_format', '3');
+$handler->override_option('footer_empty', 1);
+$handler->override_option('empty', 'No Announcements');
+$handler->override_option('empty_format', '1');
+$handler->override_option('distinct', 1);
+$handler->override_option('row_plugin', 'node');
+$handler->override_option('row_options', array(
+  'relationship' => 'none',
+  'build_mode' => 'teaser',
+  'links' => 1,
+  'comments' => 0,
+));
+$handler = $view->new_display('page', 'Page', 'page_1');
+$handler->override_option('use_pager', '1');
+$handler->override_option('path', 'student-group-announcements');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler = $view->new_display('block_link', 'Block (title link)', 'block_link_1');
+$handler->override_option('fields', array(
+  'created' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'date_format' => 'custom',
+    'custom_date_format' => 'm/d/y',
+    'exclude' => 0,
+    'id' => 'created',
+    'table' => 'node',
+    'field' => 'created',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+  'title' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('items_per_page', 5);
+$handler->override_option('style_plugin', 'table');
+$handler->override_option('style_options', array(
+  'grouping' => '',
+  'override' => 1,
+  'sticky' => 0,
+  'order' => 'asc',
+  'columns' => array(
+    'created' => 'created',
+    'title' => 'title',
+  ),
+  'info' => array(
+    'created' => array(
+      'sortable' => 0,
+      'separator' => '',
+    ),
+    'title' => array(
+      'sortable' => 0,
+      'separator' => '',
+    ),
+  ),
+  'default' => '-1',
+));
+$handler->override_option('row_plugin', 'fields');
+$handler->override_option('row_options', array());
+$handler->override_option('block_description', 'Announcements - Student Group');
+$handler->override_option('block_caching', -1);
+$handler->override_option('subject_link', 'page_1');
+$handler = $view->new_display('panel_pane', 'Content pane', 'panel_pane_1');
+$handler->override_option('fields', array(
+  'title' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 1,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 1,
+    'exclude' => 0,
+    'id' => 'title',
+    'table' => 'node',
+    'field' => 'title',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+  'title_1' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 1,
+      'path' => 'node/[title]/og/announcements',
+      'link_class' => 'group-heading',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'strip_tags' => 0,
+      'html' => 0,
+    ),
+    'link_to_node' => 1,
+    'exclude' => 1,
+    'id' => 'title_1',
+    'table' => 'node',
+    'field' => 'title',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'author_group_nid',
+  ),
+  'read_count' => array(
+    'label' => '',
+    'alter' => array(
+      'alter_text' => 1,
+      'text' => ' ',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'target' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'html' => 0,
+      'strip_tags' => 0,
+    ),
+    'empty' => '',
+    'hide_empty' => 0,
+    'empty_zero' => 0,
+    'set_precision' => FALSE,
+    'precision' => 0,
+    'decimal' => '.',
+    'separator' => ',',
+    'prefix' => '',
+    'suffix' => '',
+    'exclude' => 0,
+    'id' => 'read_count',
+    'table' => 'nodes_read',
+    'field' => 'read_count',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+));
+$handler->override_option('style_plugin', 'list');
+$handler->override_option('style_options', array(
+  'grouping' => 'title_1',
+  'type' => 'ul',
+));
+$handler->override_option('row_plugin', 'fields');
+$handler->override_option('row_options', array(
+  'inline' => array(
+    'created' => 'created',
+    'title' => 'title',
+  ),
+  'separator' => '',
+));
+$handler->override_option('pane_title', '');
+$handler->override_option('pane_description', '');
+$handler->override_option('pane_category', array(
+  'name' => 'View panes',
+  'weight' => 0,
+));
+$handler->override_option('allow', array(
+  'use_pager' => FALSE,
+  'items_per_page' => FALSE,
+  'offset' => FALSE,
+  'link_to_view' => FALSE,
+  'more_link' => FALSE,
+  'path_override' => FALSE,
+  'title_override' => FALSE,
+  'exposed_form' => FALSE,
+  'fields_override' => FALSE,
+));
+$handler->override_option('argument_input', array());
+$handler->override_option('link_to_view', '1');
+$handler->override_option('inherit_panels_path', 0);
+$handler = $view->new_display('feed', 'Feed', 'feed_1');
+$handler->override_option('style_plugin', 'rss');
+$handler->override_option('style_options', array(
+  'mission_description' => FALSE,
+  'description' => '',
+));
+$handler->override_option('row_plugin', 'node_rss');
+$handler->override_option('row_options', array(
+  'relationship' => 'none',
+  'item_length' => 'default',
+));
+$handler->override_option('path', 'student-group-announcements/feed');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('displays', array(
+  'page_1' => 'page_1',
+  'default' => 0,
+  'block_link_1' => 0,
+  'panel_pane_1' => 0,
+));
+$handler->override_option('sitename_title', FALSE);
+
+
+
+  $views[$view->name] = $view;
+  return $views;
+}

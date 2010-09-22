@@ -1,0 +1,489 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Provides an "announcement" node type for posting information from a single form
+ */
+
+
+/**
+ * Implementation of hook_node_info().
+*/
+function OSD_writing_competition_node_info(){
+  return array(
+    'OSD_writing_competition' => array(
+      'name'   => t('Writing Competition'),
+      'module' => 'OSD_writing_competition',
+      'description' => "Create a writing competition",
+      'has_title'   => TRUE,
+      'title_label' => t('Title'),
+      'has_teaser'  => FALSE,
+      'teaser_label' => t('Teaser'),
+      'has_body'    => FALSE,
+      'body_label'  => t('Body')
+    )
+  );
+}
+
+
+/**
+ *  Implementation of hook_menu().
+*/
+function OSD_writing_competition_menu(){
+  $items['node/%node/og/osd_writing_competition/add'] = array(
+    'title'  => 'Create Writing Competition',
+    'page callback' => 'node_add',
+    'page arguments' => array(3, 1),
+    'access callback' => 'node_access',
+    'access arguments' => array('create', 3, NULL, 1),
+    'file' => 'node.pages.inc',
+    'file path' => drupal_get_path('module', 'node'),
+  );
+
+  return $items;
+}
+
+
+/**
+ * Implementation of hook_perm
+*/
+function OSD_writing_competition_perm(){
+  return array('create writing competition', 'edit writing competition');
+}
+
+
+/**
+ * Implementations of hook_group_access_perm();
+*/
+function OSD_writing_competition_group_access_perm(){
+  return array();
+}
+
+
+/**
+ * Implementations of hook_group_access_view_access_level();
+*/
+function OSD_writing_competition_group_access_view_access_level($group) {
+    return $group->perms['view writing competitions'];
+}
+
+
+/**
+ * Implementation of hook_access().
+ */
+function OSD_writing_competition_access($op, $node) {
+  global $user;
+  return false;
+/*
+  if ($op == 'create') {
+    return user_access('create announcement');
+  }
+
+  if($op == 'update' || $op == 'delete'){
+    return (user_access('edit own announcement') && ($user->uid == $node->uid));
+  }
+*/
+}
+
+
+/**
+ * Implementations of hook_group_access();
+*/
+function OSD_writing_competition_group_access($op, $node, $group) {
+  switch($op){
+  case 'create':
+    return og_group_access_get_access('create announcement', $group);
+    break;
+  case 'view':
+    return og_group_access_get_access('view announcement', $group);
+    break;
+  case 'update':
+  case 'delete':
+    if(isset($node->author_group_nid)){
+      return og_group_access_get_access('edit own announcement', node_load($node->author_group_nid));
+    }
+    else{
+      return FALSE;
+    }
+    break;
+  }
+  return FALSE;
+}
+
+
+
+/**
+ * Implementation of hook_form().
+ */
+function OSD_writing_competition_form(&$node) {  
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Name'),
+    '#required' => TRUE,
+    '#default_value' => $node->title,
+    '#weight' => -12
+  );
+  
+  $form['sponsor'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Sponsor'),
+    '#required' => FALSE,
+    '#default_value' => $node->sponsor,
+    '#weight' => -9
+  );
+
+  $form['run_by'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Run By'),
+    '#required' => FALSE,
+    '#default_value' => $node->run_by,
+    '#weight' => -8
+  );
+
+  $form['website'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Website'),
+    '#required' => FALSE,
+    '#default_value' => $node->website,
+    '#weight' => -7
+  );
+ 
+  $form['primary_areas'] = array(
+    '#type' => 'select',
+    '#title' => t('Primary Areas'),
+    '#required' => TRUE,
+    '#options' => OSD_writing_competition_get_primary_areas(),
+    '#default_value' => isset($node->primary_areas) ? $node->primary_areas : array(),
+    '#multiple' => TRUE,
+    '#weight' => -6
+  );
+
+  $form['secondary_areas'] = array(
+    '#type' => 'select',
+    '#title' => t('Secondary Areas'),
+    '#required' => TRUE,
+    '#options' => OSD_writing_competition_get_secondary_areas(),
+    '#default_value' => isset($node->secondary_areas) ? $node->secondary_areas : array(),
+    '#multiple' => TRUE,
+    '#weight' => -5
+  );
+
+  $form['topic'] = array(
+    '#type'   => 'textarea',
+    '#title'  => t('Topic'),
+    '#default_value' => $node->topic,
+    '#rows'          => 3,
+    '#required'      => FALSE,
+    '#weight' => -4,
+  );
+
+
+$form['eligibility_year'] = array(
+    '#type' => 'select',
+    '#title' => t('Eligibility Year'),
+    '#required' => TRUE,
+    '#options' => array('All' => 'All', '1L' => '1L', '2L' => '2L', '3L' =>'3L'),
+    '#default_value' => isset($node->eligibility_year) ? $node->eiligibility_year : 'All',
+    '#multiple' => FALSE,
+    '#weight' => -3
+  );
+
+
+  $form['eligibility'] = array(
+    '#type'   => 'textarea',
+    '#title'  => t('Eligibility'),
+    '#default_value' => $node->eligibility,
+    '#rows'          => 3,
+    '#required'      => FALSE,
+    '#weight' => -2
+  );
+
+  $form['coaching'] = array(
+    '#type'   => 'textarea',
+    '#title'  => t('Coaching'),
+    '#default_value' => $node->coaching,
+    '#rows'          => 3,
+    '#required'      => FALSE
+  );
+
+  $form['award'] = array(
+    '#type'   => 'textarea',
+    '#title'  => t('Award'),
+    '#default_value' => $node->award,
+    '#rows'          => 3,
+    '#required'      => FALSE
+  );
+
+  $form['travel'] = array(
+    '#type'   => 'textarea',
+    '#title'  => t('Travel'),
+    '#default_value' => $node->travel,
+    '#rows'          => 3,
+    '#required'      => FALSE
+  );
+
+
+  $form['registration_fee'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Registration Fee'),
+    '#required' => FALSE,
+    '#default_value' => $node->registration_fee,
+    '#weight' => -1
+  );
+
+/*  global $user;
+  if (variable_get('configurable_timezones', 1) && $user->uid && strlen($user->timezone)) {
+    $timezone = $user->timezone;
+  }
+  else {
+    $timezone = variable_get('date_default_timezone', 0);
+  }
+*/
+  $form['deadline_date'] = array(
+    '#title' => t('Deadline'),
+    '#type'  => 'date_popup',
+    '#format' => 'Y-m-d H:i',
+    '#default_value' => $node->deadline_date ? date_convert($node->deadline_date, DATE_UNIX, DATE_DATETIME) : time(),
+    '#date_timezone' => date_default_timezone_name(),
+    '#date_year_range' => '0:+1',
+    '#date_increment' => 5,
+  );
+
+  $form['competition_date'] = array(
+    '#title' => t('Competition Date'),
+    '#type'  => 'date_popup',
+    '#format' => 'Y-m-d H:i',
+    '#default_value' => $node->competition_date ? date_convert($node->competition_date , DATE_UNIX, DATE_DATETIME) : NULL,
+    '#date_timezone' => date_default_timezone_name(),
+    '#date_year_range' => '0:+1',
+    '#date_increment' => 5,
+  );
+
+
+  $form['notes'] = array(
+    '#type'   => 'textarea',
+    '#title'  => t('Notes'),
+    '#default_value' => $node->notes,
+    '#rows'          => 3,
+    '#required'      => FALSE
+  );
+
+  $form['notes_private'] = array(
+    '#type'   => 'textarea',
+    '#title'  => t('Private Notes'),
+    '#default_value' => $node->notes_private,
+    '#rows'          => 3,
+    '#required'      => FALSE
+  );
+
+  return $form;
+}
+
+
+function OSD_writing_competition_get_primary_areas() {
+  return array(
+    'Civil Procedure' => 'Civil Procedure',
+    'Constitution Law' => 'Constitution Law',
+    'Corporations and Business Law' => 'Corporations and Business Law',
+    'Criminal Procedure' => 'Criminal Procedure',
+    'Environmental Law' => 'Environmental Law',
+    'Family Law and Estate Planning' => 'Family Law and Estate Planning',
+    'Health Law' => 'Health Law',
+    'Intellectual Property' => 'Intellectual Property',
+    'Jurisprudence and Legal History' => 'Jurisprudence and Legal History',
+    'Labor and Employment Law' => 'Labor and Employment Law',
+    'Professional Responsibility' => 'Professional Responsibility',
+    'Property Law' => 'Property Law',
+    'Public Insterest and Advocacy' => 'Public Insterest and Advocacy',
+    'Public Regulation' => 'Public Regulation',
+    'Social Issues' => 'Social Issues',
+    'Special Topics' => 'Special Topics',
+    'Underrepresented Groups' => 'Underrepresented Groups'
+  );
+}
+
+
+function OSD_writing_competition_get_secondary_areas(){
+  return array(
+    'Accounting' => 'Accounting',
+    'Animal Law' => 'Animal Law',
+    'Antitrust Law' => 'Antitrust Law',
+    'Arbitration' => 'Arbitration',
+    'Asian-American Studies' => 'Asian-American Studies',
+    'Aviation Law' =>  'Aviation Law',
+    'Bankruptcy Law' => 'Bankruptcy Law',
+    'Benefits Law' => 'Benefits Law',
+    'Business Law' => 'Business Law',
+    'Child Welfare Law' => 'Child Welfare Law',
+    'Children\'s Law' => 'Children\'s Law',
+    'Civil Law' => 'Civil Law',
+    'Civil Litigation' => 'Civil Litigation',
+    'Civil Procedure' => 'Civil Procedure',
+    'Civil Rights (Native American Law)' => 'Civil Rights (Native American Law)',
+    'Civil Rights and Constitutional Law' => 'Civil Rights and Constitutional Law',
+    'Civil Rights Law' => 'Civil Rights Law',
+    'Civil Trial Pracitice Law'  => 'Civil Trial Pracitice Law',
+    'Class Action Law' => 'Class Action Law',
+    'Coalitions and the Law' => 'Coalitions and the Law',
+    'Communication Law' => 'Communication Law',
+    'Constitutional Law' => 'Constitutional Law',
+    'Consumer Law' =>  'Consumer Law',
+    'Contract Law' => 'Contract Law',
+    'Corporate Law' => 'Corporate Law',
+    'Counseling' => 'Counseling',
+    'Criminal Law' => 'Criminal Law',
+    'Criminal Procedure'  => 'Criminal Procedure',
+    'Democracy' => 'Democracy',
+    'Disability Law' => 'Disability Law',
+    'Dispute Resolution' => 'Dispute Resolution',
+    'Domestic Violence' => 'Domestic Violence',
+    'Economic Law' => 'Economic Law',
+    'Ecomonic Regulations and Business Law' => 'Ecomonic Regulations and Business Law',
+    'Elder Law' => 'Elder Law',
+    'Employment Law' => 'Employment Law',
+    'Entertainment Law' => 'Entertainment Law',
+    'Environmental Law' => 'Environmental Law',
+    'Estate Law' => 'Estate Law',
+    'Evidence' => 'Evidence',
+    'Family Law' => 'Family Law',
+    'Federal Civil Practice and Procedure' => 'Federal Civil Practice and Procedure',
+    'Feminist Law' => 'Feminist Law',
+    'Financial Services Law' => 'Financial Services Law',
+    'First Amendment Issues' => 'First Amendment Issues',
+    'Food and Drug Law' => 'Food and Drug Law',
+    'Gay Rights Law' => 'Gay Rights Law',
+    'Gender and Sexuality' => 'Gender and Sexuality',
+    'Gender Law' => 'Gender Law',
+    'General Law' => 'General Law',
+    'Health Law' => 'Health Law',
+    'Housing and Community Law' => 'Housing and Community Law',
+    'Human Rights Law' => 'Human Rights Law',
+    'Immigration Law' => 'Immigration Law',
+    'Information Technology Law' => 'Information Technology Law',
+    'Intellectual Property' => 'Intellectual Property',
+    'International and Comparative Law' => 'International and Comparative Law',
+    'International Business Law' => 'International Business Law',
+    'International Civil Rights Law' => 'International Civil Rights Law',
+    'International Environmental Law' => 'International Environmental Law',
+    'Jurisprudence' => 'Jurisprudence',
+    'Juvenile Law' => 'Juvenile Law',
+    'Labor and Employment Law' => 'Labor and Employment Law',
+    'Labor Law' => 'Labor Law',
+    'Latino Studies' => 'Latino Studies',
+    'Law Writing' => 'Law Writing',
+    'Legal Arguments' => 'Legal Arguments',
+    'Legal Education' => 'Legal Education',
+    'Legal Ethics' => 'Legal Ethics',
+    'Legal History' => 'Legal History',
+    'Legal Justice' => 'Legal Justice',
+    'Legal Theory' => 'Legal Theory',
+    'Legislation' => 'Legislation',
+    'Litigation and Dispute Resulution' => 'Litigation and Dispute Resulution',
+    'Mediation' => 'Mediation',
+    'Mock Trial' => 'Mock Trial',
+    'Moot Comp Briefs' => 'Moot Comp Briefs',
+    'Moot Court Trial' => 'Moot Court Trial',
+    'Nautical Law' => 'Nautical Law',
+    'Nonsmokers Rights' => 'Nonsmokers Rights',
+    'Patent and Trademark Law' => 'Patent and Trademark Law',
+    'Pharmacy Law' => 'Pharmacy Law',
+    'Planning Law' => 'Planning Law',
+    'Poverty Law' => 'Poverty Law',
+    'Products Liability Law' => 'Products Liability Law',
+    'Professional Conduct' => 'Professional Conduct',
+    'Professional Liability' => 'Professional Liability',
+    'Public Education' => 'Public Education',
+    'Public Interest' => 'Public Interest',
+    'Real Property, Planning and Land Use' => 'Real Property, Planning and Land Use',
+    'Securities Law' => 'Securities Law',
+    'Social Justice' => 'Social Justice',
+    'Special Topics' => 'Special Topics',
+    'Sports Law' => 'Sports Law',
+    'Tax Law' => 'Tax Law',
+    'Taxation Law' => 'Taxation Law',
+    'Technology Law' => 'Technology Law',
+    'Telecom Law' => 'Telecom Law',
+    'Tort law' => 'Tort law',
+    'Torts/Tobacco' => 'Torts/Tobacco',
+    'Trademark Law' => 'Trademark Law',
+    'Uniform State Law' => 'Uniform State Law',
+    'Veterans Law' => 'Veterans Law',
+    'White Collar Crime' => 'White Collar Crime',
+  );
+}
+
+
+function OSD_writing_competition_insert($node) {
+  $query = "INSERT INTO {OSD_writing_competition} (nid, sponsor, run_by, website, topic, eligibility_year, eligibility, coaching, award, travel, registration_fee, deadline_date, competition_date, notes, notes_private) values (%d, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', %d, %d, '%s', '%s')";
+  db_query($query, $node->nid, $node->sponsor, $node->run_by, $node->website, $node->topic, $node->eligibility_year, $node->eligibility, $node->coaching, $node->award, $node->travel, $node->registration_fee, date_convert($node->deadline_date, DATE_DATETIME, DATE_UNIX), $node->competition_date, $node->notes, $node->notes_private);
+
+  foreach($node->primary_areas as $primary_area){
+    $query = "INSERT INTO {OSD_writing_competition_primary_area} (nid, primary_area) values (%d, '%s')";
+    db_query($query, $node->nid, $primary_area);
+  }
+  foreach($node->secondary_areas as $secondary_area){
+    $query = "INSERT INTO {OSD_writing_competition_secondary_area} (nid, secondary_area) values (%d, '%s')";
+    db_query($query, $node->nid, $secondary_area);
+  }
+
+}
+
+
+function OSD_writing_competition_delete($node) {
+  $query = "DELETE FROM {OSD_writing_competition} where nid = %d";
+  db_query($query, $node->nid);
+
+  $query = "DELETE FROM {OSD_writing_competition_primary_area} where nid = %d";
+  db_query($query, $node->nid);
+
+  $query = "DELETE FROM {OSD_writing_competition_secondary_area} where nid = %d";
+  db_query($query, $node->nid);
+}
+
+
+function OSD_writing_competition_update($node) {
+  OSD_writing_competition_delete($node);
+  OSD_writing_competition_insert($node);
+}
+
+
+/**
+ * Implementation of hook_load()
+ */
+function OSD_writing_competition_load($node){
+  $query = "SELECT * FROM {OSD_writing_competition} where nid = %d";
+  $writing_competition = db_fetch_object(db_query($query, $node->nid));
+  
+  $writing_competition->primary_areas = array();
+  $query = "SELECT primary_area FROM {OSD_writing_competition_primary_area} where nid = %d";
+  $result = db_query($query, $node->nid);
+  while($data = db_fetch_object($result)){
+    $writing_competition->primary_areas[] = $data->primary_area;
+  }
+
+  $writing_competition->secondary_areas = array();
+  $query = "SELECT secondary_area FROM {OSD_writing_competition_secondary_area} where nid = %d";
+  $result = db_query($query, $node->nid);
+  while($data = db_fetch_object($result)){
+    $writing_competition->secondary_areas[] = $data->secondary_area;
+  }
+
+  return $writing_competition;
+}
+
+
+/*function OSD_writing_competition_view($node, $teaser = FALSE, $page = FALSE) {
+  
+
+}*/
+
+
+/**
+ * Implementation of hook_views_api().
+ */
+function OSD_writing_competition_views_api() {
+  return array(
+    'api' => 2,
+  );
+}

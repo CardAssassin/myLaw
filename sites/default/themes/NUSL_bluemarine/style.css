@@ -1,0 +1,796 @@
+/* $Id: style.css,v 1.23 2007/12/17 15:05:09 goba Exp $ */
+
+/*
+** HTML elements
+*/
+body {
+  margin: 0;
+  padding: 0;
+  color: #000;
+  background-color: #ffffcc;
+  font: 76% Verdana, Arial, Helvetica, sans-serif;
+}
+
+tr.odd td, tr.even td {
+  padding: 0.3em;
+}
+h1, h2, h3, h4, h5, h6 {
+  margin-bottom: 0.5em;
+}
+h1 {
+  font-size: 1.3em;
+}
+h2 {
+  font-size: 1.2em;
+}
+h3, h4, h5, h6 {
+  font-size: 1.1em;
+}
+p {
+  margin-top: 0.5em;
+  margin-bottom: 0.9em;
+}
+a {
+  text-decoration: none;
+  font-weight: bold;
+}
+a:link {
+  color: #447788;
+}
+a:visited {
+  color: #447788;
+}
+a:hover {
+  color: #436876;
+  text-decoration: underline;
+}
+fieldset {
+  border: 1px solid #ccc;
+}
+pre {
+  background-color: #eee;
+  padding: 0.75em 1.5em;
+  margin: 0;
+  font-size: 12px;
+  border: 1px solid #666;
+}
+table {
+  /* make <td> sizes relative to body size! */
+  font-size: 1em;
+}
+.form-item label {
+  font-size: 1em;
+  color: #222;
+}
+.item-list .title {
+  font-size: 1em;
+  color: #222;
+}
+.links {
+  margin-bottom: 0;
+}
+.comment .links {
+  margin-bottom: 0;
+}
+
+/*
+** Page layout blocks / IDs
+*/
+#header {
+  width: 100%;
+  border: 0px solid #666;
+  background-color: #fff;
+}
+td#group {
+  width: 250px;
+  text-align: center;
+}
+table#header td{
+  border: 1px solid #fff;
+}
+
+#content {
+  width: 100%;
+  border-top: 5px solid #666;
+}
+div.content {
+  border: 1px solid #666;
+  background: white;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+div.book-navigation {
+  border: 1px solid #666;
+  background: #eee;
+}
+#logo {
+  vertical-align: middle;
+  border: 0;
+}
+#logo img {
+  float: left; /* LTR */
+  padding: 0 1em;
+  border: 0;
+}
+#menu {
+  padding: 0.5em 0.5em 0 0.5em; /* LTR */
+  text-align: right; /* LTR */
+  vertical-align: middle;
+}
+#navlist {
+  font-size: 1.0em;
+  padding: 0 0.8em 1.2em 0; /* LTR */
+  color: #9cf;
+}
+#navlist a {
+  font-weight: bold;
+  color: #fff;
+}
+#subnavlist {
+  padding: 0.5em 1.2em 0.4em 0; /* LTR */
+  font-size: 0.8em;
+  color: #9cf;
+}
+#subnavlist a {
+  font-weight: bold;
+  color: #9cf;
+}
+ul.links li {
+  border-left: 1px solid #9cf; /* LTR */
+}
+ul.links li.first {
+  border: none;
+}
+#search .form-text, #search .form-submit {
+  border: 1px solid #369;
+  font-size: 1.1em;
+  height: 1.5em;
+  vertical-align: middle;
+}
+#search .form-text {
+  width: 8em;
+  padding: 0 0.5em;
+}
+
+#mission {
+  background-color: #fff;
+//  margin: 1.5em 2em;
+//  padding:1.5em 2em;
+  padding-left: 10px;
+  padding-right: 10px;
+  border: 1pt solid #666;
+  color: #000;
+}
+#mission a, #mission a:visited {
+  color: #447788;
+  font-weight: bold;
+}
+
+
+.site-name {
+  margin: 0.6em 0 0 ;
+  padding: 0;
+  font-size: 2em;
+}
+.site-name a:link, .site-name a:visited {
+  color: #fff;
+}
+.site-name a:hover {
+  color: #369;
+  text-decoration: none;
+}
+.site-slogan {
+  font-size: 1em;
+  color: #eee;
+  display: block;
+  margin: 0;
+  font-style: italic;
+  font-weight: bold;
+}
+#main {
+  /* padding in px not ex because IE messes up 100% width tables otherwise */
+  padding: 10px;
+}
+#mission, .node .content, .comment .content {
+  line-height: 1.4em;
+}
+#help {
+  font-size: 0.9em;
+  margin-bottom: 1em;
+}
+.breadcrumb {
+  font-size: 1.2em;
+  margin-bottom: .5em;
+}
+.messages {
+  background-color: #eee;
+  border: 1px solid #ccc;
+  padding: 0.3em;
+  margin-bottom: 1em;
+}
+.error {
+  border-color: red;
+}
+#sidebar-left, #sidebar-right {
+  background-color: #666;
+  width: 20em;
+  /* padding in px not ex because IE messes up 100% width tables otherwise */
+  padding: 10px;
+  vertical-align: top;
+}
+#footer {
+  background-color: #cc0000;
+  border: 1px solid #666;
+  padding: 1em;
+  font-size: 0.8em;
+}
+
+/*
+** Common declarations for child classes of node, comment, block, box, etc.
+** If you want any of them styled differently for a specific parent, add
+** additional rules /with only the differing properties!/ to .parent .class.
+** See .comment .title for an example.
+*/
+.title, .title a {
+  font-weight: bold;
+  font-size: 1.3em;
+  color: #777;
+  margin: 0 auto;  /* decrease default margins for h<x>.title */
+}
+.submitted {
+  color: #999;
+  font-size: 0.8em;
+}
+.links {
+  color: #999;
+}
+.links a {
+  font-weight: bold;
+}
+.block, .box {
+  padding: 0 0 1.5em 0; /* LTR */
+}
+.block {
+  border-bottom: 1px solid #bbb;
+  padding-bottom: 0;
+  margin-bottom: 1.5em;
+}
+.block .title {
+  margin-bottom: 0px;
+  background-color: #cc0000;
+  color: #ffffff;
+  padding: 5px 0px 5px 5px;
+}
+
+.block .title a {
+ // margin-bottom: .25em;
+  background-color: #cc0000;
+  color: #ffffff;
+  padding: 5px 0px 5px 5px;
+  font-size: 1em;
+}
+
+.block .content{
+  background-color: #fff;
+  padding-left: 1px;
+  margin: 0px;
+}
+
+.box .title {
+  font-size: 1.1em;
+}
+.node {
+  margin: .5em 0 2em; /* LTR */
+}
+.sticky {
+  padding: .5em;
+  background-color: #eee;
+  border: solid 1px #ddd;
+}
+.node .content, .comment .content {
+  margin: .5em 0 .5em;
+}
+.node .taxonomy {
+  color: #999;
+  font-size: 0.8em;
+  padding-left: 1.5em; /* LTR */
+}
+.node .picture {
+  border: 0px solid #ddd;
+  float: left; /* LTR */
+  margin: 0.1em;
+}
+.node .picture img{
+  max-width: 50px;
+  max-height: 50px;
+}
+.comment-info .picture img{
+  max-width: 50px;
+  max-height: 50px;
+}
+.comment {
+  border: 1px solid #abc;
+  padding: .5em;
+  margin-bottom: 1em;
+
+}
+.comment .title a {
+  font-size: 1.1em;
+  font-weight: normal;
+}
+.comment .new {
+  text-align: right; /* LTR */
+  font-weight: bold;
+  font-size: 0.8em;
+  float: right; /* LTR */
+  color: red;
+}
+.comment .picture {
+  border: 1px solid #abc;
+  float: left; /* LTR */
+  margin: 0.5em;
+}
+
+/*
+** Module specific styles
+*/
+#aggregator .feed-source {
+  background-color: #eee;
+  border: 1px solid #ccc;
+  padding: 1em;
+  margin: 1em 0;
+}
+#aggregator .news-item .categories, #aggregator .source, #aggregator .age {
+  color: #999;
+  font-style: italic;
+  font-size: 0.9em;
+}
+#aggregator .title {
+  margin-bottom: 0.5em;
+  font-size: 1em;
+}
+#aggregator h3 {
+  margin-top: 1em;
+}
+#forum table {
+  width: 100%;
+}
+#forum td {
+  padding: 0.5em;
+}
+#forum td.forum, #forum td.posts {
+  background-color: #eee;
+}
+#forum td.topics, #forum td.last-reply {
+  background-color: #ddd;
+}
+#forum td.container {
+  background-color: #ccc;
+}
+#forum td.container a {
+  color: #555;
+}
+#forum td.statistics, #forum td.settings, #forum td.pager {
+  height: 1.5em;
+  border: 1px solid #bbb;
+}
+#forum td .name {
+  color: #96c;
+}
+#forum td .links {
+  padding-top: 0.7em;
+  font-size: 0.9em;
+}
+#profile .profile {
+  clear: both;
+  border: 1px solid #abc;
+  padding: .5em;
+  margin: 1em 0em;
+}
+#profile .profile .name {
+  padding-bottom: 0.5em;
+}
+.block-forum h3 {
+  margin-bottom: .5em;
+}
+div.admin-panel .description {
+  color: #999;
+}
+div.admin-panel .body {
+  background: #f4f4f4;
+}
+div.admin-panel h3 {
+  background-color: #69c;
+  color: #fff;
+  padding: 5px 8px 5px;
+  margin: 0;
+}
+
+
+//////////////////////////////////////////////
+//   
+
+
+table#header {
+  padding: 0;
+  margin: 0;
+}
+
+td#breadcrumb {
+  vertical-align: top;
+  text-align: right;
+  padding-right: 5px;
+  padding-top: 5px;
+}
+
+
+div.clear-block{
+  padding-top: 5px;
+  padding-bottom: 0px;
+  margin: 0px;
+}
+
+table.node-table {
+  background-color: #ffffff;
+  border: 2px solid #666;
+  width: 100%;
+  margin-bottom: 1px;
+  margin-top: 1px;
+  padding: 0px;
+}
+
+table.node-table td.node-group-author-post-header{
+  height: 20px;
+  background-color: #cc0000;
+ // border-bottom: 1px solid gray;
+  text-align: center;
+
+}
+
+table.node-table td.node-group-author-post-header a{
+  color: #fff;
+}
+
+table.node-table td.node-group-author-post-info{
+  width: 70px;
+  background-color: #cc0000;
+  color: #fff;
+
+}
+
+table.node-table td.node-group-author-post-info a{
+  color: #fff;
+}
+
+table.node-table td.node-header{
+  height: 20px;
+  background-color: #666;
+ // border-bottom: 1px solid gray;
+  text-align: center;
+
+}
+
+table.node-table td.node-header a{
+  color: #fff;
+}
+
+table.node-table td.node-footer{
+  height: 20px;
+  background-color: #666;
+ // border-top: 1px solid gray;
+  text-align: center;
+  color: #fff;
+}
+
+table.node-table td.node-footer a{
+  color: #fff;
+}
+
+table.node-table td.node-info{
+  width: 70px;
+  background-color: #666;
+  color: #cc0000;
+ // border-left: 1px solid gray;
+}
+
+table.node-table td.node-info a{
+  color: #ffffff;  
+}
+
+table.node-table td.node-teaser{
+  padding: 0px;
+  margin: 0px;
+  border: 1px solid #666;
+}
+
+table.node-table td.node-teaser div.content{
+  border: 0px solid #666;
+}
+
+table.node-table td.node-body{
+  padding: 0px;
+  margin: 0px;
+  border-top: 3px solid #666;
+}
+
+table.node-table td.node-body div.content{
+  border: 0px solid #666;
+}
+//////////////////////
+
+#comments {
+  width: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+table.comment-table{
+  background-color: #ffffff;
+  border: 2px solid #666;
+  //border-top: 1px;
+  width: 100%;
+}
+
+table.comment-table td.comment-top{
+  background-color: #666;
+  color:  #cc0000;
+  text-align: center;
+}
+
+table.comment-table td.comment-header{
+  //height: 10px;
+  background-color: #cc0000;
+  text-align: center;
+  padding:0px;
+  margin: 0px;
+
+}
+
+table.comment-table h3.comment-title{
+  //border: 1px solid gray;
+}
+
+table.comment-table td.comment-header a{
+  color: #fff;
+}
+
+table.comment-table td.comment-footer{
+  height: 10px;
+  background-color: #cc0000;
+ // border-top: 1px solid gray;
+  text-align: center;
+  color: #fff;
+}
+
+table.comment-published td.comment-footer{
+  height: 10px;
+  background-color: #cc0000;
+ // border-top: 1px solid gray;
+  text-align: center;
+  color: #fff;
+}
+
+table.comment-unpublished td.comment-footer{
+  height: 10px;
+  background-color: #666;
+ // border-top: 1px solid gray;
+  text-align: center;
+  color: #fff;
+}
+
+table.comment-table td.comment-footer a{
+  color: #fff;
+}
+
+table.comment-table td.comment-content{
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 0px;
+}
+
+table.comment-table td.comment-info{
+  width: 100px;
+  background-color: #cc0000;
+  padding-left:  5px;
+ // border-left: 1px solid gray;
+}
+
+table.comment-published td.comment-info{
+  width: 100px;
+  background-color: #cc0000;
+  padding-left:  5px;
+ // border-left: 1px solid gray;
+}
+
+table.comment-unpublished td.comment-info{
+  width: 100px;
+  background-color: #666;
+  padding-left:  5px;
+ // border-left: 1px solid gray;
+}
+
+table.comment-table td.comment-info a{
+  color: #ffffff;  
+}
+
+
+
+//////////////////////
+#primary {
+font-size: 85%;
+  line-height:normal;
+  padding:0px 0px 1px 20px;
+/*
+  font-size: 85%;
+  line-height:normal;
+ // padding:0px 0px 1px 20px;
+  padding: 45px;
+  margin: 0;
+  background-color: #666;
+  border: 1px solid #ff0;
+*/
+}
+
+#primary ul {
+  padding:0;
+  margin:0;
+ // border: 1px solid #00f;
+  list-style:none;
+  background-color: transparent;
+ // border: 0;
+}
+
+#primary li {
+  display:inline;
+  padding: 0;
+  margin: 0;
+ // border: 1px solid #0f0;
+  background-color: transparent;
+  border: 0;
+}
+
+#primary a {
+  background:#6DA6E2 url(images/red-tabs.gif) repeat-x;
+  color:#FFF;
+  font-weight:bolder;
+ // font-size:
+  display:block;
+  float:left;
+  padding:5px 14px 5px 14px;
+  margin: 0px 5px 0px 0px;
+  border: solid #666 1px;
+  //border-width: 1px 1px 0px 1px;
+}
+
+#primary a {
+  background-position:0% 0px;
+}
+
+#primary a:hover {
+  background-position:0% -42px;
+  text-decoration:none;
+}
+
+#primary a.active {
+  background-position: 0% -84px;
+}
+
+#primary ul {
+  top: 2px;
+  
+}
+
+#primary ul li ul {
+  background-color: #fff;
+  border: solid #666 1px;
+  border-width: 5px 1px 1px 1px;
+  top: 25px;
+}
+
+#primary ul li ul li{
+  border: solid #CCC 1px;
+  border-width: 0px 0px 1px 0px;
+}
+
+#primary ul li ul li:hover {
+  text-decoration: underline;
+  background-color: #ffffcc;
+}
+
+#primary ul li ul li a {
+  background-color: #fff;//#6DA6E2 url(images/tabs.gif) repeat-x;
+  background-image: none;
+  color:#436976;
+  font-weight:normal;
+  display:block;
+  float:left;
+  padding:5px 14px 5px 14px;
+  margin: 0px 1px 0px 0px;
+}
+
+textarea {
+  background-color: #fff;
+}
+
+
+
+#course-header {
+  background-color: #fff;
+  border: 5px solid #666;
+  border-right-width: 0px;
+  border-top-width: 0px;
+  border-left-width: 3px;
+  padding:  0px;
+  margin:   0px;
+}
+
+#course-header table{
+  padding:  0px;
+  margin:   0px;
+}
+
+table td#course-description {
+  border-top: 2px solid #666;
+  text-align: center;
+  padding:  0px;
+  margin:   0px;
+}
+#course-header table td {
+  padding:  0px;
+  margin:   0px;
+}
+
+
+
+table#course-info td{
+  border: 1px solid #666;
+  border-right-width: 0px;
+  padding-left: 5px;
+  background-color: #ccc;
+}
+
+table#course-info {
+  padding: 0px;
+}
+
+#exam-description {
+  background-color: #fff;
+  text-align: center;
+  border:1px solid #666;
+  width: 95%;
+}
+
+
+a.group-heading {
+  font-size: 1.2em;
+  color: #000; 
+}
+
+
+div.read-node a {
+  color: #999;
+}
+
+div.node-read td.node-group-author-post-header{
+  background-color: #ffffcc;
+}
+
+div.node-read td.node-group-author-post-header a{
+  color: #000;
+}
+
+div.node-read td.node-group-author-post-info{
+  background-color: #ffffcc;
+  color: #000;
+
+}
+
+div.node-read td.node-group-author-post-info a{
+  color: #000;
+}
+
+
+.item-list ul{
+  padding: 0;  
+}
+

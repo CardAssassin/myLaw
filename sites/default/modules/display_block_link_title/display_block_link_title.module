@@ -1,0 +1,8 @@
+<?php
+
+function display_block_link_title_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'display_block_link_title'),
+  );
+}

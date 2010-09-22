@@ -1,0 +1,8 @@
+; $Id$
+
+name = student_program
+description = Student Programs
+package = "NUSL"
+dependencies[] = og
+dependencies[] = views
+core = 6.x

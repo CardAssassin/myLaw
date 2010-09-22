@@ -1,0 +1,235 @@
+<?php
+
+
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function scheduler_repeat_form_alter(&$form, $form_state, $form_id) {
+  if ('node_type_form' == $form_id) {
+    scheduler_repeat_form_content_type($form, $form_state, $form_id);
+  }
+  else if (isset($form['type']['#value']) && $form['type']['#value'] .'_node_form' == $form_id) {
+    scheduler_repeat_form_item($form, $form_state, $form_id);
+  }
+}
+
+function scheduler_repeat_form_content_type(&$form, $form_state, $form_id){
+  $form['workflow']['scheduler_repeat'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable creation of repeated nodes'),
+    '#default_value' => variable_get('scheduler_repeat_'. $form['#node_type']->type, 0),
+    '#description' => t('Check this box to enable the ability to repeat scheduled dates for this node type.')
+  );
+  
+}
+
+
+function scheduler_repeat_form_item(&$form, $form_state, $form_id){
+  // if scheduling has been enabled for this node type
+  if (variable_get('scheduler_repeat_'. $form['type']['#value'], 0) == 1) {
+    $node = $form['#node'];
+
+    $timezone = _scheduler_timezone();
+
+    $now = time();
+    $format = 'Y-m-d';
+
+    $week_from_now = date($format ,mktime(date('H',$now), date('i',$now), 0, date('n',$now), date('j', $now)+7, date('Y', $now)));
+    $now = date($format, $now);
+
+
+    
+
+
+    $form['calendar_event']['repeat_date'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Repeat Dates'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,//(empty($node->repeat_dates) && variable_get('scheduler_optional_'. $form['type']['#value'], 0)),
+      '#weight' => 1,
+    );
+
+    $form['calendar_event']['repeat_date']['repeat_num_weeks'] = array(
+      '#title' => t('Repeat every # of weeks'),
+      '#type' => 'textfield',
+      '#default_value' => 0,
+      '#weight' => 0,
+    );
+
+    $form['calendar_event']['repeat_date']['repeat_on_days'] = array(
+      '#title' => t('Days'),
+      '#type' => 'checkboxes',
+      '#default_value' => array(),
+      '#options' => array(
+        1 => t('Monday'),
+        2 => t('Tuesday'),
+        3 => t('Wednesday'),
+        4 => t('Thursday'),
+        5 => t('Friday'),
+        6 => t('Saturday'),
+        7 => t('Sunday'),
+      ),
+      '#weight' => 1,
+    );
+
+    $form['calendar_event']['repeat_date']['repeat_until'] = array(
+      '#title' => t('Repeat Until'),
+      '#type'  => 'date_popup',
+      '#format' => $format,
+      '#default_value' => $now,
+      '#date_year_range' => '0:+1',
+      '#date_increment' => 1,
+      '#weight' => 2,
+    );
+  }
+}
+
+/*
+function _scheduler_timezone(){
+  global $user;
+  if (variable_get('configurable_timezones', 1) && $user->uid && strlen($user->timezone)) {
+    return $user->timezone;
+  }
+  else {
+    return variable_get('date_default_timezone', 0);
+  }
+}
+*/
+
+
+/**
+ * Implementation of hook_nodeapi().
+*/
+function scheduler_repeat_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  switch ($op) {
+  case 'load':
+   /* if (isset($node->nid) && $node->nid && variable_get('scheduler_'.$node->type, 0) == 1) {
+      $query = 'SELECT publish_on, unpublish_on FROM {scheduler} WHERE nid = %d';
+      $node->scheduler = db_fetch_array(db_query($query, $node->nid));
+    }
+    */
+  case 'view':
+    /*
+    if(!empty($node->scheduler)){
+      $node->content['scheduler'] = array(
+        '#value' => theme('scheduler', $node->scheduler['publish_on'], $node->scheduler['unpublish_on']),
+        '#weight' => 90,
+      );
+    }
+*/
+    break;
+  case 'update':
+//    $query = 'DELETE FROM {scheduler} WHERE nid = %d';
+//    db_query($query, $node->nid);
+  case 'insert':
+    module_load_include('inc', 'node', 'node.pages');
+    $create_node = array('type' => $node->type); 
+    $create_object = (object)$create_node;
+
+    $calendar_event_start = $node->calendar_event['start'];
+    $calendar_event_end = $node->calendar_event['end'];
+    $unpublish_on = $node->unpublish_on;
+    $publish_on = $node->publish_on;
+
+    //$publish_timestamp = _scheduler_repeat_mktimestamp($node->publish_on);
+    $current = date_convert($calendar_event_start, DATE_DATETIME, DATE_UNIX);
+   // $node->unpublish_on
+    $finish = date_convert($node->calendar_event['repeat_date']['repeat_until'], DATE_DATETIME, DATE_UNIX);
+    
+    $prev_nid = $node->nid;
+    $i = 1;
+    while($current < $finish){
+      $i++;
+      $dow = date('w', $current);
+      $increment = 0;
+      do {
+        $increment++;
+        $dow++;
+        if ($dow == 8) {
+          $dow = 1;
+        }
+      }
+      while (! $node->calendar_event['repeat_date']['repeat_on_days'][$dow]);
+
+      $current = mktime(date('H',$current), date('i',$current), 0, date('n',$current), date('j', $current)+$increment, date('Y', $current));
+
+      $calendar_event_start = _scheduler_increment_date($calendar_event_start, $increment, 'Y-m-d H:i');
+      $calendar_event_end = _scheduler_increment_date($calendar_event_end, $increment, 'Y-m-d H:i');
+//      $unpublish_on = _scheduler_increment_date($unpublish_on, $increment, 'Y-m-d H:i');
+//      $publish_on = _scheduler_increment_date($publish_on, $increment, 'Y-m-d H:i');
+      $publish_on = $unpublish_on;
+      $unpublish_on = $calendar_event_end;
+      
+
+      $form_state = array();
+      $form_state['values'] = array(
+        'uid'         => $node->uid,
+        'name'        => $node->name,
+        'title'       => $node->title . ' #' . $i,
+        'teaser'      => $node->teaser,
+        'body'        => $node->body,
+        'og_groups'   => $node->og_groups,
+        'author_group_nid' => $node->author_group_nid,
+        'calendar_event' => array(
+          'has_event'      => $node->calendar_event['has_event'],
+          'start'          => $calendar_event_start,
+          'end'            => $calendar_event_end,
+        ),
+        'create_schedule' => $node->create_schedule,
+        'publish_on'  => $publish_on,
+        'unpublish_on' => $unpublish_on,
+        'op'          => t('Save'),
+      );
+      drupal_execute($node->type.'_node_form', $form_state, $create_object);
+
+      $query = "SELECT n.nid FROM {node} n INNER JOIN {calendar_event} ce ON n.nid = ce.nid WHERE n.title = '%s' AND ce.start = %d AND ce.end = %d";
+ 
+    }
+
+
+
+   /* if(isset($node->create_schedule)){
+      $timezone = _scheduler_timezone();
+      $query = 'INSERT INTO {scheduler} (nid, publish_on, unpublish_on) VALUES (%d, %d, %d)';
+      $publish_on = date_convert($node->publish_on, DATE_DATETIME, DATE_UNIX) - $timezone;
+      $unpublish_on = date_convert($node->unpublish_on, DATE_DATETIME, DATE_UNIX) - $timezone;
+      db_query($query, $node->nid, $publish_on, $unpublish_on);
+
+      $now = time();
+      if($publish_on < $now && $now < $unpublish_on){
+        if (variable_get('scheduler_touch_'. $n->type, 0) == 1) {
+          $query = 'UPDATE {node} set status = 1, created = %d WHERE nid = %d';
+           db_query($query, $publish_on, $node->nid);
+        }
+        else{
+          $query = 'UPDATE {node} set status = 1 WHERE nid = %d';
+          db_query($query, $node->nid);
+        }
+      }
+      else{
+        $query = 'UPDATE {node} set status = 0 WHERE nid = %d';
+        db_query($query, $node->nid);
+      }
+    }
+    break;
+  case 'delete':
+    $query = 'DELETE FROM {scheduler} WHERE nid = %d';
+    db_query($query, $node->nid);
+  */
+    break;
+  }
+}
+
+
+function _scheduler_repeat_mktimestamp($date){
+  return mktime(date('H',$date), date('i',$date), 0, date('n',$date), date('j', $date), date('Y', $date));
+}
+
+function _scheduler_increment_date($date, $increment, $format){
+  $date = date_convert($date , DATE_DATETIME, DATE_UNIX) - _scheduler_timezone();
+  return date($format, mktime(date('H',$date), date('i',$date), 0, date('n',$date), date('j', $date)+$increment, date('Y', $date)));
+}
+
+
+

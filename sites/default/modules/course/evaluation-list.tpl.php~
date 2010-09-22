@@ -1,0 +1,76 @@
+  <head>
+    <title>Evaluations</title>
+    <style type="text/css">
+      body 
+      {
+        padding-top:    25pt;
+        padding-bottom: 25pt;
+        padding-left:   15pt;
+        padding-right:  15pt;
+        margin-right:   20pt;
+        margin-bottom:  25pt;
+        margin-top:     25pt;
+
+        font-family:    Arial;
+      }
+      table 
+      {
+        border: 1pt solid black; 
+        margin: 0pt;
+        padding: 0pt;
+      }
+      td
+      {
+        width: 100pt;
+        border: 1pt solid gray;  
+        margin: 0 pt;
+        padding: 3pt;
+      }
+      
+    </style>
+  </head>
+  <body>
+
+  <table>
+  <tr>
+    <?php
+    if($print['can_view_student_names']){
+      print '<td>Student Name</td>';
+    }
+    ?>
+    <td>Exam Number</td>
+    <?php
+    if($print['can_view_exam_type']){
+      print '<td>Type</td>';
+    }
+    if($print['can_view_evaluations']){
+      print '<td>Grade</td>';
+    }
+    ?>
+    <td>Last Edited</td>
+    <td>Final</td>
+  </tr>
+  <?php
+    foreach($print['evaluations'] as $evaluation){
+      print '<tr>';
+      if($print['can_view_student_names']){
+        print '<td>'.$evaluation['student'].'</td>';
+      }
+      print '<td>'.$evaluation['exam_number'].'</td>';
+      if($print['can_view_exam_type']){
+        print '<td>'.$evaluation['exam_type'].'</td>';
+      }
+      if($print['can_view_evaluations']){
+        print '<td>'.$evaluation['grade'].'</td>';
+      }
+      print '<td>'.$evaluation['last_edited'].'</td>';
+      print '<td>'.$evaluation['final'].'</td>';
+      print '</tr>';
+    }
+  ?>
+  </table>
+
+
+  </body>
+</html>
+

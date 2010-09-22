@@ -1,0 +1,84 @@
+<?php
+// $Id: page.tpl.php,v 1.28 2008/01/24 09:42:52 goba Exp $
+?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="<?php print $language->language ?>" xml:lang="<?php print $language->language ?>" dir="<?php print $language->dir ?>">
+
+<head>
+  <title><?php print $head_title ?></title>
+  <?php print $head ?>
+  <?php print $styles ?>
+  <?php print $scripts ?>
+  <script type="text/javascript"><?php /* Needed to avoid Flash of Unstyle Content in IE */ ?> </script>
+</head>
+
+<body>
+
+<table border="0" cellpadding="0" cellspacing="0" id="header">
+  <tr>
+    <td id="logo">
+      <?php if ($logo) { ?><a href="<?php print $front_page ?>" title="<?php print t('Home') ?>"><img src="<?php print $logo ?>" alt="<?php print t('Home') ?>" /></a><?php } ?>
+      <?php if ($site_slogan) { ?><div class='site-slogan'><?php print $site_slogan ?></div><?php } ?>
+    </td>
+    <td id="breadcrumb">
+      <?php print $breadcrumb ?>
+    </td>
+  </tr>
+<!--/table>
+<table border="0" cellpadding="0" cellspacing="0" id="header"-->
+  <tr>
+    <td colspan=2 id="menu">
+      <?php if (isset($secondary_links)) { ?><?php print theme('links', $secondary_links, array('class' => 'links', 'id' => 'subnavlist')) ?><?php } ?>
+      <?php if (isset($primary_links)) { ?>
+        <?php //print theme('links', $primary_links, array('class' => 'links', 'id' => 'navlist')) ?>
+         <div id="primary" class="clear-block">
+         <?php print theme('nice_menu_primary_links', 'down'); ?>
+         </div>
+      <?php } ?>
+    </td>
+    <!--td id="group">
+      <div><h1><?php 
+     //   $group = og_get_group_context();
+     //   print '<a href="?q=node/'.$group->nid.'">'.$group->title.'</a>'; ?></h1></div>
+
+    </td-->
+  </tr>
+</table>
+
+<table border="0" cellpadding="0" cellspacing="0" id="content">
+  <tr>
+    <?php if ($left) { ?><td id="sidebar-left">
+      <?php print $left ?>
+    </td><?php } ?>
+    <td valign="top">
+      <?php if ($mission) { ?><div id="mission"><?php print $mission ?></div><?php } ?>
+      <div id="main">
+        
+        <?php if ($show_messages) { print $messages; } ?>
+        <?php print $help ?>
+        <div class="tabs"><?php print $tabs ?></div>
+        <?php print $content; ?>
+        <?php print $feed_icons; ?>
+      </div>
+
+      <table border="0" cellpadding="0" cellspacing="0">
+        <tr><td valign='bottom'>
+        </td></tr>
+      </table>
+    </td>
+    <?php if ($right) { ?><td id="sidebar-right">
+      <?php print $search_box ?>
+      <?php print $right ?>
+    </td><?php } ?>
+
+    
+  </tr>
+</table>
+
+
+<div id="footer">
+  <?php print $footer_message ?>
+  <?php print $footer ?>
+</div>
+<?php print $closure ?>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<?php
+// $Id
+
+
+/**
+ * Implementation of hook_menu().
+ */
+function og_webform_menu() {
+  $items = array();
+
+/*  $items['node/%node/og/webform/add'] = array(
+    'title'  => 'Create Form',
+    'page callback' => 'node_add',
+    'page arguments' => array('webform', 1),
+    'access callback' => 'node_access',
+    'access arguments' => array('create', 'webform', NULL, 1),
+    'file' => 'node.pages.inc',
+    'file path' => drupal_get_path('module', 'node'),
+  );
+*/
+
+  // Submissions listing.
+  $items['node/%node/og/webform/admin'] = array(
+    'title' => 'Webforms',
+    'page callback' => 'og_webform_admin_content',
+    'page arguments' => array(1),
+    'access callback' => 'og_group_access_get_access',
+    'access arguments' => array('access group webform results', 1),
+    'description' => 'View and edit all the available webforms for your group.',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+function og_webform_menu_alter(&$items){
+  $items['node/%webform_menu/webform-results']['access callback'] = 'og_webform_results_access';
+  $items['node/%webform_menu/webform-results/submissions']['access callback'] = 'og_webform_results_access'; 
+  $items['node/%webform_menu/webform-results/analysis']['access callback'] = 'og_webform_results_access';
+  $items['node/%webform_menu/webform-results/table']['access callback'] = 'og_webform_results_access';
+  $items['node/%webform_menu/webform-results/download']['access callback'] = 'og_webform_results_access';
+
+  $items['node/%webform_menu/webform-results/clear']['access callback'] = 'og_webform_results_clear_access';
+
+  $items['node/%webform_menu/submissions']['access callback'] = 'og_webform_submission_access';
+  $items['node/%webform_menu/submission/%webform_menu_submission']['access callback'] = 'og_webform_submission_access';
+  $items['node/%webform_menu/submission/%webform_menu_submission/view']['access callback'] = 'og_webform_submission_access';
+  $items['node/%webform_menu/submission/%webform_menu_submission/edit']['access callback'] = 'og_webform_submission_access';
+  $items['node/%webform_menu/submission/%webform_menu_submission/delete']['access callback'] = 'og_webform_submission_access';
+  
+}
+
+
+function og_webform_results_access($node, $account = NULL) {
+  $group = isset($node->author_group_nid) ? node_load($node->author_group_nid) : NULL;
+  return node_access('view', $node, $account) && (user_access('access all webform results', $account) || (user_access('access own webform results', $account) && $account->uid == $node->uid) || og_group_access_get_access('access group webform results', $group));
+}
+
+
+function og_webform_results_clear_access($node, $account = NULL) {
+  global $user;
+  $account = isset($account) ? $account : $user;
+  $group = isset($node->author_group_nid) ? node_load($node->author_group_nid) : NULL;
+
+  return og_webform_results_access($node, $account) && (user_access('delete all webform submissions', $account) || og_group_access_get_access('delete group webform submissions', $group));
+}
+
+
+function og_webform_submission_access($node, $submission, $op = 'view', $account = NULL) {
+  global $user;
+  $account = isset($account) ? $account : $user;
+  $group = isset($node->author_group_nid) ? node_load($node->author_group_nid) : NULL;
+
+  $access_all = user_access('access all webform results', $account) || og_group_access_get_access('access group webform results', $group);
+  $access_own_submission = isset($submission) && user_access('access own webform submissions', $account) && (($account->uid && $account->uid == $submission->uid) || isset($_SESSION['webform_submission'][$submission->sid]));
+  $access_node_submissions = user_access('access own webform results', $account) && $account->uid == $node->uid;
+
+  $general_access = $access_all || $access_own_submission || $access_node_submissions;
+
+  // Disable the page cache for anonymous users in this access callback,
+  // otherwise the "Access denied" page gets cached.
+  if (!$account->uid && user_access('access own webform submissions', $account)) {
+    webform_disable_page_cache();
+  }
+
+  switch ($op) {
+    case 'view':
+      return $general_access;
+    case 'edit':
+      return $general_access && (user_access('edit all webform submissions', $account) || (user_access('edit own webform submissions', $account) && $account->uid == $submission->uid) || og_group_access_get_access('edit group webform submissions', $group));
+    case 'delete':
+      return $general_access && (user_access('delete all webform submissions', $account) || (user_access('delete own webform submissions', $account) && $account->uid == $submission->uid) || og_group_access_get_access('delete group webform submissions', $group));
+    case 'list':
+      return user_access('access all webform results', $account) || (user_access('access own webform submissions', $account) && ($account->uid || isset($_SESSION['webform_submission']))) || (user_access('access own webform results', $account) && $account->uid == $node->uid) || og_group_access_get_access('access group webform results', $group);
+  }
+}
+
+
+function webform_group_access_perm(){
+  return array('create webforms', 'edit webforms', 'access group webform results', 'delete group webform submissions', 'edit group webform submissions');
+}
+
+
+/**
+ * Implementations of hook_group_access();
+*/
+function webform_group_access($op, $node, $group) {
+  switch($op){
+  case 'create':
+    return og_group_access_get_access('create webforms', $group);
+  case 'update':
+  case 'delete':
+    return og_group_access_get_access('edit webforms', $group);
+  }
+}
+
+
+
+function og_webform_og_create_links($group){
+  $links = array();
+/*  if(og_group_access_get_access('create webforms', $group)){
+    $links[] = l('Create Questionaire', 'node/' . $group->nid . '/og/webform/add');
+  }
+*/
+  if(og_group_access_get_access('access group webform results', $group)){
+    $links[] = l('View Questionaires', 'node/' . $group->nid . '/og/webform/admin');
+  }
+
+  return $links;
+}
+
+
+/**
+ * Menu callback for admin/content/webform. Displays all webforms on the site.
+ */
+function og_webform_admin_content($group) {
+  $result = db_query("SELECT n.* FROM {node} n INNER JOIN {og_author} auth ON n.nid = auth.nid INNER JOIN {webform} w ON n.nid = w.nid WHERE auth.author_group_nid = %d", $group->nid);
+  $nodes = array();
+  while ($node = db_fetch_object($result)) {
+    $nodes[] = $node;
+  }
+
+  return theme('webform_admin_content', $nodes, $group);
+}

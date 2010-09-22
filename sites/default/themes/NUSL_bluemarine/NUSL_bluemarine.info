@@ -1,0 +1,15 @@
+; $Id$
+name = NUSL_bluemarine
+description = Customized theme based on bluemarine.
+version = VERSION
+core = 6.x
+engine = phptemplate
+regions[left] = Left sidebar
+regions[right] = Right sidebar
+regions[content] = Content
+regions[header] = Header
+regions[footer] = Footer
+stylesheets[all][] = style.css
+stylesheets[all][] = nice_menus_NUSL.css
+
+

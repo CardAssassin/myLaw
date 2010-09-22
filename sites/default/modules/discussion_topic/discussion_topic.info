@@ -1,0 +1,6 @@
+; $Id$
+
+name = Discussion Topic
+description = "Discussion Topic node"
+package = "NUSL"
+core = 6.x

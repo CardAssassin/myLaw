@@ -1,0 +1,27 @@
+<?php
+// $Id$
+
+/**
+ * Implementation of hook_install().
+ */
+function public_interest_install() {
+  drupal_install_schema('public_interest');
+}
+
+
+
+function public_interest_schema(){
+  return array(
+    'public_interest' => array(
+      'description' => t('The main table to hold data for nodes that have been marked as public interest nodes.'),
+      'fields' => array(
+        'nid' => array(
+          'description' => t('The node.nid'),
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+      ),
+    ),
+  );
+}

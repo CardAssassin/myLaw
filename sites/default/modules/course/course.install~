@@ -1,0 +1,92 @@
+<?php
+
+// $Id$
+
+function course_install(){
+  drupal_install_schema('course');
+
+  db_query("UPDATE {system} SET weight = 1 WHERE name = 'course'");
+
+  //set course nodes as group type
+  variable_set('og_content_type_usage_course', 'group');
+}
+
+
+function course_schema(){
+  $schema = array();
+
+  $schema['courses'] = array(
+    'description'     => 'Stores information about each course',
+    'fields'          => array(
+      'nid'             => array(
+        'description'     => 'The nodes {node}.nid',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'course_number'     => array(
+        'description'     => 'The course number',
+        'type'            => 'varchar',
+        'length'          => 7,
+        'not null'        => TRUE,
+      ),
+      'semester_number'     => array(
+        'description'     => 'The semester number',
+        'type'            => 'int',
+        'size'          => 'normal',
+        'not null'        => TRUE,
+      ),
+      'credits'     => array(
+        'description'     => 'Number of credits',
+        'type'            => 'int',
+        'size'          => 'tiny',
+        'not null'        => TRUE,
+      ),
+      'instructor1_uid'     => array(
+        'description'     => 'The primary instructor',
+        'type'            => 'int',
+        'size'          => 'normal',
+        'not null'        => TRUE,
+      ),
+      'instructor2_uid'     => array(
+        'description'     => 'The secondary instructor',
+        'type'            => 'int',
+        'size'          => 'normal',
+        'not null'        => FALSE,
+      ),
+      'evaluation_description' => array(
+        'description'     => 'Description for the evaluations',
+        'type'            => 'text',
+        'size'          => 'normal',
+        'not null'        => FALSE,
+      ),
+      'evaluations_initialized' => array(
+        'description'     => 'Whether all of the evaluations have been initialized',
+        'type'            => 'int',
+        'size'          => 'tiny',
+        'not null'        => TRUE,
+      ),
+      'is_first_year' => array(
+        'description'     => 'Whether the class is for first year students',
+        'type'            => 'int',
+        'size'          => 'tiny',
+        'not null'        => TRUE,
+      ),
+      'is_performance_based' => array(
+        'description'     => 'Determines if instructor can see Student Names',
+        'type'            => 'int',
+        'size'          => 'tiny',
+        'not null'        => TRUE,
+      ),
+      'is_passfail'     => array(
+        'description'     => 'Determines the grading scale',
+        'type'            => 'int',
+        'size'          => 'tiny',
+        'not null'        => TRUE,
+      ),
+    ),
+    'primary_key'        => array('nid')
+  );
+  
+  return $schema;
+}

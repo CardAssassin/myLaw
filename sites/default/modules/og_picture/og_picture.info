@@ -1,0 +1,6 @@
+name = Group Picture
+description = "Associate a picture to Organic Groups"
+package = "Organic groups"
+dependencies[] = og_group_access
+core = 6.x
+

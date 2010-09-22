@@ -1,0 +1,45 @@
+<?php
+// $Id$
+
+/**
+ * Implementation of hook_install().
+ */
+function hide_nodes_install() {
+  drupal_install_schema('read_nodes');
+}
+
+
+
+function read_nodes_schema(){
+  return array(
+    'hide_nodes' => array(
+      'description' => t('The main table to hold data for nodes that have been hidden.'),
+      'fields' => array(
+        'nid' => array(
+          'description' => t('The node.nid'),
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'uid' => array(
+          'description' => t('The user\'s uid'),
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0,
+        ),
+        'timestamp' => array(
+          'description' => t('The UNIX UTC timestamp when to the node was marked read'),
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0,
+        ),
+      ),
+      'indexes' => array(
+        'hide_nodes_nid' => array('nid'),
+        'hide_nodes_uid' => array('uid'),
+      ),
+    ),
+  );
+}

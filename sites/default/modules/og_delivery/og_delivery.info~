@@ -1,0 +1,10 @@
+; $Id$
+
+name = OG Delivery
+description = "Enable delivery of content between organic groups."
+package = "Organic groups"
+dependencies[] = og_group_access
+dependencies[] = views
+core = 6.x
+
+

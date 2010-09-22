@@ -1,0 +1,7 @@
+; $Id$
+name = Favorites
+description = Allows users to tag a node as favorite.
+core = 6.x
+
+
+

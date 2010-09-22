@@ -1,0 +1,5 @@
+<?php
+// $Id:
+?>
+
+<!--Display nothing!!!-->

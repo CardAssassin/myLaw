@@ -1,0 +1,363 @@
+<?php
+
+
+
+/**
+ * Implementation of hook_node_info().
+*/
+function class_year_node_info(){
+  return array(
+    'class_year' => array(
+      'name'   => t('Class Year'),
+      'module' => 'class_year',
+      'description' => "class year group",
+      'has_title'   => TRUE,
+      'title_label' => t('Class Year name'),
+      'has_teaser'  => FALSE,
+      'has_body'    => FALSE
+    )
+  );
+}
+
+
+/**
+ *  Implementation of hook_menu().
+*/
+function class_year_menu(){
+  $items = array();
+
+  $items['class_year'] = array(
+    'title' => 'Class Year',
+    'page callback' => 'class_year_listing_page',
+    'access callback' => user_access('view class year')
+  );
+  return $items;
+}
+
+
+
+
+/**
+ * Implementation of hook_perm
+*/
+function class_year_perm(){
+  return array('view class year', 'create class year');
+}
+
+
+/**
+ * Implementation of hook_access().
+ */
+function class_year_access($op, $node) {
+  if ($op == 'create') {
+    return user_access('create class year');
+  }
+  if ($op == 'view') {
+    return user_access('view class year');
+  }
+}
+
+
+/**
+ * Implementation of hook_form().
+ */
+function class_year_form(&$node) {
+  $type = node_get_types('type', $node);
+  
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => check_plain($type->title_label),
+    '#required' => TRUE,
+    '#default_value' => $node->title,
+    '#weight' => -5
+  );
+  
+
+ // $form['og_website'] = array();
+
+  $form['og_register'] = array('#type' => 'value', '#value' => 0);
+  $form['og_directory'] = array('#type' => 'value', '#value' => 1);
+
+  $form['og_selective'] = array(
+    '#type' => 'value', 
+    '#value' => $node->og_selective ? $node->og_selective : variable_get('og_content_type_selective_class_year', OG_INVITE_ONLY), 
+  );
+
+  return $form;
+}
+
+
+/**
+ * Implementation of hook_user
+*/
+function class_year_user($op, &$edit, &$account, $category = NULL) {
+  global $user;
+
+  switch ($op) {
+    case 'register':
+    case 'form':
+      return _class_year_user_form($account);
+      break;
+    case 'validate':
+      _class_year_user_validate($edit, $account);
+      break;
+    case 'insert':
+      _class_year_user_insert($account, $edit);
+      break;
+    case 'update':
+      _class_year_user_delete($account->uid);
+      _class_year_user_insert($account, $edit);
+      break;
+    case 'delete':
+      _class_year_user_delete($account->uid);
+      break;
+    case 'load':        
+      $query = "SELECT * FROM {users_profile_student} WHERE uid = %d"; 
+      $student_profile = db_fetch_array(db_query($query, $account->uid));
+      if(!empty($student_profile)){
+      //  $account->roles_NUSL['is_student'] = TRUE;
+        $account->student = array(
+          'class_year_nid' => $student_profile['class_year_nid'],
+        );
+      }
+
+      break;
+    case 'view':
+      if ($account->student) {
+        $account->student['name'] = array(
+          '#type' => 'user_profile_item',
+          '#title' => 'name',
+          '#value' => $account->student[''],
+          '#weight' => -10,
+        );
+      }
+      if ($account->profile_address){
+        $account->content['address'] = array(
+          '#type' => 'user_profile_item',
+          '#title' => 'Address',
+          '#value' => $account->profile_address['display'],
+          '#weight' => -5,
+        );
+      }
+      break;
+  }
+}
+
+ 
+
+function _class_year_user_form($account){
+  $form['student'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Student',
+    '#collapsible' => TRUE,
+    '#collapsed'   => TRUE,
+    '#weight' => 10,
+  );
+/*
+  $form['student']['is_student'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'User is a Student',
+    '#default_value' => $account->student,
+  );
+*/
+  $class_years = array(NULL => 'none');
+  $class_years += class_year_get_active();
+  $form['student']['student_class_year_nid'] = array(
+    '#type' => 'select',
+    '#title' => 'Class Year',
+    '#options' => $class_years,
+    '#default_value' => $account->student ? $account->student['class_year_nid'] : NULL,
+  );
+
+  return $form;
+}
+
+
+function _class_year_user_validate($form, $account){
+ // print_r($form);die;
+}
+
+
+function _class_year_user_delete($uid){
+  $query = "SELECT class_year_nid FROM {users_profile_student} WHERE uid = %d";
+  $class_year_nid = db_result(db_query($query, $uid));
+
+  $query = "DELETE FROM {users_profile_student} WHERE uid = %d";
+  db_query($query, $uid);
+
+  og_delete_subscription($class_year_nid, $uid);
+}
+
+
+function _class_year_user_insert($account, $form){
+  if($form['student_class_year_nid'] == NULL){
+    _class_year_user_delete($account->uid);
+  }
+  else{
+    $query = "INSERT INTO {users_profile_student} (uid, class_year_nid) VALUES (%d, %d)";
+    db_query($query, $account->uid, $form['student_class_year_nid']); 
+    og_subscribe_user($form['student_class_year_nid'], $account);
+  }
+}
+
+
+function class_year_get_active(){
+  $query = "SELECT nid, title FROM {node} WHERE type = 'class_year' order by title desc";
+  $result = db_query($query);
+  $active_classes = array();
+  while($class_year = db_fetch_object($result)){
+    $active_classes[$class_year->nid] = $class_year->title; 
+  }
+  return $active_classes;
+}
+
+
+// page listing all class_years
+function class_year_listing_page(){
+  $header = array(
+    array(
+      'data'  => 'Name',
+      'field' => 'title',
+    ),
+  );//header
+ 
+  $query = "SELECT n.nid, n.title FROM {node} n INNER JOIN {class_year} d ON n.nid = d.nid";
+  $query .= tablesort_sql($header);
+  $result = db_query($query);
+
+  while($class_year = db_fetch_object($result)){
+    $rows[] = array(
+      l($class_year->title, "node/$class_year->nid"),
+    ); 
+  }  
+
+  // If we have rows for a table, theme the table
+  //    otherwise set output to a message
+  if ( count($rows) ) {
+    $output = theme('table', $header, $rows);
+  }
+  else {
+    $output = "No class years were found";
+  }
+   
+  // And finally, produce the page
+  print theme('page', $output);
+}
+
+
+/**
+ * Implementation of hook_form_alter()
+*/
+function class_year_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form['#node']) && $form_id == $form['#node']->type .'_node_form') {
+    $node = $form['#node'];
+    if($node->type == 'class_year'){
+      unset($form['menu']);
+      unset($form['comment_settings']);
+      unset($form['revision_information']);
+      unset($form['author']);
+      $form['author']['name'] = array(
+        '#type'  => 'value',
+        '#value' => $node->name ? $node->name : '',
+      );
+      $form['author']['date'] = array(
+        '#type'  => 'value',
+        '#value' => $node->date ? $node->date : '',
+      );
+      unset($form['options']);
+      $form['options']['status'] = array(
+        '#type'  => 'value',
+        '#value' => $node->status,
+      );
+      $form['options']['promote'] = array(
+        '#type'  => 'value',
+        '#value' => $node->promote,
+      );
+      $form['options']['sticky'] = array(
+        '#type'  => 'value',
+        '#value' => $node->sticky,
+      );
+
+      $form['og_private'] = array('#type' => 'value', '#value' => 0);
+      
+    }//class_year
+  }
+}
+
+
+function class_year_form_node_type_form_alter(&$form, &$form_state) {
+  if (isset($form['#node_type']) && $form['#node_type']->type == 'class_year') {  
+    $form['og'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Organic groups'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#access' => user_access('administer organic groups'),
+    );
+    $form['og']['og_content_type_usage'] = array(
+      '#type' => 'value',
+      '#value' => 'group'
+    );
+
+
+    $options = array(
+      t('open - membership requests are accepted immediately.'), 
+      t('moderated - membership requests must be approved.'), 
+      t('invite only - membership must be created by an administrator.'), 
+      t('closed - membership is exclusively managed by an administrator.'),
+    );
+    $form['og']['og_content_type_selective'] = array(
+      '#type' => 'radios', 
+      '#title' => t('Membership requests'), 
+      '#required' => TRUE,
+      '#default_value' => variable_get('og_content_type_selective_class_year', OG_INVITE_ONLY),
+      '#options' => $options, 
+      '#description' => t('How should membership requests be handled in this group? When you select <em>closed</em>, users will not be able to join <strong>or</strong> leave.')
+    );
+
+  } 
+}
+
+
+
+/**
+ * Implementation of hook_insert().
+*/
+function class_year_insert($node){
+  $query = "INSERT INTO {class_year} (nid) VALUES (%d)";
+  db_query($query, $node->nid);
+  
+}
+
+
+
+
+function class_year_create_primary_link($node){
+  $plid = class_year_get_plid();
+  $item = array(
+    'link_title' => $node->title,
+    'link_path' => 'node/'. $node->nid,
+    'menu_name' => 'primary-links',
+    'module' => 'class_year',
+    'plid' => $plid,
+  );
+  menu_link_save($item);
+}
+
+
+function class_year_get_plid(){
+  //get menu link id for the class_year primary link to be used as the parent menu
+  $query = "SELECT mlid FROM {menu_links} WHERE menu_name = 'primary-links' and plid = 0 and module = 'class_year'";
+  return db_result(db_query($query));
+}
+
+
+/**
+ * Implement hook_enable()
+*/
+function class_year_enable(){
+  //set class_year nodes as group type
+  //putting this here, because it is not working in hook_install
+  variable_set('og_content_type_usage_class_year', 'group');
+}
+

@@ -1,0 +1,6 @@
+name = Mirrored Accounts
+description = "Allows an account to copy the group_access permissions of another account"
+package = "Organic groups"
+dependencies[] = og_group_access
+core = 6.x
+

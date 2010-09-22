@@ -1,0 +1,8 @@
+; $Id$
+
+name = class_year
+description = Class Year group type
+package = "NUSL"
+dependencies[] = og
+dependencies[] = views
+core = 6.x

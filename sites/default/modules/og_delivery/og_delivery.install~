@@ -1,0 +1,44 @@
+<?php
+
+// $Id$
+
+function og_delivery_install(){
+  drupal_install_schema('og_delivery');
+}
+
+function og_delivery_schema(){
+
+
+
+
+}
+  switch($GLOBALS['db_type']){
+    case 'mysql':
+    case 'mysqli':
+      db_query("CREATE TABLE {og_delivery} (
+        gid int NOT NULL,
+        can_send int NOT NULL default 1,
+        can_recieve int NOT NULL default 1,
+        is_moderated int NOT NULL default 1,
+        PRIMARY KEY (gid)
+        );"
+      );
+      db_query("CREATE TABLE {og_delivery_author} (
+        gid int NOT NULL,
+        nid int NOT NULL
+        );"
+      );
+      $success = TRUE;
+      break;
+    case 'pgsql':
+    default:
+      drupal_set_message(t('Unsupported Database'));
+  }//switch
+  
+  if($success) {
+    drupal_set_message(t('og_delivery tables installed successfully.'));
+  }
+  else{
+    drupal_set_message(t("The installation of og_delivery module was unsuccessful."), 'error');
+  }
+}

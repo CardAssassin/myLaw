@@ -1,0 +1,27 @@
+<?php
+
+// $Id$
+
+function daily_digest_install(){
+  drupal_install_schema('daily_digest');
+
+}
+
+
+function daily_digest_schema(){
+  $schema = array();
+
+  $schema['daily_digest'] = array(
+    'description'     => 'Accounts that receive daily digest',
+    'fields'          => array(
+      'uid'             => array(
+        'description'     => 'The User\'s Id',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+    'primary_key'        => array('uid'),
+  );
+  
+  return $schema;
+}

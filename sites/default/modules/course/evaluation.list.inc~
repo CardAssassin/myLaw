@@ -1,0 +1,492 @@
+<?php
+
+
+
+
+function evaluation_list_evaluations($form_state, $node){
+  if($node->type != 'course'){
+    return theme('evaluation_list_evaluations',$form);
+  }
+
+  $can_complete_initialization = evaluation_can_complete_initialization($node);
+  $can_submit_final = evaluation_can_submit_final($node);
+  $can_view_student_names = evaluation_can_view_student_names($node);
+  $can_unlock_evals = user_access('unlock evaluations');
+  $can_view_exam_type = user_access('set exam type');
+
+  $evaluations = array();
+  foreach(evaluation_get_evaluations($node->nid) as $eval_nid => $student_uid){
+    $evaluation_node = node_load($eval_nid);
+    $eval = array(
+      'nid' => $eval_nid,
+      'vid' => $evaluation_node->vid,
+      'can_update'  => evaluation_can_update($evaluation_node),
+      'exam_number' => $evaluation_node->exam_number,
+      'exam_type'   => $evaluation_node->exam_type,
+      'grade' => '',
+      'last_edited_count'     => 0,
+      'last_edited_timestamp' => 0,
+      'last_edited_uid'       => -1,
+      'final_timestamp'       => 0,
+      'final_uid'             => -1,
+      'final_count'           => 0,
+    );
+
+    if($can_view_student_names){
+      $eval['student_uid'] = $student_uid;
+    }
+
+    
+
+    if($evaluation_node->revision_count > 0){
+      $eval['grade']                 = $evaluation_node->grade;
+      $eval['last_edited_count']     = $evaluation_node->revision_count;
+      $eval['last_edited_timestamp'] = $evaluation_node->revision_timestamp;
+      $eval['last_edited_uid']       = $evaluation_node->revision_uid;
+
+      $eval['final_count'] = count($evaluation_node->final_submissions);
+      if($eval['final_count'] == 0){
+        //eval has not been submitted yet
+        if($can_submit_final){
+          $final_options[$eval_nid] = '';
+        }    
+      }
+      else{
+        $eval['final_timestamp'] = $evaluation_node->final_submissions[0]['timestamp'];
+        $eval['final_uid'] = $evaluation_node->final_submissions[0]['submitted_uid'];
+        $eval['final_vid'] = $evaluation_node->final_submissions[0]['vid'];
+    
+
+
+        //eval has been submitted, so it has the option to be unlocked
+        if($can_unlock_evals){
+          $lock_options[$eval_nid] = '';
+          $lock_values[$eval_nid] = $evaluation_node->is_locked ? '' : $eval_nid;
+        }
+      }
+    }
+    $evaluations[] = $eval;
+  }
+
+  $form['can_view_student_names'] = array(
+    '#type' => 'value',
+    '#value' => $can_view_student_names,
+  );
+
+  
+  $form['can_view_evaluations'] = array(
+    '#type' => 'value',
+    '#value' => evaluation_can_view_evaluations($node),
+  );
+
+  $form['can_view_exam_type'] = array(
+    '#type' => 'value',
+    '#value' => $can_view_exam_type,
+  );
+
+  $form['course_nid'] = array(
+    '#type' => 'value',
+    '#value' => $node->nid,
+  );
+
+  $form['evaluations'] = array(
+    '#type' => 'value',
+    '#value' => $evaluations,
+  );
+
+  if($can_submit_final && !empty($final_options)){
+    $form['final_checkboxes'] = array(
+      '#type' => 'checkboxes', 
+      '#options' => $final_options,
+    );
+
+    $form['submit_final'] = array(
+      '#type' => 'submit', 
+      '#value' => t('Submit Final')
+    );
+  }
+
+  if($can_unlock_evals && !empty($lock_options)){
+    $form['lock_checkboxes'] = array(
+      '#type' => 'checkboxes', 
+      '#options' => $lock_options,
+      '#default_value' => $lock_values,
+    );
+
+    $form['submit_locks'] = array(
+      '#type' => 'submit', 
+      '#value' => t('Set Locks')
+    );
+  }
+
+  if($can_complete_initialization){
+    $form['submit_initialize'] = array(
+      '#type' => 'submit', 
+      '#value' => t('Complete Initialization'),
+    );
+  }
+
+  
+  return $form;
+ // return theme('evaluation_list_evaluations',$form);
+}
+
+
+function evaluation_list_evaluations_submit($form, &$form_state) {
+  if(isset($form_state['clicked_button']['#post']['final_checkboxes'])){
+    module_load_include('inc', 'evaluation', 'evaluation.final');
+    foreach($form_state['clicked_button']['#post']['final_checkboxes'] as $eval_nid){
+      if($eval_nid != 0){
+        $eval = node_load($eval_nid);
+        $course = node_load($eval->author_group_nid);
+        $form_state = array();
+        $form_state['values'] = array(
+          'comment'     => "[FIRST SUBMISSION]",
+          'op'          => t('Submit')
+        );
+        drupal_execute('evaluation_finalize_form', $form_state, $eval, $course);
+      }
+    }
+  }
+
+
+  if($form_state['values']['op'] == 'Set Locks'){
+    foreach($form_state['values']['lock_checkboxes'] as $eval_nid => $val){
+      if($val == 0){
+        evaluation_lock($eval_nid);
+      }
+      else{
+        evaluation_unlock($eval_nid);
+      }
+    }
+  }
+
+  if($form_state['values']['op'] == 'Complete Initialization'){
+    
+    $form_state['redirect'] = "node/" . $form_state['values']['course_nid']. "/evaluations/initialize";
+   // print_r($form_state);die;
+  }
+
+}
+
+
+
+function theme_evaluation_list_evaluations($form){
+  $headers = array();
+  if($form['can_view_student_names']['#value']){
+    $header[] = array(
+      'data'  => 'Student Name',
+      'field' => 'student_name'
+    );
+  }
+  $header[] = array(
+    'data'  => 'Exam Number',
+    'field' => 'exam_number'
+  );
+  if($form['can_view_exam_type']['#value']){
+    $header[] = 'Type';
+  }
+  if($form['can_view_evaluations']['#value']){
+    $header[] = 'Grade';
+  }
+  $header[] = array(
+    'data'  => 'Last Edited',
+    'field' => 'last_edited'
+  );
+  $header[] = 'Final';
+  if(isset($form['submit_locks'])){
+    $header[] = 'Unlock';
+  }
+  if($form['can_view_evaluations']['#value']){
+    $header[] = 'Operations';
+  }
+        
+  $attributes = array(
+    'border'      => 1,
+    'cellspacing' => 0,
+    'cellpadding' => 5,
+  );
+
+
+  $rows = array();
+  foreach($form['evaluations']['#value'] as $eval){
+    if($eval['can_update']){
+      $operations = l('Edit', 'node/'.$eval['nid'].'/edit');
+    }
+    else{
+      $operations = '';
+    }
+    if($eval['last_edited_count'] > 0 && $form['can_view_evaluations']['#value'] && !(isset($eval['final_vid']) && $eval['final_vid'] == $eval['vid'])){
+      //make sure that there is a draft to be viewed since the last submitted final, and the user can view evaluations
+      $operations.= "<br>".l('View Draft', 'printpdf/'.$eval['nid'], array('attributes' => array('target' => '_BLANK')));
+    }
+
+    $row = array();
+    if($form['can_view_student_names']['#value']){
+      $student_account = user_load($eval['student_uid']);
+      $row['student_name'] = array(
+        'data' => theme('username', $student_account, 'double', 1),
+        'name' => theme('username', $student_account, 'nolink'),
+      );
+    }
+    $row['exam_number'] = $eval['exam_number'];
+  
+    if($form['can_view_exam_type']['#value']){
+      $row['type'] = $eval['exam_type'];
+    }
+
+    if($form['can_view_evaluations']['#value']){
+      $row['grade'] = $eval['grade'];
+    }
+
+    if($eval['last_edited_count'] == 0){
+      $row['last_edited'] = '';
+      $row['Final'] = '';
+      if(isset($form['submit_locks'])){
+        $row['Unlock'] = '';
+      }
+    }
+    else{
+      $row['last_edited'] = array(
+        "data" => l($eval['last_edited_count'] . " revisions", '/node/'.$eval['nid'] .'/revisions') . "<br>" . format_date($eval['last_edited_timestamp'], "small") ."<br>" . theme('username', user_load($eval['last_edited_uid']), 'normal', 1), 
+        "timestamp" => $eval['last_edited_timestamp'],
+      );
+
+      //if(isset($form['final_checkboxes'][$eval['nid']])){
+      if($eval['final_count'] == 0){
+        $row['Final'] = drupal_render($form['final_checkboxes'][$eval['nid']]);
+        if(isset($form['submit_locks'])){
+          $row['Unlock'] = '';
+        }
+      }
+      else{
+        if($form['can_view_evaluations']['#value']){
+          $operations.= "<br>".l('View Final', 'node/'.$form['course_nid']['#value'].'/og/evaluation/'.$eval['nid'].'/view_final');
+        }
+        if($eval['final_count'] == 1){
+          $row['Final'] = '1 submission' .'<br>';
+        }
+        else{
+          $row['Final'] = $eval['final_count'] .' submissions' .'<br>';
+        }
+        $row['Final'] .= format_date($eval['final_timestamp'], "small") . '<br>';
+        $row['Final'] .= theme('username', user_load($eval['final_uid']), 'normal', 1);
+
+        if(isset($form['submit_locks'])){
+          $row['Unlock'] = drupal_render($form['lock_checkboxes'][$eval['nid']]); 
+        }
+
+      }
+    }
+    if($form['can_view_evaluations']['#value']){
+      $row['Operations'] = $operations;
+    }
+    
+    $rows[] = $row;
+  }
+  
+ 
+  _evaluation_sort_evaluations($header, $rows);
+
+  $row = array('&nbsp', '&nbsp');
+
+  if($form['can_view_student_names']['#value']){
+    //student name column
+    $row[] = '&nbsp';
+  }
+  if($form['can_view_exam_type']['#value']){
+    //type column
+    $row[] = '&nbsp';
+  }
+  if($form['can_view_evaluations']['#value']){
+    //grade column
+    $row[] = '&nbsp';
+  }
+  if(isset($form['submit_final'])){
+    $row[] = drupal_render($form['submit_final']);
+  }
+  else{
+    $row[] = '&nbsp';
+  }
+  if(isset($form['submit_locks'])){
+    $row[] = drupal_render($form['submit_locks']);
+  }
+  if($form['can_view_evaluations']['#value']){
+    //operations column
+    $row[] = '&nbsp';
+  }
+  $rows[] = $row;
+
+
+  $output = theme('table', $header, $rows, $attributes);
+  $output.= drupal_render($form);
+  return $output;
+}
+
+
+//include print_pdf to produce final pdf to store in database
+require_once(drupal_get_path('module', 'print') .'/print_pdf/print_pdf.pages.inc');
+
+function evaluation_list_evaluations_pdf($course){
+  $can_view_student_names = evaluation_can_view_student_names($course);
+  $can_view_exam_type = user_access('set exam type');
+  $can_view_evaluations = evaluation_can_view_evaluations($course);
+
+  $evaluations = array();
+  foreach(evaluation_get_evaluations($course->nid) as $eval_nid => $student_uid){
+    $evaluation_node = node_load($eval_nid);
+    $eval = array(
+      'nid' => $eval_nid,
+      'vid' => $evaluation_node->vid,
+      'can_update'  => evaluation_can_update($evaluation_node),
+      'exam_number' => $evaluation_node->exam_number,
+      'exam_type'   => $evaluation_node->exam_type,
+      'grade' => '',
+      'last_edited_count'     => 0,
+      'last_edited_date'      => '',
+      'last_edited_user'      => '',
+      'final_date'            => '',
+      'final_user'            => '',
+      'final_count'           => 0,
+    );
+
+    if($can_view_student_names){
+      $eval['student'] = theme('username', user_load($student_uid), 'nolink', 1);
+    }
+
+    if($evaluation_node->revision_count > 0){
+      $eval['grade']                 = $evaluation_node->grade;
+      $eval['last_edited_count']     = $evaluation_node->revision_count;
+      $eval['last_edited_date']      = format_date($evaluation_node->revision_timestamp, "small");
+      $eval['last_edited_user']       = theme('username', user_load($evaluation_node->revision_uid), 'nolink', 1);
+
+      $eval['final_count'] = count($evaluation_node->final_submissions);
+      if($eval['final_count'] != 0){
+        $eval['final_date'] = format_date($evaluation_node->final_submissions[0]['timestamp'], "small");
+        $eval['final_user'] = theme('username', user_load($evaluation_node->final_submissions[0]['submitted_uid']), 'nolink', 1);
+      }
+    }
+    $evaluations[] = $eval;
+  }
+
+  $print = array(
+    'course_name' => $course->title, 
+    'course_number' => $course->course_number, 
+    'semester' => $course->semester_name,
+    'can_view_student_names' => $can_view_student_names,
+    'can_view_exam_type' => $can_view_exam_type,
+    'can_view_evaluations' => $can_view_evaluations,
+    'evaluations' => $evaluations,
+  );
+
+  $evaluation_list_template = drupal_get_path('module', 'course') .'/evaluation-list.tpl.php';
+  $filename = str_replace(" ", "", $course->semester_name) . "_" . $course->course_number;
+  
+  print_pdf_custom_template($evaluation_list_template, $print, $filename);
+}
+
+
+
+//sorting function for the exam_list_evaluations
+function _evaluation_sort_evaluations($header, &$rows){
+  $sort = tablesort_get_sort($header);
+  $order = tablesort_get_order($header);
+
+  switch($order['sql']){
+  case 'student_name':
+  case 'exam_number':
+  case 'last_edited':
+    usort($rows, "_evaluation_sort_evaluations_".$order['sql']."_".$sort);
+  }
+}
+
+//helper function for _exam_sort_evaluations()
+function _evaluation_sort_evaluations_student_name_asc($a, $b){
+  return($a['student_name']['name'] > $b['student_name']['name']);
+}
+
+
+//helper function for _exam_sort_evaluations()
+function _evaluation_sort_evaluations_student_name_desc($a, $b){
+  return !_evaluation_sort_evaluations_student_name_asc($a, $b);
+ // return($a['student_name'] < $b['student_name']);
+}
+
+
+
+//helper function for _exam_sort_evaluations()
+function _evaluation_sort_evaluations_exam_number_asc($a, $b){
+  return($a['exam_number'] > $b['exam_number']);
+}
+
+
+
+//helper function for _exam_sort_evaluations()
+function _evaluation_sort_evaluations_exam_number_desc($a, $b){
+  return($a['exam_number'] < $b['exam_number']);
+}
+
+
+//helper function for _exam_sort_evaluations()
+function _evaluation_sort_evaluations_last_edited_asc($a, $b){
+  return($a['last_edited']['timestamp'] > $b['last_edited']['timestamp']);
+}
+
+
+//helper function for _exam_sort_evaluations()
+function _evaluation_sort_evaluations_last_edited_desc($a, $b){
+  return($a['last_edited']['timestamp'] < $b['last_edited']['timestamp']);
+}
+
+
+function evaluation_can_view_evaluations($course){
+  if(user_access('view all evaluations')){
+    return TRUE;
+  }
+  if(og_group_access_get_access('view evaluation', $course)){
+    return TRUE;
+  }
+  return FALSE;
+}
+
+
+
+
+
+
+
+
+
+function evaluation_complete_initialization_confirm($form_state, $course){
+  $form['course_nid'] = array(
+    '#type' => 'value',
+    '#value' => $course->nid,
+  );
+
+  return confirm_form($form, 
+    t('Are you sure you want to complete the initialization?  By doing so you will not be able to reduce any of the grades you have entered.'),
+    "node/" .$course->nid."/evaluations/list", 
+    t('Are you sure you want to complete the initialization?  By doing so you will not be able to reduce any of the grades you have entered.'),
+    t('Confirm'), 
+    t('Cancel')
+  );
+}
+
+
+function evaluation_complete_initialization_confirm_submit($form, &$form_state) {
+  $query = "UPDATE {courses} set evaluations_initialized = 1 WHERE nid = %d";
+  db_query($query, $form_state['values']['course_nid']);
+  $form_state['redirect'] = "node/" . $form_state['values']['course_nid']."/evaluations/list";
+}
+
+
+
+
+
+
+
+
+
+
+
+

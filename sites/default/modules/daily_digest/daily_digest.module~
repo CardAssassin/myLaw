@@ -1,0 +1,204 @@
+<?php
+
+function daily_digest_menu(){
+  $items = array();
+
+  $items['admin/settings/daily_digest'] = array(
+    'title' => 'Daily Digest settings',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('daily_digest_settings'),
+  );
+
+  return $items;
+}
+
+
+function daily_digest_settings(){
+  $form['daily_digest_hour'] = array(
+    '#type' => 'select',
+    '#title' => 'Hour',
+    '#options' => array(0 => '00:00', 1 => '01:00', 2 => '02:00', 3 => '03:00', 4 => '04:00', 5 => '05:00', 6 => '06:00', 7 => '07:00', 8 => '08:00', 9 => '09:00', 10 => '10:00', 11 => '11:00', 12 => '12:00',  13 => '13:00', 14 => '14:00', 15 => '15:00', 16 => '16:00', 17 => '17:00', 18 => '18:00', 19 => '19:00', 20 => '20:00', 21 => '21:00', 22 => '22:00', 23 => '23:00'),
+    '#default_value' => variable_get('daily_digest_hour', '00:00'),
+    '#description' => 'Select the hour of the day to automatically send the daily digest. The first cron run after this hour will trigger the mailing.',
+  );
+  return system_settings_form($form);
+}
+
+
+function daily_digest_cron(){
+  $current_time = time();
+  $next_time_send = variable_get('daily_digest_next_time_send', 0);
+  if($next_time_send && $next_time_send < $current_time){
+    $last_time_send = variable_get('daily_digest_last_time_sent', 0);
+    daily_digest_send_mail($last_time_sent);
+    
+  }
+  if($next_time_send == 0 || $next_time_send < $current_time){
+    variable_set('daily_digest_last_time_sent', $current_time);
+    
+//    $timezone = variable_get('date_default_timezone', 0);
+    $hour = variable_get('daily_digest_hour',0);
+ //   $adjusted_last_time_sent = $last_time_sent + $timezone;
+    $next_time_send = gmmktime($hour, 0, 0, gmdate('m', $last_time_sent), gmdate('d', $last_time_sent) + 1, gmdate('Y', $last_time_sent));
+    variable_set('daily_digest_next_time_send', $next_time_send);
+  }
+
+}
+
+
+/**
+ * Implementation of hook_user
+ */
+function daily_digest_user($op, &$edit, &$account, $category = NULL) {
+  global $user;
+
+  switch ($op) {
+  case 'register':
+  case 'form':
+    return _daily_digest_user_form($account);
+  case 'validate':
+    break;
+  case 'insert':
+  case 'update':
+    return _daily_digest_update($account->uid, $edit);
+  case 'delete':
+    return _daily_digest_delete($account->uid);
+  case 'load':
+    $query = "SELECT count(uid) FROM {daily_digest} WHERE uid = %d";
+    $account->daily_digest = db_result(db_query($query, $account->uid));
+    break;
+  case 'view':
+    $account->content['daily_digest'] = array(
+      '#type' => 'user_profile_item',
+      '#title' => 'Daily Digest',
+      '#value' => $account->daily_digest ? 'Yes':'No',
+      '#weight' => -15,
+    );
+    break;
+  }
+}
+
+
+function _daily_digest_user_form($account){
+  $form['daily_digest'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Daily Digest',
+  );
+
+  $form['daily_digest']['receive_daily_digest'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'Receive Daily Digest',
+    '#default_value' => $account->daily_digest,
+  );
+  return $form;
+}
+
+
+function _daily_digest_update($uid, $form){
+  _daily_digest_delete($uid);
+  if($form['receive_daily_digest']){
+    $query = "INSERT INTO {daily_digest} (uid) VALUES %d";
+    db_query($query, $uid);
+  }
+}
+
+function _daily_digest_delete($uid){
+  $query = "DELETE FROM {daily_digest} WHERE uid = %d";
+  db_query($query, $uid);
+}
+
+
+
+
+function daily_digest_get_accounts(){
+  $accounts = array();
+  $query = "SELECT uid FROM {daily_digest}";
+  $result = db_query($query);
+  while($data = db_fetch_object($result)){
+    $accounts[] = $data->uid;
+  }
+  return $accounts;
+}
+
+
+function daily_digest_send_mail($last_timestamp){
+  watchdog('daily_digest', 'send_mail', array(), WATCHDOG_WARNING);
+//  $headers = "From: myLAW <apache@mylaw.slaw.neu.edu>\n" . "MIME-Version: 1.0\n" . "Content-type: text; charset=ISO-8859-1";
+  foreach(daily_digest_get_accounts() as $uid){
+    $account = user_load($uid);
+    $params = array('account' => $account, 'last_timestamp' => $last_timestamp);
+    drupal_mail('daily_digest', 'send', $account->mail, user_preferred_language($account), $params);
+    watchdog('daily_digest', 'drupal_mail', array(), WATCHDOG_WARNING);
+ //   drupal_mail_send($message);
+ //   mail($account->mail, 'myLaw Daily Digest', $content, $headers);
+  }
+
+}
+
+function daily_digest_mail($key, &$message, $params) {
+  switch($key) {
+  case 'send':
+    watchdog('daily_digest', 'mail to %mail', array('%mail' => $params['account']->mail), WATCHDOG_WARNING);
+    $message['subject'] = t('myLAW Daily Digest', $variables, $language->language);
+    $message['body'] = "";
+    
+    $message['body'] .= _daily_digest_announcements($params['last_timestamp'], $params['account']);
+    $message['body'] .= _daily_digest_discussion_topics($params['last_timestamp'], $params['account']);
+    $message['body'] .= _daily_digest_classifieds($params['last_timestamp'], $params['account']);
+    break;
+  }
+}
+
+
+function _daily_digest_announcements($last_timestamp, $account){
+  $content = "=====================\nANNOUNCEMENTS\n=====================\n\n";
+  $query = "SELECT n.nid, n.title, an.title as author_group_name FROM {node} n INNER JOIN {og_author} a ON n.nid = a.nid INNER JOIN {node} an ON a.author_group_nid = an.nid WHERE n.type = 'announcement' AND n.created > %d ORDER BY an.title, n.title";
+  $result = db_query($query, $last_timestamp);
+  $author_group_name = '';
+  while($data = db_fetch_object($result)){
+    $node = node_load($data->nid);
+    if(node_access('view', $node, $account)){
+      if($author_group_name != $data->author_group_name){
+        $author_group_name = $data->author_group_name;
+        $content .= "--------------------\n$author_group_name\n--------------------\n";
+      }
+      $content .= "  $data->title\n  ".url('node/'.$data->nid)."\n\n";
+    }
+  }
+  return $content;
+}
+
+
+function _daily_digest_discussion_topics($last_timestamp, $account){
+  $content = "=====================\nDISCUSSION TOPICS\n=====================\n\n";
+  $query = "SELECT nid, title FROM {node} WHERE type = 'discussion_topic' AND created > %d ORDER BY title";
+  $result = db_query($query, $last_timestamp);
+  while($data = db_fetch_object($result)){
+    $node = node_load($data->nid);
+    if(node_access('view', $node, $account)){
+      $content .= "  $data->title\n  ".url('node/'.$data->nid)."\n\n";
+    }
+  }
+  return $content;
+}
+
+
+function _daily_digest_classifieds($last_timestamp, $account){
+  $content = "=====================\nCLASSIFIEDS\n=====================\n\n";
+  $query = "SELECT n.nid, n.title, c.category FROM {node} n INNER JOIN {classifieds} c ON n.nid = c.nid WHERE n.created > %d ORDER BY c.category, n.title";
+  $result = db_query($query, $last_timestamp);
+  $category = '';
+  while($data = db_fetch_object($result)){
+    $node = node_load($data->nid);
+    if(node_access('view', $node, $account)){
+      if($category != $data->category){
+        $category = $data->category;
+        $content .= "--------------------\n$category\n--------------------\n";
+      }
+      $content .= "  $data->title\n  ".url('node/'.$data->nid)."\n\n";
+    }
+  }
+  return $content;
+}

@@ -1,0 +1,112 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Provides an "announcement" node type for posting information from a single form
+ */
+
+
+/**
+ * Implementation of hook_node_info().
+*/
+function important_announcement_node_info(){
+  return array(
+    'important_announcement' => array(
+      'name'   => t('Important Announcement'),
+      'module' => 'important_announcement',
+      'description' => "post an important announcement",
+      'has_title'   => TRUE,
+      'title_label' => t('Title'),
+      'has_teaser'  => TRUE,
+      'teaser_label' => t('Teaser'),
+      'has_body'    => TRUE,
+      'body_label'  => t('Body')
+    )
+  );
+}
+
+
+
+/**
+ * Implementation of hook_perm
+*/
+function important_announcement_perm(){
+  return array('create important announcement');
+}
+
+
+/**
+ * Implementation of hook_access().
+ */
+function important_announcement_access($op, $node) {
+  global $user;
+
+  if ($op == 'create' || $op == 'update' || $op == 'delete') {
+    return user_access('create important announcement');
+  }
+
+}
+
+
+
+
+
+/**
+ * Implementation of hook_form().
+ */
+function important_announcement_form(&$node) {
+  $type = node_get_types('type', $node);
+  
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => check_plain($type->title_label),
+    '#required' => TRUE,
+    '#default_value' => $node->title,
+    '#weight' => -1
+  );
+ 
+  
+  $form['body_field']['teaser'] = array(
+    '#type'   => 'textarea',
+    '#title'  => check_plain($type->teaser_label),
+    '#default_value' => $node->teaser,
+    '#rows'          => 3,
+    '#required'      => TRUE
+  );
+
+  $form['body_field']['body'] = array(
+    '#type'   => 'textarea',
+    '#title'  => check_plain($type->body_label),
+    '#default_value' => $node->body,
+    '#rows'          => 4,
+    '#required'      => TRUE,
+    
+  );
+  $form['body_field']['format'] = filter_form($node->format);
+  $form['body_field']['#prefix'] = '<div class="body-field-wrapper">';
+  $form['body_field']['#suffix'] = '</div>';
+  
+
+  return $form;
+}
+
+
+function important_announcement_link($type, $object, $teaser = FALSE){
+  $links = array();
+  if(!$teaser && $type == 'important-announcement' && user_access('create important announcement')){
+    $links[] = array(
+      'title' => t('Delete'), 
+      'href' => 'node/'. $object->nid.'/delete',
+    );
+  }
+  return $links;
+}
+
+
+function important_announcement_views_api() {
+  return array(
+    'api' => 2,
+  );
+}
+

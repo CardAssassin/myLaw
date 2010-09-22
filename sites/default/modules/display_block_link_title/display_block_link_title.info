@@ -1,0 +1,3 @@
+name = Display block link title module
+description = Creates a block display within views which allows the title to become a link
+core = 6.x

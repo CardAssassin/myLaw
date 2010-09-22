@@ -1,0 +1,19 @@
+<H1><?php print $title; ?></H1>
+
+
+        <?php print $node->content['body']['#value']; ?>
+        <?php print $node->content['book_navigation']['#value']; ?>
+
+<?php if ($submitted): ?>
+        <span class='submitted'>
+        <?php print format_date($node->created, 'custom', "F jS, Y"); ?>
+        </span>
+      <?php endif; ?> 
+
+
+      <? if ($links): ?>
+        <div class="links">
+          <?php print $links; ?>
+        </div>
+      <?php endif; ?>
+

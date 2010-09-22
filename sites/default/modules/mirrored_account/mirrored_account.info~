@@ -1,0 +1,5 @@
+name = NUSL user profile
+description = "Adds user profile"
+package = "NUSL"
+core = 6.x
+

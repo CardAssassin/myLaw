@@ -1,0 +1,283 @@
+<?php
+
+
+
+
+/**
+ * Implementation of hook_node_info().
+*/
+function student_program_node_info(){
+  return array(
+    'student_program' => array(
+      'name'   => t('Student Program'),
+      'module' => 'student_program',
+      'description' => "Student Program",
+      'has_title'   => TRUE,
+      'title_label' => t('Student Program name'),
+      'has_teaser'  => FALSE,
+      'has_body'    => TRUE,
+      'body_label'  => t('Homepage'),
+    )
+  );
+}
+
+
+
+
+/**
+ * Implementations of hook_group_access_menuitems()
+function student_program_group_access_menuitems(){
+  $items['node/%node/og/selective'] = array(
+    'title' => 'Membership requests',
+    'description' => 'How should membership requests be handled in this group?',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('student_program_selective_form', 1),
+    'access callback' => 'student_program_selective_access_callback', 
+    'access arguments' => array(1),
+  );
+  return $items;
+}
+*/
+
+
+
+function student_program_selective_access_callback($group){
+  return ($group->type == 'student_program' && og_is_group_admin($group));
+}
+
+
+/**
+ * Implementations of hook_group_access_create_links()
+*/
+function student_program_group_access_create_links($group){
+  $links = array();
+  if(student_program_selective_access_callback($group)){
+    $links[] = l('Membership Requests', 'node/'. $group->nid . '/og/selective');
+  }
+  return $links;
+}
+
+/**
+ * Implementation of hook_perm
+*/
+function student_program_perm(){
+  return array('view student program', 'create student program');
+}
+
+
+/**
+ * Implementation of hook_group_access_view_access_level() of og_group_access
+ */
+function student_program_group_access_view_access_level($group){
+  return $group->perms['view group'];
+}
+
+
+
+/**
+ * Implementation of hook_access().
+ */
+function student_program_access($op, $node) {
+  if ($op == 'create') {
+    return user_access('create student program');
+  }
+  if ($op == 'view') {
+    return user_access('view student program');
+  }
+}
+
+
+/**
+ * Implementation of hook_form().
+ */
+function student_program_form(&$node) {
+/*
+   $item2 = array(
+      'link_title' => 'Programs',
+      'link_path' => 'student-programs',
+      'menu_name' => 'primary-links',
+      'module' => 'student_program',
+      'plid' => 0,
+    );
+    menu_link_save($item2);
+*/
+
+  $type = node_get_types('type', $node);
+  
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => check_plain($type->title_label),
+    '#required' => TRUE,
+    '#default_value' => $node->title,
+    '#weight' => -5
+  );
+  
+  unset($form['menu']);
+
+  $form['body_field']['body'] = array(
+    '#type'   => 'textarea',
+    '#title'  => check_plain($type->body_label),
+    '#default_value' => $node->body,
+    '#rows'          => 4,
+    '#required'      => FALSE,
+    '#weight'        => -3
+  );
+
+  $form['body_field']['format'] = filter_form($node->format);
+  $form['body_field']['#prefix'] = '<div class="body-field-wrapper">';
+  $form['body_field']['#suffix'] = '</div>';
+
+ // $form['og_website'] = array();
+
+  $form['og_register'] = array('#type' => 'value', '#value' => 0);
+  $form['og_directory'] = array('#type' => 'value', '#value' => 1);
+
+
+  return $form;
+}
+
+
+function student_program_nodeapi(&$node, $op, $teaser, $page) {
+  switch ($op) {
+  case 'view':
+    if (!$teaser && $page) {
+      if(isset($node->author_group_nid)){
+        $group = node_load($node->author_group_nid);
+      }
+      else{
+        $group = $node;
+      }
+      if($group->type == 'student_program'){
+        $bc = array();
+        $bc[] = l(t('Home'), "");
+        $bc[] = l(t('Student Programs'), 'student-programs');
+        $bc[] = l($group->title, 'node/'.$group->nid);
+        drupal_set_breadcrumb($bc);
+      }
+    } 
+  }
+}
+
+
+
+
+
+function student_program_selective_form_submit($form, &$form_state){
+  $query = "UPDATE {og} SET og_selective = %d WHERE nid = %d";
+  db_query($query, $form_state['values']['og_selective'], $form_state['values']['nid']);
+}
+
+
+// page listing all student_programs
+function student_program_listing_page(){
+  $header = array(
+    array(
+      'data'  => 'Name',
+      'field' => 'title',
+    ),
+  );//header
+ 
+    $rows[] = array();
+
+  // If we have rows for a table, theme the table
+  //    otherwise set output to a message
+  if ( count($rows) ) {
+    $output = theme('table', $header, $rows);
+  }
+  else {
+    $output = "No student programs were found";
+  }
+   
+  // And finally, produce the page
+  print theme('page', $output);
+}
+
+
+/**
+ * Implementation of hook_form_alter()
+*/
+function student_program_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form['#node']) && $form_id == $form['#node']->type .'_node_form') {
+    $node = $form['#node'];
+    if($node->type == 'student_program'){
+      unset($form['menu']);
+      unset($form['comment_settings']);
+      unset($form['revision_information']);
+      unset($form['author']);
+      $form['author']['name'] = array(
+        '#type'  => 'value',
+        '#value' => $node->name ? $node->name : '',
+      );
+      $form['author']['date'] = array(
+        '#type'  => 'value',
+        '#value' => $node->date ? $node->date : '',
+      );
+      unset($form['options']);
+      $form['options']['status'] = array(
+        '#type'  => 'value',
+        '#value' => $node->status,
+      );
+      $form['options']['promote'] = array(
+        '#type'  => 'value',
+        '#value' => $node->promote,
+      );
+      $form['options']['sticky'] = array(
+        '#type'  => 'value',
+        '#value' => $node->sticky,
+      );
+
+      
+    }//student_program
+  }
+}
+
+
+
+
+/**
+ * Implementation of hook_insert().
+*/
+function student_program_insert($node){
+  //add primary link
+  student_program_create_primary_link($node);
+}
+
+
+
+
+function student_program_create_primary_link($node){
+  $plid = student_program_get_plid();
+  $item = array(
+    'link_title' => $node->title,
+    'link_path' => 'node/'. $node->nid,
+    'menu_name' => 'primary-links',
+    'module' => 'student_program',
+    'plid' => $plid,
+  );
+  menu_link_save($item);
+}
+
+
+function student_program_get_plid(){
+  //get menu link id for the student_program primary link to be used as the parent menu
+  $query = "SELECT mlid FROM {menu_links} WHERE menu_name = 'primary-links' and plid = 0 and link_path = 'student-programs' and router_path = 'student-programs'";
+  return db_result(db_query($query));
+}
+
+
+/**
+ * Implement hook_enable()
+*/
+function student_program_enable(){
+  //set student group nodes as group type
+  //putting this here, because it is not working in hook_install
+  variable_set('og_content_type_usage_student_program', 'group');
+}
+
+
+function student_program_views_api() {
+  return array(
+    'api' => 2,
+  );
+}
+

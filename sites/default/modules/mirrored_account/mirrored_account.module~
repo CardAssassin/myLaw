@@ -1,0 +1,69 @@
+<?php
+
+//$Id$
+
+
+
+/**
+ * Implementation of hook_perm()
+ */
+function mirrored_account_perm(){
+  return array('mirror host', 'mirror parasite');
+}
+
+
+
+/**
+ * Implementation of hook_user
+ */
+function mirrored_account_user($op, &$edit, &$account, $category = NULL) {
+  switch ($op) {
+  case 'register':
+  case 'form':
+    break;
+  case 'validate':
+    break;
+  case 'insert':
+    break;
+  case 'update':
+    break;
+  case 'delete':
+    break;
+  case 'load':
+    if(user_access('mirror parasite', $account)){
+      $query = "SELECT host_uid FROM {mirrored_uids} WHERE parasite_uid = %d";
+      $account->mirrored_uids = db_fetch_array(db_query($query, $account->uid));
+    }
+    break;
+  case 'view':
+    break;
+  }
+}
+
+
+function mirrored_account_insert($host_uid, $parasite_uid){
+  $host_account = user_load($host_uid);
+  $parasite_account = user_load($parasite_uid);
+  if(user_access('mirror host', $host_account) && user_access('mirror parasite', $parasite_account)){
+    $query = "INSERT INTO {mirrored_uids} (parasite_uid, host_uid) VALUES(%d , %d)";
+    db_query($query, $parasite_uid, $host_uid);
+  }
+}
+
+
+function mirrored_account_remove($host_uid, $parasite_uid){
+  $query = "DELETE FROM {mirrored_uids} WHERE parasite_uid = %d AND host_uid = %d";
+  db_query($query, $parasite_uid);
+}
+
+
+function mirrored_account_remove_hosts($parasite_uid){
+  $query = "DELETE FROM {mirrored_uids} WHERE parasite_uid = %d";
+  db_query($query, $parasite_uid);
+}
+
+
+function mirrored_account_remove_parasites($host_uid){
+  $query = "DELETE FROM {mirrored_uids} WHERE host_uid = %d";
+  db_query($query, $host_uid);
+}

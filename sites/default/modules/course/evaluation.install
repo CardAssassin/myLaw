@@ -1,0 +1,76 @@
+<?php
+
+// $Id$
+
+function evaluation_install(){
+  drupal_install_schema('evaluation');
+
+}
+
+
+function evaluation_schema(){
+  $schema = array();
+
+  $schema['course_evaluations'] = array(
+    'description'     => 'Stores information about each evaluation',
+    'fields'          => array(
+      'evaluation_nid' => array(
+        'description'     => 'The evaluation\'s {node}.nid',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'student_nuid'     => array(
+        'description'     => 'The student\'s nuid',
+        'type'            => 'varchar',
+        'length'          => 9,
+        'not null'        => TRUE,
+      ),
+      'student'          => array(
+        'description'    => 'Student\'s name',
+        'type'           => 'varchar',
+        'length'           => 255,
+        'not null'       => TRUE,
+      ),
+      'is_locked'      => array(
+        'description'     => 'Determines if the evaluation can be edited',
+        'type'            => 'int',
+        'size'            => 'tiny',
+      ),
+      'manual_entry'  => array(
+        'description'  => 'True if the evaluation was created or edited manually, false if it was created by Banner',
+        'type'         => 'int',
+        'size'         => 'tiny',
+        'not null'     => TRUE,
+      ),
+
+    ),
+    'primary_key'        => array('evaluation_nid')
+  );
+
+  $schema['course_evaluation_grades'] = array(
+    'description'     => 'Grade values and private notes to the student for evaluation revisions',
+    'fields'          => array(
+      'vid'             => array(
+        'description'     => 'The evaluation\'s {node_revisions}.vid',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'grade_value'     => array(
+        'description'     => 'The integer representation of the evaluation\'s grade',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'notes'     => array(
+        'description'     => 'Unofficial notes to the student',
+        'type'            => 'longtext',
+        'not null'        => TRUE,
+      ),
+    ),
+    'primary_key'        => array('vid')
+  );
+  
+  return $schema;
+}

@@ -1,0 +1,172 @@
+<?php
+// $Id$
+
+
+/**
+ * Implementation of hook_perm()
+*/
+function hide_nodes_perm() {
+  return array('mark nodes hidden', 'administer hidden nodes');
+}
+
+
+/**
+ * Implementation of hook_menu().
+ */
+function hide_nodes_menu() {
+  global $user;
+  $items = array();
+
+  $items['admin/settings/hide_nodes'] = array(
+      'title'            => 'Hide nodes',
+      'description'      => 'Settings for hidding nodes',
+      'page callback'    => 'drupal_get_form',
+      'page arguments'   => array('hide_nodes_settings'),
+      'type'             => MENU_NORMAL_ITEM,
+      'access callback'  => 'user_access',
+      'access arguments' => array('administer hidden nodes')
+    );
+
+    $items['node/%node/hide'] = array(
+      'page callback' => 'hide_nodes_hide',
+      'page arguments' => array(1),
+      'type'     => MENU_CALLBACK,
+      'access callback'   => 'user_access',
+      'access arguments' => array('mark node hidden'),
+    );
+
+    $items['node/%node/unhide'] = array(
+      'page callback' => 'hide_nodes_unhide',
+      'page arguments' => array(1),
+      'type'     => MENU_CALLBACK,
+      'access callback'   => 'user_access',
+      'access arguments' => array('mark node hidden'),
+    );
+
+  return $items;
+}
+
+
+/**
+ * Implementation of hook_user().
+ */
+function hide_nodes_user($op, &$edit, &$user, $category = null) {
+  switch ($op) {
+    case 'delete':
+      db_query("DELETE FROM {hide_nodes} WHERE uid = %d", $user->uid);
+      break;
+  }
+}
+
+
+/**
+ * Implementation of hook_nodeapi().
+ */
+function hide_nodes_nodeapi(&$node, $op, $teaser = null, $page = null) {
+  switch ($op) {
+    case 'delete':
+      // Delete all entries of the node being deleted.
+      db_query("DELETE FROM {hide_nodes} WHERE nid = %d", $node->nid);
+      break;
+  }
+}
+
+
+/**
+ * Implementation of hook_links().
+ */
+function hide_nodes_link($type, $node = null, $teaser = false) {
+  $links = array();
+
+  if (hide_nodes_is_hide_type($node->type) && user_access('mark nodes hidden')) {
+    if (hide_nodes_is_hidden($node->nid)) {
+      $links[] = array(
+        'title' => t('Unhide'), 
+        'href' => 'node/'. $node->nid.'/unhide',
+      );
+    }
+    else{
+      $links[] = array(
+        'title' => t('Hide'), 
+        'href' => 'node/'. $node->nid.'/hide',
+      );
+    }
+  }
+  return $links;
+}
+
+
+/**
+ * Settings page for this module.
+ */
+function hide_nodes_settings() {
+  $form['hide_nodes_settings'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Hide Nodes Page Settings'),
+    '#collapsible' => true,
+    '#collapsed' => false,
+  );
+
+  $types = node_get_types();
+  foreach ($types as $type) {
+    $options[$type->type] = t($type->name);
+  }
+  $form['hide_nodes_settings']['hide_nodes_types'] = array(
+    '#type' => 'select',
+    '#title' => t('Allow these node types to be hidden by the user'),
+    '#default_value' => variable_get('hide_nodes_types', array()),
+    '#options' => $options,
+    '#multiple' => TRUE
+  );
+  return system_settings_form($form);
+}
+
+
+
+
+
+
+
+
+/**
+ * Mark node as hidden
+*/
+function hide_nodes_hide($node) {
+  global $user;
+  db_query("DELETE FROM {hide_nodes} WHERE nid = %d AND uid = %d", $node->nid, $user->uid);
+  db_query("INSERT INTO {hide_nodes} (nid, uid, timestamp) VALUES (%d, %d, %d)", $node->nid, $user->uid, time());
+  drupal_goto("node/$node->nid");
+}
+
+
+/**
+ * Unmark node as hidden
+ */
+function hide_nodes_unhide($node) {
+  global $user;
+  db_query("DELETE FROM {hide_nodes} WHERE nid = %d AND uid = %d", $node->nid, $user->uid);
+  drupal_goto("node/$node->nid");
+}
+
+
+function hide_nodes_is_hide_type($type){
+  $types = variable_get('hide_nodes_types', array());
+  return (in_array($type, $types));
+}
+
+
+function hide_nodes_is_hidden($nid) {
+  global $user;
+  $query = "SELECT COUNT(*) FROM {hide_nodes} WHERE nid = %d AND uid = %d";
+  $result = db_result(db_query($query, $nid, $user->uid));
+  return ($result > 0);
+}
+
+
+/**
+ * Implementation of "contrib module views" hook_views_tables()
+ */
+function hide_nodes_views_api() {
+  $info['api'] = 2;
+  return $info;
+}

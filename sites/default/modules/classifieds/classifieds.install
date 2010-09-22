@@ -1,0 +1,33 @@
+<?php
+
+// $Id$
+
+function classifieds_install(){
+  drupal_install_schema('classifieds');
+}
+
+
+function classifieds_schema(){
+  $schema = array();
+
+  $schema['classifieds'] = array(
+    'description'     => 'Stores information about each group',
+    'fields'          => array(
+      'nid'             => array(
+        'description'     => 'The nodes {node}.nid',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'category'      => array(
+        'description'     => 'Category the classified is filed under',
+        'type'            => 'varchar',
+        'length'            => 255,
+        'not null'        => TRUE,
+      ),
+    ),
+    'primary_key'        => array('nid')
+  );
+  
+  return $schema;
+}

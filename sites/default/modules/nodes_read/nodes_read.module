@@ -1,0 +1,122 @@
+<?php
+// $Id$
+
+
+
+/**
+ * Implementation of hook_menu().
+ */
+function nodes_read_menu() {
+  global $user;
+  $items = array();
+
+  $items['admin/settings/nodes_read'] = array(
+      'title'            => 'Nodes Read',
+      'description'      => 'Settings for read nodes',
+      'page callback'    => 'drupal_get_form',
+      'page arguments'   => array('nodes_read_settings'),
+      'type'             => MENU_NORMAL_ITEM,
+      'access callback'  => 'user_access',
+      'access arguments' => array('administer site configuration')
+    );
+
+  return $items;
+}
+
+
+/**
+ * Implementation of hook_user().
+ */
+function nodes_read_user($op, &$edit, &$user, $category = null) {
+  switch ($op) {
+    case 'delete':
+      db_query("DELETE FROM {nodes_read} WHERE uid = %d", $user->uid);
+      break;
+  }
+}
+
+
+/**
+ * Implementation of hook_nodeapi().
+ */
+function nodes_read_nodeapi(&$node, $op, $teaser = null, $page = null) {
+  switch ($op) {
+    case 'load':
+      if(nodes_read_is_read_type($node->type)){
+        global $user;
+        $query = "SELECT COUNT(uid) FROM {nodes_read} WHERE nid = %d AND uid = %d";
+        $node->user_read_count = db_result(db_query($query, $node->nid, $user->uid));
+        
+        $query = "SELECT COUNT(DISTINCT(uid)) FROM {nodes_read} WHERE nid = %d";
+        $node->read_count = db_result(db_query($query, $node->nid));
+      }
+      break;
+    case 'delete':
+      // Delete all entries of the node being deleted.
+      db_query("DELETE FROM {nodes_read} WHERE nid = %d", $node->nid);
+      break;
+    case 'view':
+      if(nodes_read_is_read_type($node->type) && !$teaser){
+        global $user;
+        $query = "INSERT INTO {nodes_read} (nid, uid) VALUES (%d, %d)";
+        db_query($query, $node->nid, $user->uid);
+
+        $node->content['reads'] = array(
+          '#value' => '<br>Read by ' . $node->read_count . ' users',
+          '#weight' => 99,
+        );
+      }
+      break;
+  }
+}
+
+
+/**
+ * Settings page for this module.
+ */
+function nodes_read_settings() {
+  $form['nodes_read_settings'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Read Nodes Page Settings'),
+    '#collapsible' => true,
+    '#collapsed' => false,
+  );
+
+  $types = node_get_types();
+  foreach ($types as $type) {
+    $options[$type->type] = t($type->name);
+  }
+  $form['nodes_read_settings']['nodes_read_types'] = array(
+    '#type' => 'select',
+    '#title' => t('Record these node types as read by the user'),
+    '#default_value' => variable_get('nodes_read_types', array()),
+    '#options' => $options,
+    '#multiple' => TRUE
+  );
+  return system_settings_form($form);
+}
+
+
+
+function nodes_read_is_read_type($type){
+  $types = variable_get('nodes_read_types', array());
+  return (in_array($type, $types));
+}
+
+
+function nodes_read_is_read($nid) {
+  global $user;
+  $query = "SELECT COUNT(*) FROM {nodes_read} WHERE nid = %d AND uid = %d";
+  $result = db_result(db_query($query, $nid, $user->uid));
+  return ($result > 0);
+}
+
+
+/**
+ * Implementation of "contrib module views" hook_views_tables()
+ */
+function nodes_read_views_api() {
+  $info['api'] = 2;
+  return $info;
+}
+

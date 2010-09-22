@@ -1,0 +1,1055 @@
+<?php
+
+
+/**
+ * Implementation of hook_node_info().
+*/
+function course_node_info(){
+  return array(
+    'course' => array(
+      'name'   => t('Course'),
+      'module' => 'course',
+      'description' => "course group",
+      'has_title'   => TRUE,
+      'title_label' => t('Course name'),
+      'has_teaser'  => FALSE,
+      'has_body'    => TRUE,
+      'body_label'  => t('Description'),
+    )
+  );
+}
+
+
+/**
+ *  Implementation of hook_menu().
+*/
+function course_menu(){
+  $items = array();
+
+  $items['courses'] = array(
+    'title' => 'Courses',
+    'page callback' => 'course_listing_page',
+    'access callback' => true,
+    'menu_name' => 'primary-links',
+  );
+  $items['admin/settings/course'] = array(
+    'title' => 'Course Settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('course_settings_form'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+  );
+  $items['admin/settings/course/create-exam-numbers'] = array(
+    'title' => 'Create Exam Numbers',
+    'page callback' => 'course_create_exam_numbers',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+  );
+
+  $items['user/%user/exam-type'] = array(
+    'title' => 'Select Exam Type',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('course_select_exam_type', 1),
+    'access callback' => 'course_exam_type_access_callback',
+    'access arguments' => array(1),
+  );
+  return $items;
+}
+
+
+function course_exam_type_access_callback($account){
+  return (($GLOBALS['user']->uid == $account->uid) || user_access('set exam type')) && $account->uid > 0;
+}
+
+
+/**
+ * Implementation of hook_perm
+*/
+function course_perm(){
+  return array('view all courses', 'create course', 'set exam type');
+}
+
+/**
+ * Implementation of hook_group_access_view_access_level() of og_group_access
+ */
+function course_group_access_view_access_level($group){
+  return $group->perms['view group'];
+}
+
+
+/**
+ * Implementation of hook_access().
+ */
+function course_access($op, $node) {
+  if ($op == 'create') {
+    return user_access('create course');
+  }
+  else if ($op == 'view'){
+    return user_access('view all courses');
+  }
+}
+
+
+
+function course_settings_form($form_state) {
+  $current_semester_ul = variable_get('course_current_semester_UL', 0);
+  $options_ul = array();
+  if($current_semester_ul == 0){
+    $semester = (date('Y') -1969) * 4;
+    for($i =0; $i<6; $i++){
+      $options_ul[$semester+$i]=course_get_semester_name($semester+$i);
+    }
+  }
+  else{
+    $options_ul[$current_semester_ul-1] = course_get_semester_name($current_semester_ul-1);
+    $options_ul[$current_semester_ul] = course_get_semester_name($current_semester_ul);
+    $options_ul[$current_semester_ul+1] = course_get_semester_name($current_semester_ul+1);
+    $options_ul[$current_semester_ul+2] = course_get_semester_name($current_semester_ul+2);
+  }
+
+
+  $current_semester_1l = variable_get('course_current_semester_1L', 0);
+  $options_1l = array();
+  if($current_semester_1l == 0){
+    $semester = (date('Y') -1969) * 4;
+    for($i=0; $i<8; $i+=2){
+      $options_1l[$semester+$i]=course_get_semester_name($semester+$i);
+    }
+  }
+  else{
+    $options_1l[$current_semester_1l-2] = course_get_semester_name($current_semester_1l-2);
+    $options_1l[$current_semester_1l] = course_get_semester_name($current_semester_1l);
+    $options_1l[$current_semester_1l+2] = course_get_semester_name($current_semester_1l+2);
+  }
+    
+  $form['semesters'] = array(
+    '#title' => 'Semesters',
+    '#type' => 'fieldset',
+  );
+  $form['semesters']['course_current_semester_1L'] = array(
+    '#title' => 'First Year Current Semester',
+    '#description' => 'Select the semester representing the current term for 1L students',
+    '#type' => 'select',
+    '#options' => $options_1l,
+    '#default_value' => $current_semester_1l,
+  );
+
+  $form['semesters']['course_current_semester_UL'] = array(
+    '#title' => 'Upper Level Current Semester',
+    '#description' => 'Select the semester representing the current term for UL students',
+    '#type' => 'select',
+    '#options' => $options_ul,
+    '#default_value' => $current_semester_ul,
+  );
+  
+  $form['#submit'][] = 'course_settings_form_submit';
+
+
+  $form['class_years'] = array(
+    '#title' => 'Class Years',
+    '#type' => 'fieldset',
+  );
+  $class_years = array();
+  $query = "SELECT nid, title FROM {node} WHERE type = 'class_year'";
+  $result = db_query($query);
+  while($data = db_fetch_object($result)){
+    $class_years[$data->nid] = $data->title;
+  }
+  $form['class_years']['course_3L_nid'] = array(
+    '#title' => '3L Class Year',
+    '#type' => 'select',
+    '#options' => $class_years,
+    '#default_value' => variable_get('course_3L_nid',0),
+  );
+  $form['class_years']['course_2L_nid'] = array(
+    '#title' => '2L Class Year',
+    '#type' => 'select',
+    '#options' => $class_years,
+    '#default_value' => variable_get('course_2L_nid',0),
+  );
+  $form['class_years']['course_1L_nid'] = array(
+    '#title' => '1L Class Year',
+    '#type' => 'select',
+    '#options' => $class_years,
+    '#default_value' => variable_get('course_1L_nid',0),
+  );
+
+  $form['course_create_exam_numbers'] = array(
+    '#type' => 'submit',
+    '#value' => 'Create Exam Numbers',
+  );
+
+  return system_settings_form($form);
+}
+
+
+function course_settings_form_submit($form, $form_alter){
+  $plid = course_get_plid();
+  $query = "DELETE FROM {menu_links} WHERE plid = %d";
+  db_query($query, $plid);
+
+  //create first year menu links
+  $current_semester = variable_get('course_current_semester_1L', 0);
+  $query = "SELECT n.nid, n.title FROM {node} n INNER JOIN {courses} c on n.nid = c.nid WHERE is_first_year = 1 AND semester_number = %d";
+  $result = db_query($query, $current_semester);
+  while($data = db_fetch_object($result)){
+    _course_create_primary_link_current($data->title, $data->nid, $plid);
+  }
+
+//create first year menu links for previous semester
+  $query = "SELECT n.nid, n.title FROM {node} n INNER JOIN {courses} c on n.nid = c.nid WHERE is_first_year = 1 AND semester_number = %d";
+  $result = db_query($query, $current_semester-2);
+  while($data = db_fetch_object($result)){
+    _course_create_primary_link_previous($data->title, $data->nid, $plid);
+  }
+ 
+  //create upper level menu links
+  $current_semester = variable_get('course_current_semester_UL', 0);
+  $query = "SELECT n.nid, n.title FROM {node} n INNER JOIN {courses} c on n.nid = c.nid WHERE is_first_year = 0 AND  semester_number = %d";
+  $result = db_query($query, $current_semester);
+  while($data = db_fetch_object($result)){
+    _course_create_primary_link_current($data->title, $data->nid, $plid);
+  }
+
+//create upper level menu links for the previous semester
+  $query = "SELECT n.nid, n.title FROM {node} n INNER JOIN {courses} c on n.nid = c.nid WHERE is_first_year = 0 AND  semester_number = %d";
+  $result = db_query($query, $current_semester -1);
+  while($data = db_fetch_object($result)){
+    _course_create_primary_link_previous($data->title, $data->nid, $plid);
+  }
+
+
+  menu_rebuild();
+}
+
+
+/**
+ * Implementation of hook_user
+ */
+function course_user($op, &$edit, &$account, $category = NULL) {
+  global $user;
+
+  switch ($op) {
+  case 'view':
+    if(course_exam_type_access_callback(user_load(arg(1)))){
+      $is_1L = course_student_in_class_year("1L", $account->uid);
+      $semesters = array();
+      $current_semester_UL = variable_get('course_current_semester_UL', 0);
+      $semesters[$current_semester_UL] = '';
+      $semesters[$current_semester_UL-1] = '';
+      if($is_1L){
+        $current_semester_1L = variable_get('course_current_semester_1L', 0);
+        $semesters[$current_semester_1L] = '';
+        $semesters[$current_semester_1L-2] = '';
+      }
+
+      $account->content['exam_info'] = array(
+        '#type' => 'fieldset',
+        '#title' => 'Exam Info',
+      );
+      foreach($semesters as $semester_number => $s){
+        if(course_student_has_exam_number($semester_number, $account->uid)){
+          $account->content['exam_info']['exam_semester_'.$semester_number] = array(
+            '#type' => 'fieldset',
+            '#title' => course_get_semester_name($semester_number),
+          );
+          $exam_info = course_get_exam_info($semester_number, $account->uid);
+          if($exam_info['exam_type'] != NULL){
+            $exam_number = $exam_info['exam_number'];
+            $exam_type = l($exam_info['exam_type'], 'user/'.$account->uid.'/exam-type');
+            $account->content['exam_info']['exam_semester_'.$semester_number]['exam_type'] = array(
+            '#type' => 'user_profile_item',
+            '#title' => 'Exam Type',
+            '#value' => $exam_type,
+            '#weight' => -16,
+          );
+          }
+          else{
+            $exam_number = l('Set Exam Type', 'user/'.$account->uid.'/exam-type');
+          }
+          $account->content['exam_info']['exam_semester_'.$semester_number]['exam_number'] = array(
+            '#type' => 'user_profile_item',
+            '#title' => 'Exam Number',
+            '#value' => $exam_number,
+            '#weight' => -15,
+          );
+        }
+      }
+    }
+    break;
+  }
+}
+
+
+function course_select_exam_type(&$form_state, $account){
+  $is_1L = course_student_in_class_year("1L", $account->uid);
+  $semesters = array();
+  $current_semester_UL = variable_get('course_current_semester_UL', 0);
+  $semesters[$current_semester_UL] = '';
+  $semesters[$current_semester_UL-1] = '';
+  if($is_1L){
+    $current_semester_1L = variable_get('course_current_semester_1L', 0);
+    $semesters[$current_semester_1L] = '';
+    $semesters[$current_semester_1L-2] = '';
+  }
+  $form['student_uid'] = array(
+    '#type' => 'hidden',
+    '#value' => $account->uid
+  );
+  $form['exam_info'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Exam Info',
+    '#tree' => TRUE,
+  );
+  foreach($semesters as $semester_number => $s){
+    if(course_student_has_exam_number($semester_number, $account->uid)){
+      $exam_info = course_get_exam_info($semester_number, $account->uid);
+      $form['exam_info']['exam_semester_'.$semester_number] = array(
+        '#type' => 'fieldset',
+        '#title' => course_get_semester_name($semester_number),
+      );
+      $form['exam_info']['exam_semester_'.$semester_number]['semester_number'] = array(
+        '#type' => 'hidden',
+        '#value' => $semester_number,
+      );
+      $form['exam_info']['exam_semester_'.$semester_number]['exam_type'] = array(
+        '#title' => 'Exam Type',
+        '#type' => 'select',
+        '#options' => array('laptop' => 'laptop', 'school' => 'school'),
+        '#default_value' => $exam_info['exam_type'],
+      );
+    }
+  }
+  $form['#redirect'] = 'user/'.$account->uid;
+  $form['course_select_exam_type_submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Submit',
+  );
+
+  return $form;
+}
+
+
+function course_select_exam_type_submit($form, &$form_state){
+  foreach($form_state['values']['exam_info'] as $exam_semester){
+    $query = "UPDATE {course_exam_numbers} SET exam_type = '%s' WHERE semester_number = %d AND student_uid = %d";
+    db_query($query, $exam_semester['exam_type'], $exam_semester['semester_number'],  $form_state['values']['student_uid']);
+  }
+}
+
+
+function course_create_exam_numbers(){
+  $students = course_get_current_students();
+  $current_semester_1L = variable_get('course_current_semester_1L', 0);
+  $current_semester_UL = variable_get('course_current_semester_UL', 0);
+  
+  foreach($students as $uid){
+    if(course_student_in_class_year("1L", $uid) && !course_student_has_exam_number($current_semester_1L, $uid)){
+      $exam_number = _course_get_exam_number("1L", $current_semester_1L);
+      db_query("INSERT INTO {course_exam_numbers} (student_uid, exam_number, semester_number) VALUES (%d, '%s', %d)", $uid, $exam_number, $current_semester_1L);
+    }
+    elseif(!course_student_has_exam_number($current_semester_UL, $uid)){
+      $class_year = course_student_get_class_year($uid);
+      $exam_number = _course_get_exam_number($class_year, $current_semester_UL);
+      db_query("INSERT INTO {course_exam_numbers} (student_uid, exam_number, semester_number) VALUES (%d, '%s', %d)", $uid, $exam_number, $current_semester_UL);
+    }
+  }
+  drupal_set_message('Exam numbers have been created');
+  drupal_goto('admin/settings/course');
+}
+
+
+/**
+ * Helper function for course_create_exam_numbers
+ * Creates a random number to be used as an exam_number
+ * Checks to make sure the exam_number has not been used in the current semester
+ * First digit corresponds to the class year of the student
+*/
+function _course_get_exam_number($class_year, $semester_number){
+  switch($class_year){
+  case "3L":
+    $first_digit = 3;
+    break;
+  case "2L":
+    $first_digit = 2;
+    break;
+  case "1L":
+    $first_digit = 1;
+    break;
+  default:
+    $first_digit = 0;
+    break;
+  }
+  $exam_number = $first_digit . rand(1000,9999);
+  if(course_exam_number_taken($semester_number, $exam_number)){
+    return _course_get_exam_number($class_year, $semester_number);
+  }
+  else{
+    return $exam_number;
+  }
+}
+
+
+/*
+ * Checks if the exam_number is already used
+ */
+function course_exam_number_taken($semester_number, $exam_number){
+  $query = "SELECT COUNT(exam_number) FROM {course_exam_numbers} WHERE semester_number = %d AND exam_number = '%s'";
+  return db_result(db_query($query, $semester_number, $exam_number));
+}
+
+
+/*
+ * Checks if the student has been issued an exam_number
+ */
+function course_student_has_exam_number($semester_number, $uid){
+  $query = "SELECT COUNT(student_uid) FROM {course_exam_numbers} WHERE semester_number = %d and student_uid = %d";
+  return db_result(db_query($query, $semester_number, $uid));
+}
+
+
+/* 
+ * Retrieves the type of exam the student is taking
+ * laptop or school
+ */
+function course_get_exam_info($semester_number, $uid){
+  $query = "SELECT exam_type, exam_number FROM {course_exam_numbers} WHERE semester_number = %d and student_uid = %d";
+  $result = db_query($query, $semester_number, $uid);
+  return db_fetch_array($result);
+}
+
+
+/*
+ * returns an array of students who are enrolled in classes for the current semester
+ */
+function course_get_current_students(){
+  $students = array();
+
+  $current_semester = variable_get('course_current_semester_1L', 0);
+  $query = "SELECT u.uid FROM {courses} c INNER JOIN {og_uid} u ON c.nid = u.nid WHERE c.semester_number = %d AND c.is_first_year = 1 AND u.is_active = 1 AND u.is_admin = 0";
+  $result = db_query($query, $current_semester);
+  while($data = db_fetch_object($result)){
+    $students[$data->uid] = $data->uid;
+  }
+
+  $current_semester = variable_get('course_current_semester_UL', 0);
+  $query = "SELECT u.uid FROM {courses} c INNER JOIN {og_uid} u ON c.nid = u.nid WHERE c.semester_number = %d AND c.is_first_year = 0 AND u.is_active = 1 AND u.is_admin = 0";
+  $result = db_query($query, $current_semester);
+  while($data = db_fetch_object($result)){
+    $students[$data->uid] = $data->uid;
+  }
+  return $students;
+}
+
+
+function course_student_get_class_year($uid){
+  if(course_student_in_class_year("3L", $uid)){
+    return "3L";
+  }elseif(course_student_in_class_year("2L", $uid)){
+    return "2L";
+  }elseif(course_student_in_class_year("1L", $uid)){
+    return "1L";
+  }
+  return "0L";
+}
+
+
+function course_student_in_class_year($class_year, $uid){
+  switch($class_year){
+  case "1L":
+    $group_nid = variable_get('course_1L_nid',0);
+    break;
+  case "2L":
+    $group_nid = variable_get('course_2L_nid',0);
+    break;
+  case "3L":
+    $group_nid = variable_get('course_3L_nid',0);
+    break;
+  default:
+    return false;
+  }
+  $query = "SELECT COUNT(uid) FROM {og_uid} WHERE nid = %d AND uid = %d";
+  return db_result(db_query($query, $group_nid, $uid));
+}
+
+
+/**
+ * Implementation of hook_node_access_records.
+*/
+function course_node_access_records($node) {
+  if($node->type == 'course'){
+    $grants[] = array(
+      'realm' => 'view all courses', 
+      'gid' => 1, 
+      'grant_view' => 1, 
+      'grant_update' => 0, 
+      'grant_delete' => 0,
+      'priority' => 0,
+    );
+  }
+
+  return isset($grants) ? $grants : NULL;
+}
+
+
+/**
+ * Implementation of hook_node_grants().
+*/
+function course_node_grants($account, $op) { 
+  if ($op == 'view' && user_access('view all courses')) {
+    $grants['view all courses'][] = 1;
+  }
+
+  return isset($grants) ? $grants : array();
+}
+
+
+/**
+ * Implementation of hook_view().
+*
+function course_view($node, $teaser = FALSE, $page = FALSE) {
+  $node->body = '';
+  $node = node_prepare($node, $teaser);
+  
+  return $node;
+}
+*/
+
+
+/**
+ * Implementation of hook_form().
+ */
+function course_form(&$node) {
+
+/*
+I would like this to be a part of the install file, but it's not working there.
+$item2 = array(
+      'link_title' => 'Courses',
+      'link_path' => 'courses',
+      'menu_name' => 'primary-links',
+      'module' => 'course',
+      'plid' => 0,
+    );
+    menu_link_save($item2);
+*/
+
+  $type = node_get_types('type', $node);
+  
+  $form['og_description'] = array(
+    '#type' => 'value',
+    '#value' => 'Course',
+  );  
+
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => check_plain($type->title_label),
+    '#required' => TRUE,
+    '#default_value' => $node->title,
+    '#weight' => -7
+  );
+  $form['course_number'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Course Number',
+    '#required' => TRUE,
+    '#default_value' => $node->course_number,
+    '#weight' => -6
+  );
+  $form['credits'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Credits',
+    '#required' => TRUE,
+    '#default_value' => $node->credits,
+    '#weight' => -5
+  );
+
+  $form['is_first_year'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'First Year Course',
+    '#default_value' => $node->is_first_year,
+    '#weight' => -4,
+  );
+
+  $semester = (isset($node->semester_number) && $node->semester_number != 0) ? $node->semester_number : variable_get('course_current_semester_UL', 0);
+  $options = array();
+  $options[$semester-1] = course_get_semester_name($semester-1);
+  $options[$semester] = course_get_semester_name($semester);
+  $options[$semester+1] = course_get_semester_name($semester+1);
+  $options[$semester+2] = course_get_semester_name($semester+2);
+  $form['semester_number'] = array(
+    '#type' => 'select',
+    '#title' => 'Semester',
+    '#required' => TRUE,
+    '#options' => $options,
+    '#default_value' => $node->semester_number,
+    '#weight' => -4
+  );
+  $form['instructor1_uid'] = array(
+    '#type' => 'select',
+    '#title' => 'Primary Instructor',
+    '#options' => course_instructor_list(),
+    '#required' => TRUE,
+    '#default_value' => $node->instructor1_uid,
+    '#weight' => -3
+  );
+  $form['instructor2_uid'] = array(
+    '#type' => 'select',
+    '#title' => 'Secondary Instructor',
+    '#options' => course_instructor_list(),
+    '#required' => FALSE,
+    '#default_value' => $node->instructor2_uid,
+    '#weight' => -2
+  );
+
+  $form['is_performance_based'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'Performance Based',
+    '#default_value' => $node->is_performance_based,
+  );
+
+  $form['is_passfail'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'Pass/Fail',
+    '#default_value' => $node->is_passfail,
+  );
+    
+
+
+  $form['body_field']['body'] = array(
+    '#type'   => 'textarea',
+    '#title'  => check_plain($type->body_label),
+    '#default_value' => $node->body,
+    '#rows'          => 4,
+    '#required'      => FALSE,
+    '#weight'        => -3
+  );
+
+  $form['body_field']['evaluation_description'] = array(
+    '#type'   => 'textarea',
+    '#title'  => t('Evaluation Description'),
+    '#default_value' => $node->evaluation_description,
+    '#rows'          => 4,
+    '#required'      => FALSE,
+    '#weight'        => -2
+  );
+
+  $form['body_field']['format'] = filter_form($node->format);
+  $form['body_field']['#prefix'] = '<div class="body-field-wrapper">';
+  $form['body_field']['#suffix'] = '</div>';
+ 
+  unset($form['menu']);
+
+  $form['og_register'] = array('#type' => 'value', '#value' => 0);
+  $form['og_directory'] = array('#type' => 'value', '#value' => 1);
+
+  $form['og_selective'] = array(
+    '#type' => 'value', 
+    '#value' => $node->og_selective ? $node->og_selective : variable_get('og_content_type_selective_course', OG_INVITE_ONLY), 
+  );
+
+  return $form;
+}
+
+
+function course_validate($node){
+  if($node->is_first_year && ($node->semester_number % 2)){
+    form_set_error('semester_number', t('First Year classes can only be fall or spring semester'));
+  }
+}
+
+
+// page listing all courses
+function course_listing_page(){
+
+  $header = array(
+    array(
+      'data' => 'Semester',
+      'field' => 'semester_number'
+    ),
+    array(
+      'data'  => 'Course #',
+      'field' => 'course_number'
+    ),
+    array(
+      'data'  => 'Name',
+      'field' => 'title',
+    ),
+    array(
+      'data' => 'Instructor',
+      'field' => 'instructor1_uid'
+    )
+  );//header
+ 
+  $query = "SELECT n.nid, n.title, c.course_number, c.semester_number, c.instructor1_uid, c.instructor2_uid FROM {node} n INNER JOIN {courses} c ON n.nid = c.nid";
+  $query .= tablesort_sql($header);
+  $result = db_query($query);
+
+  while($course = db_fetch_object($result)){
+    if(user_access('view all courses') || og_group_access_get_access('view group', node_load($course->nid))){
+      $semester = course_get_semester_name($course->semester_number);
+      $instructor = theme('username', user_load($course->instructor1_uid), 'normal', 1);
+      if($course->instructor2_uid != -1){
+        $instructor .= " | " . theme('username', user_load($course->instructor2_uid), 'normal', 1);
+      }
+      $rows[] = array(
+        l($course->course_number, "node/$course->nid"),
+        l($course->title, "node/$course->nid"),
+        $semester,
+        $instructor
+      ); 
+    }
+  }  
+
+  // If we have rows for a table, theme the table
+  //    otherwise set output to a message
+  if ( count($rows) ) {
+    $output = theme('table', $header, $rows);
+  }
+  else {
+    $output = "No courses were found";
+  }
+   
+  // And finally, produce the page
+  print theme('page', $output);
+}
+
+
+/**
+ * Implementation of hook_form_alter()
+*/
+function course_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form['#node']) && $form_id == $form['#node']->type .'_node_form') {
+    $node = $form['#node'];
+    if($node->type == 'course'){
+      unset($form['menu']);
+      unset($form['comment_settings']);
+      unset($form['revision_information']);
+      unset($form['author']);
+      $form['author']['name'] = array(
+        '#type'  => 'value',
+        '#value' => $node->name ? $node->name : '',
+      );
+      $form['author']['date'] = array(
+        '#type'  => 'value',
+        '#value' => $node->date ? $node->date : '',
+      );
+      unset($form['options']);
+      $form['options']['status'] = array(
+        '#type'  => 'value',
+        '#value' => $node->status,
+      );
+      $form['options']['promote'] = array(
+        '#type'  => 'value',
+        '#value' => $node->promote,
+      );
+      $form['options']['sticky'] = array(
+        '#type'  => 'value',
+        '#value' => $node->sticky,
+      );
+
+      $form['og_private'] = array('#type' => 'value', '#value' => 0);
+
+    }//course
+  }
+}
+
+
+function course_form_node_type_form_alter(&$form, &$form_state) {
+  //set the type usage to group 
+/*
+  if (isset($form['#node_type']) && $form['#node_type']->type == 'course') {  
+    $form['og']['og_content_type_usage'] = array(
+      '#type' => 'value',
+      '#value' => 'group'
+    );
+    $form['og']['og_content_type_usage_override'] = array(
+      '#type' => 'value',
+      '#value' => 0,
+    );
+  } 
+*/
+}
+
+
+function course_nodeapi(&$node, $op, $teaser, $page) {
+  switch ($op) {
+  case 'view':
+    if (!$teaser && $page) {
+      if(isset($node->author_group_nid)){
+        $group = node_load($node->author_group_nid);
+      }
+      else{
+        $group = $node;
+      }
+      if($group->type == 'course'){
+        $bc = array();
+        $bc[] = l(t('Home'), "");
+        $bc[] = l(t('Courses'), 'courses');
+        $bc[] = l($group->title, 'node/'.$group->nid);
+        drupal_set_breadcrumb($bc);
+      }
+    } 
+  }
+}
+
+
+
+
+/**
+ * Implementation of hook_insert().
+*/
+function course_insert($node){
+  $query = "INSERT INTO {courses} (nid, course_number, semester_number, instructor1_uid, instructor2_uid, evaluation_description, evaluations_initialized, credits, is_first_year, is_performance_based, is_passfail) VALUES (%d, '%s', %d, %d, %d, '%s', %d, %d, %d, %d, %d)";
+  db_query($query, $node->nid, $node->course_number, $node->semester_number, $node->instructor1_uid, $node->instructor2_uid, $node->evaluation_description, $node->evaluations_initialized, $node->credits, $node->is_first_year, $node->is_performance_based, $node->is_passfail);
+  //add primary link
+  course_create_primary_link($node);
+
+  og_save_subscription($node->nid, $node->instructor1_uid, array('is_active' => 1, 'is_admin' => 1));
+  if($node->instructor2_uid != -1){
+    og_save_subscription($node->nid, $node->instructor2_uid, array('is_active' => 1, 'is_admin' => 1)); 
+  }
+
+  node_access_rebuild(TRUE);
+  
+}
+
+
+/**
+ * Implementation of hook_update().
+*/
+function course_update($node){
+  $query = "UPDATE {courses} SET course_number = '%s', semester_number = %d, instructor1_uid = %d, instructor2_uid = %d, evaluation_description = '%s', evaluations_initialized = %d, credits = %d, is_first_year = %d, is_performance_based = %d, is_passfail = %d WHERE nid = %d";
+  db_query($query, $node->course_number, $node->semester_number, $node->instructor1_uid, $node->instructor2_uid, $node->evaluation_description, $node->evaluations_initialized, $node->credits, $node->is_first_year, $node->is_performance_based, $node->is_passfail, $node->nid);
+
+  node_access_rebuild(TRUE);
+}
+
+
+/**
+ * Implementation of hook_load()
+*/
+function course_load(&$node){
+  $query = "SELECT course_number, semester_number, credits, instructor1_uid, instructor2_uid, evaluation_description, evaluations_initialized, is_first_year, is_performance_based, is_passfail FROM {courses} WHERE nid = %d";
+  $result = db_fetch_object(db_query($query, $node->nid));
+  $node->course_number = $result->course_number;
+  $node->semester_number = $result->semester_number;
+  $node->credits = $result->credits;
+  $node->instructor1_uid = $result->instructor1_uid;
+  $node->instructor2_uid = $result->instructor2_uid;
+  $node->evaluation_description = $result->evaluation_description;
+  $node->evaluations_initialized = $result->evaluations_initialized;
+  $node->is_first_year = $result->is_first_year;
+  $node->is_performance_based = $result->is_performance_based;
+  $node->is_passfail = $result->is_passfail;
+
+  $node->semester_name = course_get_semester_name($node->semester_number);
+  
+}
+
+
+
+
+
+
+function course_theme(){
+  return array(
+    'course_mission' => array(
+      'arguments' => array(
+        'course_nid' => NULL, 
+      ),
+      'template' => 'course-mission',
+    ),
+    'course_header' => array(
+      'arguments' => array(
+        'course_nid' => NULL,
+      ),
+      'template' => 'course-header',
+    ),
+  );
+}
+
+
+//if the node is a course, or if the author of the node is a course
+// add the course header to the page
+function course_preprocess_page(&$variables){
+  $node = $variables['node'];
+  if($node->type == 'course'){
+    $course_nid = $node->nid;
+  }
+  else if(isset($node->author_group_nid)){
+    $author_group_node = node_load($node->author_group_nid);
+    if($author_group_node->type == 'course'){
+      $course_nid = $author_group_node->nid;
+    }
+  }
+  if($course_nid != null){
+    $variables['mission'] = theme('course_header', $course_nid);
+  }
+}
+
+
+
+/**
+ * Process variables for course-header.tpl.php
+ *
+ * The $variables array contains the following arguments:
+ * - $course_nid
+ *
+ * @see course-header.tpl.php
+ */
+function template_preprocess_course_header(&$variables) {
+  
+  $course = node_load($variables['course_nid']);
+
+  $variables['instructor1']  = theme('username', user_load($course->instructor1_uid), 'normal', 1);
+  if($course->instructor2_uid != -1){
+    $variables['instructor2'] = theme('username', user_load($course->instructor2_uid), 'normal', 1);
+  }
+  else{
+    $variables['instructor2'] = '';
+  }
+  
+  $variables['course_number']    = $course->course_number;
+  $variables['credits']          = $course->credits;
+  $variables['semester_name']    = $course->semester_name;
+  $variables['description']      = $course->body;
+  
+}
+
+/*
+function course_create_primary_link($node){
+  $plid = course_get_plid();
+  $item = array(
+    'link_title' => $node->title,
+    'link_path' => 'node/'. $node->nid,
+    'menu_name' => 'primary-links',
+    'module' => 'course',
+    'plid' => $plid,
+  );
+  menu_link_save($item);
+}
+*/
+
+function course_create_primary_link($node){
+  $plid = course_get_plid();
+  if($node->is_first_year){
+    $current_semester = variable_get('course_current_semester_1L', 0);
+    if($node->semester_number == $current_semester){
+      _course_create_primary_link_current($node->title, $node->nid, $plid);
+    }
+    elseif($node->semester_number == $current_semester-2){
+      _course_create_primary_link_previous($node->title, $node->nid, $plid);
+    }
+  }
+  else{
+    $current_semester = variable_get('course_current_semester_UL', 0);
+    if($node->semester_number == $current_semester){
+      _course_create_primary_link_current($node->title, $node->nid, $plid);
+    }
+    elseif($node->semester_number == $current_semester-1){
+      _course_create_primary_link_previous($node->title, $node->nid, $plid);
+    }
+  }
+}
+
+function _course_create_primary_link_current($title, $nid, $plid){
+  $item = array(
+    'link_title' => $title,
+    'link_path' => 'node/'. $nid,
+    'menu_name' => 'primary-links',
+    'module' => 'course',
+    'plid' => $plid,
+  );
+  menu_link_save($item);
+}
+
+function _course_create_primary_link_previous($node, $plid){
+  $item = array(
+    'link_title' => '> '.$node->title,
+    'link_path' => 'node/'. $node->nid,
+    'menu_name' => 'primary-links',
+    'module' => 'course',
+    'plid' => $plid,
+    'weight' => 5
+  );
+  menu_link_save($item);
+}
+
+
+
+function course_get_plid(){
+  //get menu link id for the course primary link to be used as the parent menu
+  $query = "SELECT mlid FROM {menu_links} WHERE menu_name = 'primary-links' and plid = 0 and link_path = 'courses' and router_path = 'courses'";
+  return db_result(db_query($query));
+}
+
+
+function course_instructor_list(){
+  $instructor_list = array();
+  $instructor_list[-1] = "Select Instructor";
+
+  $query = "SELECT up.name_last, up.name_first, up.name_middle, up.uid FROM {users_profile} up INNER JOIN {users_roles} ur On ur.uid = up.uid INNER JOIN {role} r ON r.rid = ur.rid WHERE r.name = 'faculty' ORDER BY name_last asc, name_first asc";
+  $result = db_query($query);
+  while($data = db_fetch_object($result)){
+    $instructor_list[$data->uid] = $data->name_last . ", " . $data->name_first;
+  }
+  return $instructor_list;
+}
+
+
+// Select all student members of the course
+function course_get_students($course_nid){
+  $query = "SELECT u.uid, u.name FROM {og_uid} ou INNER JOIN {users} u ON ou.uid = u.uid WHERE ou.nid = %d AND u.status > 0 AND ou.is_admin = 0 ORDER BY u.name";
+  $result = db_query($query, $course_nid);
+
+  $students = array();
+  while($data = db_fetch_object($result)){
+    $students[$data->uid] = theme('username', user_load($data->uid), 'nolink', 0);
+  }
+  
+  return $students;
+}
+
+
+
+
+
+//semester name is derived from the semester_number
+//semester_number starts with the fall 1968 semester
+function course_get_semester_name($semester_number){
+  $year = 1968 + (int)ceil($semester_number / 4);
+  switch($semester_number % 4){
+  case 0:
+    return $year . " Fall";
+  case 1:
+    return $year . " Winter";
+  case 2:
+    return $year . " Spring";
+  case 3:
+    return $year . " Summer";
+  }
+}
+
+
+/**
+ * Implement hook_enable()
+*/
+function course_enable(){
+  //set course nodes as group type
+  //putting this here, because it is not working in hook_install
+  variable_set('og_content_type_usage_course', 'group');
+}
+
+
+
+
+function course_user_is_in_classes($uid) {
+  $query = 'SELECT count(og.nid) FROM {og_uid} og INNER JOIN {courses} c on og.nid = c.nid WHERE og.is_active = 1 AND og.uid = %d AND ((c.is_first_year = 1 AND c.semester_number = %d) OR (c.is_first_year = 1 AND c.semester_number = %d))';
+  $result = db_result(db_query($query, $uid, variable_get('course_current_semester_1L', 0), variable_get('course_current_semester_UL', 0))); 
+  return ($result > 0);
+}
+
+
+function course_audience_in_classes($nid) {
+  $query = 'SELECT status FROM {course_audience} WHERE nid = %d';
+  return db_result(db_query($query, $nid));
+}

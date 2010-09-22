@@ -1,0 +1,7 @@
+name = NUSL user profile
+description = "Adds user profile"
+package = "NUSL"
+dependencies[] = course
+dependencies[] = mirrored_account
+core = 6.x
+

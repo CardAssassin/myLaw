@@ -1,0 +1,200 @@
+<?php
+
+
+function video_message_board_menu(){
+  $items['node/%node/video-message-board'] = array(
+    'type' => MENU_CALLBACK, 
+    'page callback' => 'video_message_board_file',
+    'page arguments' => array(1), 
+    'access callback' => 'node_access',
+    'access arguments' => array('view', 1),
+    'title' => 'Download Video Message Board'
+  );
+  return $items;
+}
+
+
+function video_message_board_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form['type']['#value']) && 'announcement_node_form' == $form_id)  {
+
+    $form['video_message_board'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Video Message Board'),
+      '#collapsible' => TRUE,
+      '#collapsed'   => TRUE,
+    );
+
+    $form['#attributes'] = array('enctype' => "multipart/form-data");
+    $form['video_message_board']['vmb_upload'] = array(
+      '#type' => 'file',
+      '#title' => t('Upload powerpoint slide'),
+    );
+ 
+    $form['#validate'][] = 'video_message_board_form_alter_validate';
+    $form['#submit'][] = 'video_message_board_form_alter_submit';
+
+  }
+
+}
+
+function video_message_board_form_alter_validate(&$form, &$form_state) {
+  if (((isset($_FILES['files']) && $_FILES['files']['name']['vmb_upload']) || _video_message_board_has_vmb($form_state['values']['nid'])) && !isset($form_state['values']['og_groups'][variable_get('community_nid', 0)])){
+    form_set_error('og_groups', t('Video Message Board slides can only be posted to "All Community"'));
+  }
+}
+
+
+function video_message_board_form_alter_submit(&$form, &$form_state) {
+  // If required, validate the uploaded picture.
+  $validators = array(
+    'file_validate_extensions' => array('ppt'),
+  );
+
+/*  $source = 'file_upload';
+  static $upload_cache;
+  if (isset($upload_cache[$source])) {
+    drupal_set_message('upload_cache');
+   // return $upload_cache[$source];
+  }
+
+  print_r($_FILES);die;
+  if(isset($_FILES['files'])){
+    drupal_set_message('files');
+  }
+  */
+
+  //if(isset($_POST['file_upload'])){
+  
+  $source = 'vmb_upload';
+  if (isset($_FILES['files']) && $_FILES['files']['name'][$source] && is_uploaded_file($_FILES['files']['tmp_name'][$source])) {
+    //taken from file_save_upload
+    switch ($_FILES['files']['error'][$source]) {
+      // @see http://php.net/manual/en/features.file-upload.errors.php
+      case UPLOAD_ERR_OK:
+        break;
+
+      case UPLOAD_ERR_INI_SIZE:
+      case UPLOAD_ERR_FORM_SIZE:
+        drupal_set_message(t('The file %file could not be saved, because it exceeds %maxsize, the maximum allowed size for uploads.', array('%file' => $source, '%maxsize' => format_size(file_upload_max_size()))), 'error');
+        return 0;
+
+      case UPLOAD_ERR_PARTIAL:
+      case UPLOAD_ERR_NO_FILE:
+        drupal_set_message(t('The file %file could not be saved, because the upload did not complete.', array('%file' => $source)), 'error');
+        return 0;
+
+        // Unknown error
+      default:
+        drupal_set_message(t('The file %file could not be saved. An unknown error has occurred.', array('%file' => $source)), 'error');
+        return 0;
+    }
+
+    $tmpName  = $_FILES['files']['tmp_name'][$source];
+
+    $fp      = fopen($tmpName, 'r');
+    $content = fread($fp, filesize($tmpName));
+   // $content = addslashes($content);
+    fclose($fp);
+    $form_state['values']['vmb'] = array(
+      'content' => $content,
+    );
+  }
+
+
+
+/*  if ($file = file_save_upload('file_upload', $validators, file_directory_path())) {
+    //Remove file from db
+    $form_state['values']['file'] = $file;
+  /*  $query = "DELETE FROM {video_message_board} WHERE nid = %d";
+    db_query($query, $form_state['values']['nid']);
+    //save file as blob
+    
+    $query = "INSERT INTO {video_message_board} (nid, ppt) values (%d, %b)";
+    db_query($query, $form_state['values']['nid'], $file);
+*/
+/*
+  }
+  else{
+    print("file not saved");die;
+  }
+*/
+}
+
+
+
+
+function video_message_board_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
+  global $user;
+
+  switch($op){
+  case 'insert':
+  case 'update':
+    if(isset($node->vmb)){
+      $query = "DELETE FROM {video_message_board} WHERE nid = %d";
+      db_query($query, $node->nid);
+      //save file as blob
+    
+      $query = "INSERT INTO {video_message_board} (nid, data) values (%d, %b)";
+      db_query($query, $node->nid, $node->vmb['content']);
+    }
+    break;
+  case 'load':
+    if(_video_message_board_has_vmb($node->nid)){
+      $node->has_vmb = true;
+    }
+    break;
+  case 'view':
+    if($node->has_vmb){
+      $node->content['video_message_board'] = array(
+        '#value' => theme('video_message_board', $node->nid),
+        '#weight' => 10,
+      );
+    }
+    break;
+  }
+
+
+}
+
+
+function _video_message_board_has_vmb($nid){
+  $query = "SELECT count(*) FROM {video_message_board} WHERE nid = %d";
+  return (db_result(db_query($query, $nid)) > 0);
+}
+
+function video_message_board_theme(){
+  return array(
+    'video_message_board' => array(
+      'arguments' => array('nid' => NULL),
+      'template' => 'video-message-board',
+    ),
+  );
+}
+
+
+/*function video_message_board_preprocess_node(&$variables) {
+  $variables['slidelink'] = l('Video Board Slide', 'node/'.$variables['nid'].'/video-message-board');
+}
+*/
+
+function video_message_board_file($node){
+  $query = "SELECT data FROM {video_message_board} WHERE nid = %d";
+  $video_message_board = db_fetch_object(db_query($query, $node->nid));
+  if(isset($video_message_board->data)){
+    $filename = str_replace(" ", "_", $node->title);  
+ 
+    header("Content-Type: application/mspowerpoint");
+    header("Content-Disposition: attachment; filename=$filename.ppt");
+    header("Content-Length: ".strlen($video_message_board->data));
+    header("Accept-Ranges: bytes");
+    header("Pragma: public");
+    header("Expires: 0");
+    header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+    header("Content-transfer-encoding: binary");
+  
+    echo db_decode_blob($video_message_board->data);
+    die;
+  }
+}
+
+

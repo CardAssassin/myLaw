@@ -1,0 +1,6 @@
+; $Id$
+
+name = OSD Writing Competition
+description = "Opportunities for Student Distinction Writing Competition"
+package = "NUSL"
+core = 6.x

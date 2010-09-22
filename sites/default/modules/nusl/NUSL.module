@@ -1,0 +1,383 @@
+<?php
+
+
+function NUSL_phptemplate_comment_submitted($comment) {
+  $output = theme('username', $comment);
+  $output .= "<br>";
+  $output .= format_date($comment->timestamp, 'custom', 'm/d/y H:i');
+  return $output;
+}
+
+
+function og_group_access_preprocess_node(&$variables) {
+  $node = $variables['node'];
+
+  if (isset($node->author_group_nid)) {
+    $author_group = node_load($node->author_group_nid);
+    $variables['author_group'] = l($author_group->title, "node/$author_group->nid");
+    array_unshift($variables['template_files'], 'node-group-author-post');
+  }
+
+}
+
+/**
+ *  Implementation of hook_menu().
+*/
+function NUSL_menu(){ 
+  $items['logout'] = array(
+    'title' => 'Log out',
+    'access callback' => 'user_is_logged_in',
+    'page callback' => 'user_logout',
+    'file' => 'user.pages.inc',
+    'file path' => drupal_get_path('module', 'user'),
+    'menu_name' => 'primary-links',
+    'weight'   => 20,
+  );
+
+/*
+
+  $items['NUSL/announcement'] = array(
+    'title' => 'Create Announcement',
+    'access callback' => true,
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('node/add/announcement'),
+    'menu_name' => 'NUSL',
+  );
+
+  $items['NUSL/discussion-topic'] = array(
+    'title' => 'Create Discussion Topic',
+    'access callback' => true,
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('node/add/discussion-topic'),
+    'menu_name' => 'NUSL',
+  );
+
+  $items['NUSL/calendar-entry'] = array(
+    'title' => 'Create Calendar Entry',
+    'access callback' => true,
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('node/add/calendar-entry'),
+    'menu_name' => 'NUSL',
+  );
+
+  $items['NUSL/faq'] = array(
+    'title' => 'FAQ\'s',
+    'access callback' => true,
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('faq'),
+    'menu_name' => 'NUSL',
+  );
+
+  $items['NUSL/modr8'] = array(
+    'title' => 'Moderated content',
+    'description' => 'Approve or delete moderated content.',
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('modr8'),
+    'access callback' => '_og_delivery_access_callback_moderate_any',
+    'menu_name' => 'NUSL',
+  );
+*/
+
+  return $items;
+}
+
+
+/**
+ * Implementation of hook_block().
+*/
+function NUSL_block($op = 'list', $delta = 0, $edit = array()){
+  switch ($op) {
+    case 'list':
+      $blocks[0]['info'] = t('Group actions');
+      $blocks[0]['cache'] = BLOCK_NO_CACHE;
+      $blocks[1]['info'] = t('Home Menu');
+      $blocks[1]['cache'] = BLOCK_NO_CACHE;
+      return $blocks;
+  case 'view':
+    switch ($delta) {
+      case 0:
+        return og_group_access_block_actions();
+      case 1:
+        return NUSL_block_contents();
+    }
+  }
+}
+
+
+
+
+function NUSL_block_contents() {
+  $links = array();
+  $links[] = l('Create Announcement', 'node/add/announcement');
+  $links[] = l('Create Discussion Topic', 'node/add/discussion-topic');
+  $links[] = l('FAQ\'s', 'faq');
+  if(_og_delivery_access_callback_moderate_any()) {
+    $links[] = l('Moderate(' . og_delivery_modr8_num_all() . ')', 'modr8');
+  }
+  $links[] = l('Law School Calendar', 'https://jefferson.slaw.neu.edu/cgi-bin/view/webevent.cgi', array('attributes' => array('target' => '_blank')));
+  $links[] = l('myNEU', 'http://www.myneu.neu.edu', array('attributes' => array('target' => '_blank')));
+  $links[] = l('Video Message Board',  'node/2238');
+
+  $links = array_merge($links, module_invoke_all('NUSL_home_links'));
+
+  $block['content'] .= theme('item_list', $links);
+  $block['subject'] = "Home Menu";
+  return $block;
+}
+
+/*
+  Creates a block for use within a group to show available actions to the user
+*/
+function og_group_access_block_actions(){
+  $group_access_links = array();
+
+  // Only display group details if we have a group context.
+  if (($group = og_get_group_context()) && node_access('view', $group)) {
+  //  $block['content'] = "Create Content";
+    $group_access_links = module_invoke_all('og_create_links', $group);
+
+    if (og_is_group_admin($group)) {
+      $group_access_links[] = l(t('Membership'), 'og/users/'.$group->nid.'/list');
+    //  $group_access_links[] = l(t('Permissions'), 'node/'.$group->nid.'/og/permissions');
+    }
+     
+
+    list($txt, $subscription) = og_subscriber_count_link($group);
+    if ($subscription == 'active') {
+      if ($group->og_selective < OG_INVITE_ONLY) {
+        $group_access_links['invite'] = l(t('Invite friend'), "og/invite/$group->nid");
+      }      
+
+    }
+    elseif ($subscription == 'requested') {
+      $group_access_links['approval'] = t('Your membership request awaits approval.');
+      $group_access_links['delete'] = l(t('Delete request'), "og/unsubscribe/$group->nid/$user->uid", array('query' => 'destination=og'));
+    }
+   /* elseif (!$user->uid) {
+      $dest = drupal_get_destination();
+      $group_access_links['must_login'] = t('You must <a href="!register">register</a>/<a href="!login">login</a> in order to post into this group.', array('!register' => url("user/register", array('query' => $dest)), '!login' => url("user/login", array('query' => $dest))));
+    }*/
+    elseif ($group->og_selective < OG_INVITE_ONLY) {
+      $group_access_links['subscribe'] = og_subscribe_link($group);
+    }
+
+    $block['content'] .= theme('item_list', $group_access_links);
+    $block['subject'] = "Group Menu";//l($node->title, "node/$node->nid");
+    return $block;
+  }
+/*
+    list($txt, $subscription) = og_subscriber_count_link($node);
+    if ($subscription == 'active' || user_access('administer nodes')) {
+*/  
+}
+
+
+function og_group_access_membership($form_state, $group){
+  $query = 'SELECT * FROM {og_uid} WHERE nid = %d';
+  $result = db_query($query, $group->nid);
+  $rows = array();
+  while($data = db_fetch_array($result)){
+    $rows[] = $data;
+  }
+  
+  $form['members'] = array(
+    '#type' => 'value',
+    '#value' => $rows,
+  );
+
+  return $form;
+}
+
+
+function theme_og_group_access_membership($form){
+  $header[] = array(
+    'data' => 'Name',
+    'field' => 'name',
+  );
+  $header[] = array(
+    'data' => 'Login',
+    'field' => 'login',
+  );
+  $header[] = array(
+    'data' => 'Member Since',
+    'field' => 'created',
+  );
+  $header[] = array(
+    'data' => 'Access Level',
+    'field' => 'access',
+  );
+
+  $attributes = array();
+
+  $rows = array();
+  foreach($form['members']['#value'] as $member){
+    $account = user_load($member['uid']);
+    $rows[] = array(
+      'name' => array(
+        'data' => theme('username', $account, 'double', 1),
+        'name_last' => $account->name_last,
+        'name_first' => $account->name_first,
+      ),
+      'login' => theme('username', $account, 'login', 1),
+      'created' => array(
+        'data' => format_date($member['created'], 'small'),
+        'timestamp' => $member['created'],
+      ),
+      'access' => $member['is_admin'] == 1 ? 'Admin' : 'Member',
+    );
+  }
+
+  _og_group_access_membership_sort($header, $rows);
+  
+  $output = theme('table', $header, $rows, $attributes);
+  return $output;
+}
+
+
+//sorting function for the og_group_access_membership
+function _og_group_access_membership_sort($header, &$rows){
+  $sort = tablesort_get_sort($header);
+  $order = tablesort_get_order($header);
+
+  switch($order['sql']){
+  case 'name':
+  case 'login':
+    usort($rows, "_og_group_access_membership_sort_name_".$sort);
+    break;
+  case 'created':
+  case 'access':
+    usort($rows, "_og_group_access_membership_sort_".$order['sql']."_".$sort);
+  }
+}
+
+//helper function for _og_group_access_membership_sort()
+function _og_group_access_membership_sort_name_asc($a, $b){
+  if($a['name']['name_last'] == $b['name']['name_last']){
+    return ($a['name']['name_first'] > $b['name']['name_first']);
+  }
+  return ($a['name']['name_last'] > $b['name']['name_last']);
+}
+
+//helper function for _og_group_access_membership_sort()
+function _og_group_access_membership_sort_name_desc($a, $b){
+  if($a['name']['name_last'] == $b['name']['name_last']){
+    return ($a['name']['name_first'] < $b['name']['name_first']);
+  }
+  return ($a['name']['name_last'] < $b['name']['name_last']);
+}
+
+//helper function for _og_group_access_membership_sort()
+function _og_group_access_membership_sort_created_asc($a, $b){
+  if($a['created']['timestamp'] == $b['created']['timestamp']){
+    return _og_group_access_membership_sort_name_asc($a, $b);
+  }
+  return($a['created']['timestamp'] > $b['created']['timestamp']);
+}
+
+//helper function for _og_group_access_membership_sort()
+function _og_group_access_membership_sort_created_desc($a, $b){
+  if($a['created']['timestamp'] == $b['created']['timestamp']){
+    return _og_group_access_membership_sort_name_asc($a, $b);
+  }
+  return($a['created']['timestamp'] < $b['created']['timestamp']);
+}
+
+//helper function for _og_group_access_membership_sort()
+function _og_group_access_membership_sort_access_asc($a, $b){
+  if($a['access'] == $b['access']){
+    return _og_group_access_membership_sort_name_asc($a, $b);
+  }
+  else {
+    return($a['access'] > $b['access']);
+  }
+}
+
+//helper function for _og_group_access_membership_sort()
+function _og_group_access_membership_sort_access_desc($a, $b){
+  if($a['access'] == $b['access']){
+    return _og_group_access_membership_sort_name_asc($a, $b);
+  }
+  else {
+    return($a['access'] < $b['access']);
+  }
+}
+
+
+/**
+ * Implementation of form_alter()
+*/
+function NUSL_form_alter(&$form, &$form_state, $form_id){
+  if (isset($form['#node']) && $form_id == $form['#node']->type .'_node_form') {
+    $node = $form['#node'];
+  
+   unset($form['menu']);
+
+    unset($form['author']);
+    $form['author']['name'] = array(
+      '#type'  => 'value',
+      '#value' => $node->name ? $node->name : '',
+    );
+    $form['author']['date'] = array(
+      '#type'  => 'value',
+      '#value' => $node->date ? $node->date : '',
+    );
+
+    unset($form['options']);
+    $form['options']['status'] = array(
+      '#type'  => 'value',
+      '#value' => $node->status,
+    );
+    $form['options']['promote'] = array(
+      '#type'  => 'value',
+      '#value' => $node->promote,
+    );
+    $form['options']['sticky'] = array(
+      '#type'  => 'value',
+      '#value' => $node->sticky,
+    );
+
+    unset($form['buttons']['preview']);
+  }
+  elseif($form_id == 'comment_form'){
+    unset($form['preview']);
+  }
+}
+
+
+/**
+ * Implementation of hook_nodeapi().
+ *
+*/
+function NUSL_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
+  global $user;
+  
+  switch ($op) {
+    case 'view':
+ //    drupal_set_message('view');
+ //    content_profile_get_user_context();
+    break;
+  }
+}
+
+
+function NUSL_theme(){
+  return array(
+    'og_group_access_membership' => array(
+      'arguments' => array('form' => NULL),
+    ),
+  );
+}
+
+
+
+
+
+function NUSL_views_api() {
+  return array(
+    'api' => 2,
+  );
+}
+
+
+
+

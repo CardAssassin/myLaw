@@ -1,0 +1,207 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Provides an "Classified" node type for posting information from a single form
+ */
+
+
+/**
+ * Implementation of hook_node_info().
+*/
+function classifieds_node_info(){
+  return array(
+    'classifieds' => array(
+      'name'   => t('Classifieds'),
+      'module' => 'classifieds',
+      'description' => "create a classified post",
+      'has_title'   => TRUE,
+      'title_label' => t('Title'),
+      'has_teaser'  => TRUE,
+      'teaser_label' => t('Teaser'),
+      'has_body'    => TRUE,
+      'body_label'  => t('Body')
+    )
+  );
+}
+
+
+/**
+ * Implementation of hook_menu
+*/
+function classifieds_menu(){
+  $items = array();
+
+  $items['classifieds/post'] = array(
+    'title' => 'Post Advertisement',
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('node/add/classifieds'),
+    'access callback' => true,
+    'menu_name' => 'primary-links',
+    'weight' => 5,
+  );
+  
+  return $items;
+}
+
+
+/**
+ * Implementation of hook_perm
+*/
+function classifieds_perm(){
+  return array('create classified', 'edit own classified');
+}
+
+
+/**
+ * Implementation of hook_access().
+ */
+function classifieds_access($op, $node) {
+  global $user;
+
+  if ($op == 'create') {
+    return user_access('create classified');
+  }
+
+  if($op == 'update' || $op == 'delete'){
+    return (user_access('edit own classified') && ($user->uid == $node->uid));
+  }
+}
+
+
+
+
+
+/**
+ * Implementation of hook_form().
+ */
+function classifieds_form(&$node) {
+  $type = node_get_types('type', $node);
+  
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => check_plain($type->title_label),
+    '#required' => TRUE,
+    '#default_value' => $node->title,
+    '#weight' => -5
+  );
+ 
+  
+  $form['body_field']['teaser'] = array(
+    '#type'   => 'textarea',
+    '#title'  => check_plain($type->teaser_label),
+    '#default_value' => $node->teaser,
+    '#rows'          => 3,
+    '#required'      => TRUE
+  );
+
+  $form['body_field']['body'] = array(
+    '#type'   => 'textarea',
+    '#title'  => check_plain($type->body_label),
+    '#default_value' => $node->body,
+    '#rows'          => 4,
+    '#required'      => TRUE,
+    
+  );
+  $form['body_field']['format'] = filter_form($node->format);
+  $form['body_field']['#prefix'] = '<div class="body-field-wrapper">';
+  $form['body_field']['#suffix'] = '</div>';
+  
+
+  $form['category'] = array(
+    '#title' => t('Category'),
+    '#type'  => 'select',
+    '#options' => classifieds_get_categories(),
+    '#default_value' => $node->category ? $node->category: 'Misc.',
+    '#weight' => -1,
+  );
+
+  
+  return $form;
+}
+
+
+function classifieds_get_categories(){
+  $categories = array();
+  $categories['Misc.'] = 'Misc.';
+  $categories['Books'] = 'Books';
+  $categories['Apartments'] = 'Apartments';
+  $categories['Lost & Found'] = 'Lost & Found';
+  return $categories;
+}
+
+/**
+ * Implementation of hook_validate
+*/
+//function announcement_validate($node){
+ // event_validate_form_date($node, "announcement_start");
+ // event_validate_form_date($node, "announcement_end"); 
+
+
+//}
+
+/** 
+ * Implementation of hook_load
+*/
+function classifieds_load(&$node){
+  $query = "SELECT category FROM {classifieds} WHERE nid = %d";
+  return db_fetch_object(db_query($query, $node->nid));
+}
+
+
+/**
+ * Implementation of hook_view
+*/
+function classifieds_view(&$node, $teaser = FALSE, $page=FALSE){
+
+  $node = node_prepare($node, $teaser);
+  $node->content['category'] = array(
+    '#value' => theme(classifieds_category, $node),
+    '#weight' => 2
+  );
+  return $node;
+}
+
+
+function theme_classifieds_category($node){
+  $output = '<div class="classifieds-category">';
+  $output .= $node->category;
+  $output .= '</div><br />';
+
+  return $output;
+}
+
+
+
+
+
+/**
+ * Implementation of hook_insert().
+*/
+function classifieds_insert($node){
+  $query = "INSERT INTO {classifieds} (nid, category) VALUES (%d, '%s')";
+  db_query($query, $node->nid, $node->category);
+}
+
+
+/**
+ * Implementation of hook_update
+*/
+function classifieds_update($node){
+   // print_r($node);die;
+    $query = "UPDATE {classifieds} SET category = '%s' WHERE nid = %d";
+    db_query($query, $node->category, $node->nid);
+}
+
+
+/**
+ * Implementation of hook_views_api().
+ */
+function classifieds_views_api() {
+  return array(
+    'api' => 2,
+  );
+}
+
+

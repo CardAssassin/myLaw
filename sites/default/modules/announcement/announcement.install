@@ -1,0 +1,45 @@
+<?php
+
+// $Id$
+
+function announcement_install(){
+  drupal_install_schema('announcement');
+}
+
+
+function announcement_schema(){
+  $schema = array();
+
+  $schema['announcements'] = array(
+    'description'     => 'Stores information about each group',
+    'fields'          => array(
+      'nid'             => array(
+        'description'     => 'The nodes {node}.nid',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'vid'             => array(
+        'description'     => 'The node version id',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'posting_date'      => array(
+        'description'     => 'The posting date of the announcement',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'expiration_date'             => array(
+        'description'     => 'The expiration date of the announcement',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+    ),
+    'primary_key'        => array('nid')
+  );
+  
+  return $schema;
+}

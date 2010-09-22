@@ -1,0 +1,447 @@
+<?php
+
+
+/**
+ * Implementation of hook_perm
+ */
+function NUSL_user_profile_perm(){
+  return array('view user address');
+}
+
+
+function NUSL_user_profile_locked_roles(){
+  return array('faculty', 'staff', 'faculty secretary', 'student');
+}
+
+
+/**
+ * Implementation of hook_user
+ */
+function NUSL_user_profile_user($op, &$edit, &$account, $category = NULL) {
+  global $user;
+
+  switch ($op) {
+    case 'register':
+    case 'form':
+      return _NUSL_user_profile_form($account);
+      break;
+    case 'insert':
+      NUSL_user_profile_insert($account->uid, $edit);
+      break;
+    case 'update':
+      NUSL_user_profile_delete($account);
+      NUSL_user_profile_insert($account->uid, $edit);
+      break;
+    case 'delete':
+      NUSL_user_profile_delete($account);
+      break;
+    case 'load':
+      $account->profile_name = NUSL_user_profile_get_name($account->uid);
+/*      $profile_address = NUSL_user_profile_get_address($account->uid);
+      if(!empty($profile_address)){
+        $account->profile_address = $profile_address;
+      }
+*/
+      $query = "SELECT faculty_secretary_uid FROM {users_profile_faculty} WHERE uid = %d";
+      $account->faculty_secretary_uid = db_result(db_query($query, $account->uid));
+
+     // $query = "SELECT is_student, is_staff, is_faculty FROM {users_profile} WHERE uid = %d";
+    //  $roles_NUSL = db_fetch_array(db_query($query, $account->uid));
+     // $account->roles_NUSL = $roles_NUSL;
+      
+
+      break;
+    case 'view':
+      //if ($account->profile_name) {
+        $account->content['name'] = array(
+          '#type' => 'user_profile_item',
+          '#title' => 'name',
+          '#value' => theme('username', $account, 'nolink', 2),
+          '#weight' => -10,
+        );
+     // }
+/*      if ($account->profile_address){
+        $account->content['address'] = array(
+          '#type' => 'user_profile_item',
+          '#title' => 'Address',
+          '#value' => $account->profile_address['display'],
+          '#weight' => -5,
+        );
+      }
+*/
+      break;
+    case 'login':
+      global $_ldapauth_ldap;
+
+      //print_r($_ldapauth_ldap);die;
+  //    NUSL_user_profile_update_name(244, 'first', 'last');
+
+      if (!_ldapauth_init($account))
+        return;
+/*
+      $bind_info = _ldapdata_edition($account);
+      if (!$_ldapdata_ldap->connect($bind_info['dn'], $bind_info['pass'])) {
+        watchdog('ldapdata', "User load: user %name's data could not be read in the LDAP directory", array('%name' => $account->name), WATCHDOG_WARNING);
+        return;
+      }
+*/
+      $_ldapauth_ldap->connect($_ldapauth_ldap->getOption('binddn'), $_ldapauth_ldap->getOption('bindpw'));
+
+      $attributes = $_ldapauth_ldap->retrieveAttributes($account->ldap_dn);
+      
+      NUSL_user_profile_update_name($account->uid, $attributes['givenname'][0], $attributes['sn'][0]);
+      break;
+  }
+}
+
+
+function NUSL_user_profile_insert_name($uid, $first_name, $last_name){
+  $query = "INSERT INTO {users_profile} (uid, name_first, name_last) VALUES (%d, '%s', '%s')";
+  db_query($query, $uid, $first_name, $last_name);
+}
+
+
+function NUSL_user_profile_update_name($uid, $first_name, $last_name){
+  $query = "UPDATE {users_profile} SET name_first = '%s', name_last = '%s' WHERE uid = %d";
+  db_query($query, $first_name, $last_name, $uid);
+}
+
+
+function NUSL_user_profile_update_roles($uid, $edupersonaffiliation){
+  foreach($edupersonaffiliation as $affiliation){
+    
+  }
+}
+
+
+
+
+
+function NUSL_user_profile_get_name($uid){
+  $query = "SELECT name_last as last, name_first as first, name_middle as middle FROM {users_profile} WHERE uid = %d";
+  $profile_name = db_fetch_array(db_query($query, $uid));
+ // $profile_name['display'] = trim($profile_name['last'] .', ' . $profile_name['first'] . ' ' . $profile_name['middle']);
+  return $profile_name;
+}
+
+
+
+function NUSL_user_profile_get_address($uid){
+  global $user;
+  if(user_access('view user address') || $uid == $user->uid){
+    $query = "SELECT address1, address2, city, state, zip FROM {users_profile} WHERE uid = %d";
+    $profile_address = db_fetch_array(db_query($query, $uid));
+    $profile_address['display'] = $profile_address['address1'] .', ' . $profile_address['address2'] . ', ' . $profile_address['city'] . ', ' .$profile_address['state'] . ' ' .  $profile_address['zip'];
+    return $profile_address;
+  }
+  return array();
+}
+
+function NUSL_user_profile_set_user_roles(&$account){
+  
+}
+
+function _NUSL_user_profile_form($account){
+/*  $form['name'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Name',
+  );
+
+  $form['name']['name_first'] = array(
+    '#type' => 'textfield',
+    '#title' => 'First name',
+    '#maxlength' => 50,
+    '#default_value' => $account->profile_name ? $account->profile_name['first'] : '',
+    '#required' => TRUE,
+  );
+  $form['name']['name_middle'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Middle name',
+    '#maxlength' => 50,
+    '#default_value' => $account->profile_name ? $account->profile_name['middle'] : '',
+    '#required' => FALSE,
+  );
+  $form['name']['name_last'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Last name',
+    '#maxlength' => 100,
+    '#default_value' => $account->profile_name ? $account->profile_name['last'] : '',
+    '#required' => TRUE,
+  );
+
+
+  $form['address'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Address',
+  );
+  $form['address']['address1'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Address',
+    '#maxlength' => 255,
+    '#default_value' => $account->profile_address ? $account->profile_address['address1'] : '',
+    '#required' => TRUE,
+  );
+  $form['address']['address2'] = array(
+    '#type' => 'textfield',
+    '#title' => '',
+    '#maxlength' => 255,
+    '#default_value' => $account->profile_address ? $account->profile_address['address2'] : '',
+    '#required' => FALSE,
+  );
+  $form['address']['city'] = array(
+    '#type' => 'textfield',
+    '#title' => 'City',
+    '#maxlength' => 100,
+    '#default_value' => $account->profile_address ? $account->profile_address['city'] : '',
+    '#required' => TRUE,
+  );
+  $form['address']['state'] = array(
+    '#type' => 'select',
+    '#title' => 'State',
+    '#options' => NUSL_get_states(),
+    '#default_value' => isset($account->profile_address) ? variable_get('state',$account->profile_address['state']) : 'MA',
+    '#required' => TRUE,
+    '#multiple' => FALSE,
+  );
+
+  $form['address']['zip'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Zip code',
+    '#maxlength' => 5,
+    '#default_value' => $account->profile_address ? $account->profile_address['zip'] : '',
+    '#required' => TRUE,
+  );
+*/
+  
+
+
+
+  $form['faculty'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Faculty',
+    '#collapsible' => TRUE,
+    '#collapsed'   => TRUE,
+    '#weight' => 10,
+  );
+  $form['faculty']['faculty_secretary'] = array(
+    '#type' => 'select',
+    '#title' => 'Faculty Secretary',
+    '#options' => array('NULL' => 'none') + NUSL_user_profile_get_faculty_secretaries(),
+    '#default_value' => $account->faculty_secretary_uid,
+    '#weight' => -3
+  );
+/*
+  $form['faculty']['is_faculty'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'User is a faculty member',
+    '#default_value' => $account->roles_NUSL['is_faculty'],
+  );
+*/
+
+  $form['staff'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Staff',
+    '#collapsible' => TRUE,
+    '#collapsed'  => TRUE,
+    '#weight' => 10,
+  );
+/*
+  $form['staff']['is_staff'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'User is Staff',
+    '#default_value' => $account->roles_NUSL['is_staff'],
+  );
+*/
+  return $form;
+}
+
+
+
+function NUSL_user_profile_delete($account){
+  $query = "DELETE FROM {users_profile} WHERE uid = %d";
+  db_query($query, $account->uid);
+
+  if(isset($account->faculty_secretary_uid) && $account->faculty_secretary_uid != 0){
+    $query = "DELETE FROM {users_profile_faculty} WHERE uid=%d";
+    db_query($query, $account->uid);
+    mirrored_account_remove($account->uid, $account->faculty_secretary_uid);
+  }
+
+}
+
+
+function NUSL_user_profile_insert($uid, $form){
+/*
+  $query = "INSERT INTO {users_profile} (uid, name_last, name_first, name_middle, address1, address2, city, state, zip) VALUES (%d, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')";
+  db_query($query, $uid, $form['name_last'], $form['name_first'], $form['name_middle'], $form['address1'], $form['address2'], $form['city'], $form['state'], $form['zip']); 
+*/
+
+  if($form['faculty_secretary'] != 0){
+    $query = "INSERT INTO {users_profile_faculty} (uid, faculty_secretary_uid) VALUES (%d, %d)";
+    db_query($query, $uid, $form['faculty_secretary']);
+    mirrored_account_insert($uid, $form['faculty_secretary']);
+  }
+
+}
+
+
+/**
+ * Format a username.
+ *
+ * @param $object
+ *   The user object to format, usually returned from user_load().
+ * @return
+ *   A string containing an HTML link to the user's page if the passed object
+ *   suggests that this is a site user. Otherwise, only the username is returned.
+ */
+function phptemplate_username($object, $format = 'normal', $middle_length = 0) {
+  if(isset($object->type) && isset($object->uid)){
+    $object = user_load($object->uid);
+  }
+  
+  if($object->name){
+    if($object->profile_name['last'] == ''){
+      $format = 'login';
+    }
+    $middle = '';
+    if($format != 'login' && $object->profile_name['middle'] != ''){
+      
+      if($middle_length == 1){
+        $middle = drupal_substr($object->profile_name['middle'], 0, 1) . '. ';
+      }
+      elseif($middle_length > 1){
+        $middle = $object->profile_name['middle'] . ' ';
+      }
+    }
+    switch($format){
+    case 'nolink':
+      $username = $object->profile_name['last'] . ', ' . $object->profile_name['first'] . ' ' . $middle;
+      $userlink = $username;
+      break;
+    case 'normal':
+      $username = $object->profile_name['last'] . ', ' . $object->profile_name['first'] . ' ' . $middle;
+      $userlink = l($username, 'user/'. $object->uid, array('attributes' => array('title' => t('View user profile.'))));
+      break;
+    case 'double':     
+      $username1 = $object->profile_name['last'] . ', ';
+      $username2 = $object->profile_name['first'] . ' ' . $middle;
+      $username = $username1 .'<br>' . $username2;
+      $userlink = l($username1, 'user/'. $object->uid, array('attributes' => array('title' => t('View user profile.')))); 
+      $userlink .= '<br>';
+      $userlink .= l($username2, 'user/'. $object->uid, array('attributes' => array('title' => t('View user profile.')))); 
+      break;
+    case 'login':
+      $username = $object->name;
+      $userlink .= l($username, 'user/'. $object->uid, array('attributes' => array('title' => t('View user profile.')))); 
+      break;
+    }
+    
+    
+  }
+
+  if ($object->uid && $object->name) {
+    
+    // Shorten the name when it is too long or it will break many tables.
+ /*   if (drupal_strlen($object->name) > 20) {
+      $name = drupal_substr($object->name, 0, 15) .'...';
+    }
+    else {
+      $name = $object->name;
+    }
+*/
+    if (user_access('access user profiles')) {
+      $output = $userlink;
+    }
+    else {
+     // $output = check_plain($username);
+      $output = $username;
+    }
+  }
+  else if ($object->name) {
+    // Sometimes modules display content composed by people who are
+    // not registered members of the site (e.g. mailing list or news
+    // aggregator modules). This clause enables modules to display
+    // the true author of the content.
+    if (!empty($object->homepage)) {
+      $output = l($username, $object->homepage, array('attributes' => array('rel' => 'nofollow')));
+    }
+    else {
+      $output = check_plain($username);
+    }
+
+    $output .= ' ('. t('not verified') .')';
+  }
+  else {
+    $output = variable_get('anonymous', t('Anonymous'));
+  }
+  return $output;
+}
+
+
+
+function NUSL_user_profile_get_faculty_secretaries(){
+  $query = "SELECT up.uid, up.name_last, up.name_first FROM {users_roles} ur INNER JOIN {role} r ON ur.rid = r.rid INNER JOIN {users_profile} up ON ur.uid = up.uid WHERE r.name = 'faculty secretary'";
+  $result = db_query($query);
+  $faculty_secretaries = array();
+  while($data = db_fetch_object($result)){
+    $faculty_secretaries[$data->uid] = $data->name_last .", ".$data->name_first;
+  } 
+  return $faculty_secretaries;
+}
+
+
+function NUSL_get_states(){
+  return array(
+    'AL' => 'Alabama',
+    'AK' => 'Alaska',
+    'AZ' => 'Arizona',
+    'CA' => 'California',
+    'CO' => 'Colorado',
+    'CT' => 'Connecticut',
+    'DE' => 'Deleware',
+    'DC' => 'District of Columbia',
+    'FL' => 'Florida',
+    'GA' => 'Georgia',
+    'HI' => 'Hawaii',
+    'ID' => 'Idaho',
+    'IL' => 'Illinois',
+    'IN' => 'Indiana',
+    'IA' => 'Iowa',
+    'KS' => 'Kansas',
+    'KY' => 'Kentucky',
+    'LA' => 'Louisiana',
+    'ME' => 'Maine',
+    'MD' => 'Maryland',
+    'MA' => 'Massachusetts',
+    'MI' => 'Michigan',
+    'MN' => 'Minnesota',
+    'MS' => 'Mississippi',
+    'MO' => 'Montana',
+    'NE' => 'Nebraska',
+    'NV' => 'Nevada',
+    'NH' => 'New Hampshire',
+    'NJ' => 'New Jersey',
+    'NM' => 'New Mexico',
+    'NY' => 'New York',
+    'NC' => 'North Carolina',
+    'ND' => 'North Dakota',
+    'OH' => 'Ohio',
+    'OK' => 'Oklahoma',
+    'OR' => 'Oregon',
+    'PA' => 'Pennsylvania',
+    'RI' => 'Rhode Island',
+    'SC' => 'South Carolina',
+    'SD' => 'South Dakota',
+    'TN' => 'Tennessee',
+    'TX' => 'Texas',
+    'UT' => 'Utah',
+    'VT' => 'Vermont',
+    'VA' => 'Virginia',
+    'WA' => 'Washington',
+    'WV' => 'West Virginia',
+    'WI' => 'Wisconsin',
+    'WY' => 'Wyoming'
+  );
+}
+
+

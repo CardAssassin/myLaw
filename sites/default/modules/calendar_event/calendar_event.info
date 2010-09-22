@@ -1,0 +1,7 @@
+; $Id$
+name = Calendar Event
+description = Adds the ability for nodes to be entered into calendar as an event
+package = NUSL
+core = 6.x
+
+

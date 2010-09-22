@@ -1,0 +1,334 @@
+<?php
+
+
+/**
+ * Implementation of hook_node_info().
+*/
+function department_node_info(){
+  return array(
+    'department' => array(
+      'name'   => t('Department'),
+      'module' => 'department',
+      'description' => "department group",
+      'has_title'   => TRUE,
+      'title_label' => t('Department name'),
+      'has_teaser'  => FALSE,
+      'has_body'    => TRUE,
+      'body_label'  => t('Homepage'),
+    )
+  );
+}
+
+
+
+
+
+/**
+ * Implementation of hook_perm
+*/
+function department_perm(){
+  return array('view department', 'create department');
+}
+
+
+/**
+ * Implementation of hook_group_access_view_access_level() of og_group_access
+ */
+function department_group_access_view_access_level($group){
+  return $group->perms['view group'];
+}
+
+
+
+/**
+ * Implementation of hook_access().
+ */
+function department_access($op, $node) {
+  if ($op == 'create') {
+    return user_access('create department');
+  }
+  if ($op == 'view') {
+    return user_access('view department');
+  }
+}
+
+
+/**
+ * Implementation of hook_form().
+ */
+function department_form(&$node) {
+/*
+  $item = array(
+      'link_title' => 'Departments',
+      'link_path' => 'departments',
+      'menu_name' => 'primary-links',
+      'module' => 'department',
+      'plid' => 0,
+    );
+    menu_link_save($item);
+*/
+
+  $type = node_get_types('type', $node);
+  
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => check_plain($type->title_label),
+    '#required' => TRUE,
+    '#default_value' => $node->title,
+    '#weight' => -5
+  );
+  
+  $form['body_field']['body'] = array(
+    '#type'   => 'textarea',
+    '#title'  => check_plain($type->body_label),
+    '#default_value' => $node->body,
+    '#rows'          => 4,
+    '#required'      => FALSE,
+    '#weight'        => -3
+  );
+
+  $form['body_field']['format'] = filter_form($node->format);
+  $form['body_field']['#prefix'] = '<div class="body-field-wrapper">';
+  $form['body_field']['#suffix'] = '</div>';
+
+ // $form['og_website'] = array();
+
+  $form['og_register'] = array('#type' => 'value', '#value' => 0);
+  $form['og_directory'] = array('#type' => 'value', '#value' => 1);
+
+  $form['og_selective'] = array(
+    '#type' => 'value', 
+    '#value' => OG_CLOSED,//$node->og_selective ? $node->og_selective : variable_get('og_content_type_usage_department', OG_INVITE_ONLY), 
+  );
+
+  return $form;
+}
+
+
+function department_nodeapi(&$node, $op, $teaser, $page) {
+  switch ($op) {
+  case 'prepare':
+  case 'view':
+    if (!$teaser) {
+      if(isset($node->author_group_nid)){
+        $group = node_load($node->author_group_nid);
+      }
+      else{
+        $group = $node;
+      }
+      if($group->type == 'department'){
+        $bc = array();
+        $bc[] = l(t('Home'), "");
+        $bc[] = l(t('Departments'), 'departments');
+        $bc[] = l($group->title, 'node/'.$group->nid);
+        drupal_set_breadcrumb($bc);
+      }
+    } 
+  } 
+}
+
+
+// page listing all departments
+function department_listing_page(){
+  $header = array(
+    array(
+      'data'  => 'Name',
+      'field' => 'title',
+    ),
+  );//header
+ 
+  $query = "SELECT n.nid, n.title FROM {node} n INNER JOIN {departments} d ON n.nid = d.nid";
+  $query .= tablesort_sql($header);
+  $result = db_query($query);
+
+  while($department = db_fetch_object($result)){
+    $rows[] = array(
+      l($department->title, "node/$department->nid"),
+    ); 
+  }  
+
+  // If we have rows for a table, theme the table
+  //    otherwise set output to a message
+  if ( count($rows) ) {
+    $output = theme('table', $header, $rows);
+  }
+  else {
+    $output = "No departments were found";
+  }
+   
+  // And finally, produce the page
+  print theme('page', $output);
+}
+
+
+/**
+ * Implementation of hook_form_alter()
+*/
+function department_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form['#node']) && $form_id == $form['#node']->type .'_node_form') {
+    $node = $form['#node'];
+    if($node->type == 'department'){
+      unset($form['menu']);
+      unset($form['comment_settings']);
+      unset($form['revision_information']);
+      unset($form['author']);
+      $form['author']['name'] = array(
+        '#type'  => 'value',
+        '#value' => $node->name ? $node->name : '',
+      );
+      $form['author']['date'] = array(
+        '#type'  => 'value',
+        '#value' => $node->date ? $node->date : '',
+      );
+      unset($form['options']);
+      $form['options']['status'] = array(
+        '#type'  => 'value',
+        '#value' => $node->status,
+      );
+      $form['options']['promote'] = array(
+        '#type'  => 'value',
+        '#value' => $node->promote,
+      );
+      $form['options']['sticky'] = array(
+        '#type'  => 'value',
+        '#value' => $node->sticky,
+      );
+
+      $form['og_private'] = array('#type' => 'value', '#value' => 0);
+      
+    }//department
+  }
+}
+
+
+function department_form_node_type_form_alter(&$form, &$form_state) {
+  if (isset($form['#node_type']) && $form['#node_type']->type == 'department') {  
+    $form['og'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Organic groups'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#access' => user_access('administer organic groups'),
+    );
+    $form['og']['og_content_type_usage'] = array(
+      '#type' => 'value',
+      '#value' => 'group'
+    );
+
+  } 
+}
+
+
+/**
+ * Implementation of hook_insert().
+*/
+function department_insert($node){
+ // $query = "INSERT INTO {departments} (nid) VALUES (%d)";
+ // db_query($query, $node->nid);
+  //add primary link
+  department_create_primary_link($node);
+  
+}
+
+
+function department_update($node){
+  node_access_rebuild(TRUE);
+}
+
+
+/**
+ * Implementation of hook_load()
+*/
+function department_load(&$node){
+/*
+  $query = "SELECT course_number, semester_number, instructor1_uid, instructor2_uid FROM {courses} WHERE nid = %d";
+  $result = db_fetch_object(db_query($query, $node->nid));
+  $node->course_number = $result->course_number;
+  $node->semester_number = $result->semester_number;
+  $node->instructor1_uid = $result->instructor1_uid;
+  $node->instructor2_uid = $result->instructor2_uid;
+*/
+}
+
+
+
+
+
+function department_create_primary_link($node){
+  $plid = department_get_plid();
+  $item = array(
+    'link_title' => $node->title,
+    'link_path' => 'node/'. $node->nid,
+    'menu_name' => 'primary-links',
+    'module' => 'department',
+    'plid' => $plid,
+  );
+  menu_link_save($item);
+}
+
+
+function department_get_plid(){
+  //get menu link id for the department primary link to be used as the parent menu
+  $query = "SELECT mlid FROM {menu_links} WHERE menu_name = 'primary-links' and plid = 0 and link_path = 'departments' and router_path = 'departments'";
+  return db_result(db_query($query));
+}
+
+
+/**
+ * Implement hook_enable()
+*/
+function department_enable(){
+  //set department nodes as group type
+  //putting this here, because it is not working in hook_install
+  variable_set('og_content_type_usage_department', 'group');
+
+/*
+  $mlid = department_get_plid();
+ 
+  if($mlid == 0){
+    // create department link within primary-links
+    $item = array(
+      'link_title' => 'Departments',
+      'link_path' => 'departments',
+      'menu_name' => 'primary-links',
+      'module' => 'department',
+      'plid' => 0,
+    );
+    menu_link_save($item);
+  }
+  else{
+    $query = "UPDATE {menu_links} set hidden = 0 WHERE mlid = %d";
+    db_query($query, $mlid);
+  }
+*/
+}
+
+
+/**
+ * Implement hook_disable()
+
+function department_disable(){
+  $mlid = department_get_plid();
+  if($mlid > 0){
+    $query = "UPDATE {menu_links} set hidden = 1 WHERE mlid = %d";
+    db_query($query, $mlid);
+  }
+
+}
+*/
+
+function department_views_api() {
+  return array(
+    'api' => 2,
+  );
+}
+
+
+//hack to remove Add new comment link
+function department_link_alter(&$links, &$node){
+  if(og_is_group_type($node->type)){
+    unset($links['comment_add']);
+  }
+
+
+}

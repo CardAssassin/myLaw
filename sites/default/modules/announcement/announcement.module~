@@ -1,0 +1,255 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Provides an "announcement" node type for posting information from a single form
+ */
+
+
+/**
+ * Implementation of hook_node_info().
+*/
+function announcement_node_info(){
+  return array(
+    'announcement' => array(
+      'name'   => t('Announcement'),
+      'module' => 'announcement',
+      'description' => "post an announcement",
+      'has_title'   => TRUE,
+      'title_label' => t('Title'),
+      'has_teaser'  => TRUE,
+      'teaser_label' => t('Teaser'),
+      'has_body'    => TRUE,
+      'body_label'  => t('Body')
+    )
+  );
+}
+
+
+/**
+ *  Implementation of hook_menu().
+*/
+function announcement_menu(){
+  $items['node/%node/og/announcement/add'] = array(
+    'title'  => 'Send Announcement',
+    'page callback' => 'node_add',
+    'page arguments' => array(3, 1),
+    'access callback' => 'node_access',
+    'access arguments' => array('create', 3, NULL, 1),
+    'file' => 'node.pages.inc',
+    'file path' => drupal_get_path('module', 'node'),
+  );
+  $items['node/add/announcement'] = array(
+    'title'  => 'Send Announcement',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('announcement_pre_form'),
+    'access callback' => true,
+  );
+  return $items;
+}
+
+
+/**
+ * Implementation of hook_perm
+
+function announcement_perm(){
+  return array('create announcement', 'edit own announcement');
+}
+*/
+
+/**
+ * Implementation of hook_access().
+ */
+function announcement_access($op, $node) {
+  global $user;
+  return false;
+/*
+  if ($op == 'create') {
+    return user_access('create announcement');
+  }
+
+  if($op == 'update' || $op == 'delete'){
+    return (user_access('edit own announcement') && ($user->uid == $node->uid));
+  }
+*/
+}
+
+
+
+
+
+/**
+ * Implementation of hook_form().
+ */
+function announcement_form(&$node) {
+  $type = node_get_types('type', $node);
+
+/*  if(!isset($node->author_group_nid)){
+    $options = array(NULL => ' Select Group');
+    $query = 'SELECT nid FROM {og}';
+    $result = db_query($query);
+    while($data = db_fetch_object($result)){
+      $group = node_load($data->nid);
+      if(og_group_access_get_access('create announcement', $group) && og_group_access_get_access('create group to group posts', $group)){
+        $options[$group->nid] = $group->title;
+      }
+    }
+    asort($options);
+
+    $form['author_group_nid'] = array(
+      '#type' => 'select',
+      '#title' => t('Authoring Group'),
+      '#options' => $options,
+      '#required' => TRUE,
+      '#weight' => -20
+    );
+  }
+*/
+  
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => check_plain($type->title_label),
+    '#required' => TRUE,
+    '#default_value' => $node->title,
+    '#weight' => -1
+  );
+ 
+  
+  $form['body_field']['teaser'] = array(
+    '#type'   => 'textarea',
+    '#title'  => t('Teaser'),//check_plain($type->teaser_label),
+    '#default_value' => $node->teaser,
+    '#rows'          => 3,
+    '#required'      => TRUE
+  );
+
+  $form['body_field']['body'] = array(
+    '#type'   => 'textarea',
+    '#title'  => check_plain($type->body_label),
+    '#default_value' => $node->body,
+    '#rows'          => 4,
+    '#required'      => TRUE,
+    
+  );
+  $form['body_field']['format'] = filter_form($node->format);
+  $form['body_field']['#prefix'] = '<div class="body-field-wrapper">';
+  $form['body_field']['#suffix'] = '</div>';
+  
+
+  return $form;
+}
+
+/*
+function announcement_block($op = 'list', $delta = 0, $edit = array()){
+  switch ($op) {
+  case 'list':
+    $blocks[0]['info'] = t('Post Announcement');
+    return $blocks; 
+  case 'view':
+    $blocks['subject'] = t('Post Announcement');
+    $blocks['content'] = drupal_get_form('announcement_quick_form');
+    break;
+  }
+  return $blocks;
+}
+*/
+
+function announcement_pre_form(){
+  $options = array(NULL => ' Select Group');
+  $query = 'SELECT nid FROM {og}';
+  $result = db_query($query);
+  $count = 0;
+  while($data = db_fetch_object($result)){
+    $group = node_load($data->nid);
+    if(og_group_access_get_access('create announcement', $group) && og_group_access_get_access('create group to group posts', $group)){
+      $options[$group->nid] =  $group->title;
+      $count++;
+    }
+  }
+  asort($options);
+
+  if ($count == 0) {
+    drupal_set_message('You do not have permission to create an announcement');
+  }
+  else if ($count == 1) {
+    $group_nids = array_keys($options);
+    drupal_goto('node/'.array_pop($group_nids).'/og/announcement/add');
+  }
+  else {
+    $form['author_group_nid'] = array(
+      '#type' => 'select',
+      '#title' => t('Authoring Group'),
+      '#options' => $options,
+      '#required' => TRUE,
+    );
+    $form['submit'] = array(
+      '#type' => 'submit', 
+      '#value' => t('Submit'),
+      '#submit' => array('announcement_quick_form_submit'),
+      '#weight' => 5,
+    );
+    return $form;
+  }
+}
+
+
+function announcement_quick_form_submit($form, $form_state){
+  drupal_goto('node/'.$form_state['values']['author_group_nid'].'/og/announcement/add');
+}
+
+
+
+/**
+ * Implementations of hook_group_access_perm();
+*/
+function announcement_group_access_perm(){
+  return array('view announcement', 'create announcement', 'edit own announcement');
+}
+
+
+/**
+ * Implementations of hook_group_access();
+*/
+function announcement_group_access($op, $node, $group) {
+  switch($op){
+  case 'create':
+    return og_group_access_get_access('create announcement', $group);
+    break;
+  case 'view':
+    return og_group_access_get_access('view announcement', $group);
+    break;
+  case 'update':
+  case 'delete':
+    if(isset($node->author_group_nid)){
+      return og_group_access_get_access('edit own announcement', node_load($node->author_group_nid));
+    }
+    else{
+      return FALSE;
+    }
+    break;
+  }
+  return FALSE;
+}
+
+
+
+/**
+ * Implementations of hook_group_access_view_access_level();
+*/
+function announcement_group_access_view_access_level($group) {
+    return $group->perms['view announcement'];
+}
+
+
+/**
+ * Implementations of hook_group_access_create_links()
+
+function announcement_group_access_create_links($group){
+  $links = array();
+  if(node_access('create', 'announcement', NULL, $group)){
+    $links[] = l('Send Announcement', 'node/'. $group->nid . '/og/announcement/add');
+  }
+  return $links;
+}
+*/

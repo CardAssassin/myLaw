@@ -1,0 +1,10 @@
+name = Organic groups
+description = "Enable users to create and manage their own 'groups'"
+package = "Organic groups"
+dependencies[] = views
+core = 6.x
+; Information added by drupal.org packaging script on 2008-05-29
+version = "HEAD"
+project = "og"
+datestamp = "1212019698"
+

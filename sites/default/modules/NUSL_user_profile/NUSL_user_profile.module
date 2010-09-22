@@ -1,0 +1,638 @@
+<?php
+
+
+/**
+ * Implementation of hook_menu
+ */
+function NUSL_user_profile_menu(){
+  $items = array();
+
+  $items['my_account'] = array(
+    'title' => 'My Account',
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('user'),
+    'access callback' => 'user_access',
+    'access arguments' => array('access user profiles'),
+    'menu_name' => 'primary-links',
+    'weight' => 5,
+  );
+
+  $items['my_account/favorites'] = array(
+    'title' => 'Favorites',
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('favorites'),
+    'access callback' => 'user_access',
+    'access arguments' => array('access user profiles'),
+    'menu_name' => 'primary-links',
+  );
+  $items['my_account/hidden'] = array(
+    'title' => 'Hidden Posts',
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('hidden'),
+    'access callback' => 'user_access',
+    'access arguments' => array('access user profiles'),
+    'menu_name' => 'primary-links',
+  );
+  $items['my_account/moderated'] = array(
+    'title' => 'Posts Held in Moderation',
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('moderated'),
+    'access callback' => 'user_access',
+    'access arguments' => array('access user profiles'),
+    'menu_name' => 'primary-links',
+  );
+  $items['my_account/tracker'] = array(
+    'title' => 'Recent Posts',
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('tracker'),
+    'access callback' => 'user_access',
+    'access arguments' => array('access user profiles'),
+    'menu_name' => 'primary-links',
+  );
+ 
+  // group admin only
+  $items['og/users/%node/add_user_name'] = array(
+    'page callback' => 'drupal_get_form', 
+    'title' => 'Add members by name', 
+    'page arguments' => array('NUSL_user_profile_og_add_users', 2), 
+    'type' => MENU_LOCAL_TASK, 
+    'weight' => 5, 
+    'access callback' => 'og_is_group_admin',
+    'access arguments' => array(2),
+  );
+  return $items;
+}
+
+
+function NUSL_user_profile_locked_roles(){
+  return array('faculty', 'staff', 'faculty secretary', 'student');
+}
+
+
+/**
+ * Implementation of hook_user
+ */
+function NUSL_user_profile_user($op, &$edit, &$account, $category = NULL) {
+  global $user;
+
+  switch ($op) {
+    case 'register':
+    case 'form':
+      return _NUSL_user_profile_form($account);
+      break;
+    case 'insert':
+      NUSL_user_profile_insert($account->uid, $edit);
+      break;
+    case 'update':
+      NUSL_user_profile_delete($account);
+      NUSL_user_profile_insert($account->uid, $edit);
+      break;
+    case 'delete':
+      NUSL_user_profile_delete($account);
+      break;
+    case 'load':
+      $account->profile_name = NUSL_user_profile_get_name($account->name);
+/*      $profile_address = NUSL_user_profile_get_address($account->uid);
+      if(!empty($profile_address)){
+        $account->profile_address = $profile_address;
+      }
+*/
+      $query = "SELECT faculty_secretary_uid FROM {users_profile_faculty} WHERE uid = %d";
+      $account->faculty_secretary_uid = db_result(db_query($query, $account->uid));
+
+     // $query = "SELECT is_student, is_staff, is_faculty FROM {users_profile} WHERE uid = %d";
+    //  $roles_NUSL = db_fetch_array(db_query($query, $account->uid));
+     // $account->roles_NUSL = $roles_NUSL;
+      
+
+      break;
+    case 'view':
+      //if ($account->profile_name) {
+        $account->content['name'] = array(
+          '#type' => 'user_profile_item',
+          '#title' => 'name',
+          '#value' => theme('username', $account, 'nolink', 2),
+          '#weight' => -10,
+        );
+     // }
+/*      if ($account->profile_address){
+        $account->content['address'] = array(
+          '#type' => 'user_profile_item',
+          '#title' => 'Address',
+          '#value' => $account->profile_address['display'],
+          '#weight' => -5,
+        );
+      }
+*/
+      break;
+    case 'login':
+      NUSL_user_profile_set_role($account);
+      NUSL_user_profile_set_classyear($account);
+      NUSL_user_profile_set_courses($account);
+      NUSL_user_profile_set_courses_instructor($account);
+      break;
+  }
+}
+
+
+//sets the user role for the values student faculty and staff
+function NUSL_user_profile_set_role(&$account){
+  db_set_active('banner');
+  $query = "SELECT role FROM {userinfo} WHERE NUID = '%s'";
+  $role_code = db_result(db_query($query, $account->name));
+  db_set_active('default');
+
+  $query = "SELECT rid FROM {role} WHERE name = '%s'";
+  $rid_student = db_result(db_query($query, 'student'));
+  $rid_staff = db_result(db_query($query, 'staff'));
+  $rid_faculty = db_result(db_query($query, 'faculty'));
+
+  $query = "DELETE FROM {users_roles} WHERE uid = %d AND (rid = %d OR rid = %d OR rid = %d)";
+  db_query($query, $account->uid, $rid_student, $rid_staff, $rid_faculty);
+  
+  switch($role_code){
+    case 'student':
+      $rid = $rid_student;
+      break;
+    case 'staff':
+    case 'sponsored-staff':
+    case 'tempemp':
+      $rid = $rid_staff;
+      break;
+    case 'faculty':
+    case 'sponsored-faculty':
+      $rid = $rid_faculty;
+      break;
+    default:
+      $rid = NULL;
+      break;
+  }
+
+  if($rid != NULL){
+    $query = "INSERT INTO {users_roles} (uid, rid) VALUES (%d, %d)";
+    db_query($query, $account->uid, $rid);
+  }
+
+  $account = user_load(array('uid' => $account->uid));
+}
+
+
+function NUSL_user_profile_is_student($account){
+  foreach($account->roles as $role){
+    if($role == 'student'){
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+
+function NUSL_user_profile_set_classyear($account){
+  $is_student = NUSL_user_profile_is_student($account);
+
+  if($is_student){
+    //get class year
+    db_set_active('banner');
+    $query = "SELECT CLASS_YEAR, STU_PATTERNOFATTENDANCE FROM {studentinfo} WHERE ID = '%s'";
+    $studentinfo = db_fetch_object(db_query($query, $account->name));
+    db_set_active('default');
+
+    $banner_class_years = array();
+    $banner_class_years[] = $studentinfo->CLASS_YEAR;
+    switch($studentinfo->STU_PATTERNOFATTENDANCE){
+      case 'JA':
+        $banner_class_years[] = $studentinfo->CLASS_YEAR . ' Winter/Summer';
+        break;
+      case 'JB':
+        $banner_class_years[] = $studentinfo->CLASS_YEAR . ' Fall/Spring';
+        break;
+    }
+
+    $subscriptions = og_get_subscriptions($account->uid);
+
+    $is_subscribed = FALSE;
+
+    //unsubscribe from class_years not selected
+    foreach($subscriptions as $sub){
+      if($sub['type'] == 'class_year' && !in_array($sub['title'], $banner_class_years)){
+        og_delete_subscription($sub['nid'], $account->uid);
+      }
+    }
+
+    foreach($banner_class_years as $banner_class_year){
+      $is_subscribed = FALSE;
+      foreach($subscriptions as $sub){
+        if($sub['type'] == 'class_year' && in_array($sub['title'], $banner_class_years) && $sub['is_active']){
+          $is_subscribed = TRUE; 
+        }
+      }
+      //subscribe to class_years
+      if(!$is_subscribed){
+        $query = "SELECT nid FROM {node} WHERE type = 'class_year' AND title = '%s'";
+        $gid = db_result(db_query($query, $class_year));
+        og_save_subscription($gid, $account->uid, array('is_active' => 1));
+      }
+    }
+  }
+}
+
+
+function NUSL_user_profile_set_courses($account){
+  db_set_active('banner');
+  $query = "SELECT * FROM {courses} WHERE id = '%s'";
+  $result = db_query($query, $account->name);
+  db_set_active('default');
+
+  $course_nids = array();
+  while($course_data = db_fetch_object($result)){
+    $query = "SELECT nid FROM {courses} WHERE crn = %d";
+    $nid = db_result(db_query($query, $course_data->registered_course_crn));
+    if($nid){
+      $course_nids[] = $nid;
+    }
+  }
+
+  if(!empty($course_nids)){ 
+    $query = "SELECT nid FROM {node} WHERE type = 'course' AND nid NOT IN ( " . implode(", ", $course_nids) . ")"; 
+    $result = db_query($query);
+    while($data = db_fetch_object($result)){
+      $query = "DELETE FROM {og_uid} WHERE uid = %d AND nid = %d"; 
+      db_query($query, $account->uid, $data->nid);
+    }
+  }  
+
+  $subscriptions = og_get_subscriptions($account->uid);
+  foreach($course_nids as $nid){
+    $sub_exists = FALSE;
+    foreach($subscriptions as $sub){
+      if($sub['nid'] == $nid){
+        $sub_exists = TRUE;
+        break;
+      }
+    }
+    if(!$sub_exists){
+      og_save_subscription($nid, $account->uid, array('is_active' => 1));
+    }
+  }
+}
+
+
+function NUSL_user_profile_set_courses_instructor($account){
+  db_set_active('banner');
+  $query = "SELECT DISTINCT(registered_course_crn) FROM {courses} WHERE primary_instructor_id = '%s' or secondary_instructor_id = '%s'";
+  $result = db_query($query, $account->name, $account->name);
+  db_set_active('default');
+
+  $course_nids = array();
+  while($course_data = db_fetch_object($result)){
+    $query = "SELECT nid FROM {courses} WHERE crn = %d";
+    $nid = db_result(db_query($query, $course_data->registered_course_crn));
+    if($nid){
+      $course_nids[] = $nid;
+    }
+  }
+
+  $subscriptions = og_get_subscriptions($account->uid);
+  foreach($course_nids as $nid){
+    $sub_exists = FALSE;
+    foreach($subscriptions as $sub){
+      if($sub['nid'] == $nid){
+        $sub_exists = TRUE;
+        break;
+      }
+    }
+    if(!$sub_exists){
+      og_save_subscription($nid, $account->uid, array('is_active' => 1, 'is_admin' => 1));
+    }
+  }
+}
+
+
+
+function NUSL_user_profile_get_name($name){
+  db_set_active('banner');
+  $query = "SELECT last_name as last, first_name as first, middle_name as middle FROM {userinfo} WHERE NUID ='%s'";
+  $profile_name = db_fetch_array(db_query($query, $name));
+ // $profile_name['display'] = trim($profile_name['last'] .', ' . $profile_name['first'] . ' ' . $profile_name['middle']);
+  db_set_active('default');
+  return $profile_name;
+}
+
+
+
+
+function _NUSL_user_profile_form($account){
+  $form['faculty'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Faculty',
+    '#collapsible' => TRUE,
+    '#collapsed'   => TRUE,
+    '#weight' => 10,
+    '#access' => user_access('administer users'),
+  );
+  $form['faculty']['faculty_secretary'] = array(
+    '#type' => 'select',
+    '#title' => 'Faculty Secretary',
+    '#options' => array('NULL' => 'none') + NUSL_user_profile_get_faculty_secretaries(),
+    '#default_value' => $account->faculty_secretary_uid,
+    '#weight' => -3,
+    '#access' => user_access('administer users'),
+  );
+
+  return $form;
+}
+
+
+
+function NUSL_user_profile_delete($account){
+  if(isset($account->faculty_secretary_uid) && $account->faculty_secretary_uid != 0){
+    $query = "DELETE FROM {users_profile_faculty} WHERE uid=%d";
+    db_query($query, $account->uid);
+    mirrored_account_remove($account->uid, $account->faculty_secretary_uid);
+  }
+
+}
+
+
+function NUSL_user_profile_insert($uid, $form){
+  if($form['faculty_secretary'] != 0){
+    $query = "INSERT INTO {users_profile_faculty} (uid, faculty_secretary_uid) VALUES (%d, %d)";
+    db_query($query, $uid, $form['faculty_secretary']);
+    mirrored_account_insert($uid, $form['faculty_secretary']);
+  }
+
+}
+
+
+function NUSL_user_profile_og_add_users($form_state, $group_node) {
+  db_set_active('banner');
+  $query = "SELECT NUID, last_name, first_name FROM {userinfo} WHERE last_name <> '' ORDER By last_name, first_name";
+  $result = db_query($query);
+  db_set_active('default');
+  while($data = db_fetch_object($result)) {
+    $query = "SELECT uid FROM {users} WHERE name = '%s'";
+    $uid = db_result(db_query($query, $data->NUID));
+    if($uid){
+      $options[$uid] = $data->last_name . ', ' . $data->first_name;
+    }
+  }
+
+  $form['uid'] = array(
+    '#type' => 'select',
+    '#title' => t('Select User to Add'),
+    '#options' => $options,
+    '#multiple' => FALSE,
+  );
+    
+
+  $form['op'] = array(
+    '#type' => 'submit', 
+    '#value' => t('Add user')
+  );
+  $form['gid'] = array(
+    '#type' => 'value', 
+    '#value' => $group_node->nid
+  );
+  return $form;
+}
+
+function NUSL_user_profile_og_add_users_submit($form, &$form_state) {
+  if($form_state['values']['uid'] != NULL){
+    og_save_subscription($form_state['values']['gid'], $form_state['values']['uid'], array('is_active' => 1));
+    drupal_set_message('1 user added to the group.');
+  }
+  else {
+    drupal_set_message('user does not have an account');
+  }
+}
+
+
+
+/**
+ * Format a username.
+ *
+ * @param $object
+ *   The user object to format, usually returned from user_load().
+ * @return
+ *   A string containing an HTML link to the user's page if the passed object
+ *   suggests that this is a site user. Otherwise, only the username is returned.
+ */
+function phptemplate_username($object, $format = 'normal', $middle_length = 0) {
+  if(isset($object->type) && isset($object->uid)){
+    $object = user_load($object->uid);
+  }
+  
+  if($object->name){
+    db_set_active('banner');
+    $query = "SELECT * FROM {userinfo} WHERE NUID = '%s'";
+    $result = db_query($query, $object->name);
+    $userinfo = db_fetch_object($result);
+    db_set_active('default');
+ 
+    if($userinfo->last_name == ''){
+      $format = 'login';
+    }
+    $middle = '';
+    if($format != 'login' && $userinfo->middle_name != ''){
+      
+      if($middle_length == 1){
+        $middle = drupal_substr($userinfo->middle_name, 0, 1) . '. ';
+      }
+      elseif($middle_length > 1){
+        $middle = $userinfo->middle_name . ' ';
+      }
+    }
+    switch($format){
+    case 'nolink':
+      $username = $userinfo->last_name . ', ' . $userinfo->first_name . ' ' . $middle;
+      $userlink = $username;
+      break;
+    case 'normal':
+      $username = $userinfo->last_name . ', ' . $userinfo->first_name . ' ' . $middle;
+      $userlink = l($username, 'user/'. $object->uid, array('attributes' => array('title' => t('View user profile.'))));
+      break;
+    case 'double':     
+      $username1 = $userinfo->last_name . ', ';
+      $username2 = $userinfo->first_name . ' ' . $middle;
+      $username = $username1 .'<br>' . $username2;
+      $userlink = l($username1, 'user/'. $object->uid, array('attributes' => array('title' => t('View user profile.')))); 
+      $userlink .= '<br>';
+      $userlink .= l($username2, 'user/'. $object->uid, array('attributes' => array('title' => t('View user profile.')))); 
+      break;
+    case 'login':
+      $username = $object->name;
+      $userlink .= l($username, 'user/'. $object->uid, array('attributes' => array('title' => t('View user profile.')))); 
+      break;
+    }
+    
+    
+  }
+
+  if ($object->uid && $object->name) {
+    
+    // Shorten the name when it is too long or it will break many tables.
+ /*   if (drupal_strlen($object->name) > 20) {
+      $name = drupal_substr($object->name, 0, 15) .'...';
+    }
+    else {
+      $name = $object->name;
+    }
+*/
+    if (user_access('access user profiles')) {
+      $output = $userlink;
+    }
+    else {
+     // $output = check_plain($username);
+      $output = $username;
+    }
+  }
+  else if ($object->name) {
+    // Sometimes modules display content composed by people who are
+    // not registered members of the site (e.g. mailing list or news
+    // aggregator modules). This clause enables modules to display
+    // the true author of the content.
+    if (!empty($object->homepage)) {
+      $output = l($username, $object->homepage, array('attributes' => array('rel' => 'nofollow')));
+    }
+    else {
+      $output = check_plain($username);
+    }
+
+    //$output .= ' ('. t('not verified') .')';
+  }
+  else {
+    $output = variable_get('anonymous', t('Anonymous'));
+  }
+  return $output;
+}
+
+
+
+function NUSL_user_profile_get_faculty_secretaries(){
+  $query = "SELECT ur.uid FROM {users_roles} ur INNER JOIN {role} r ON ur.rid = r.rid WHERE r.name = 'faculty secretary'";
+  $result = db_query($query);
+  $faculty_secretaries = array();
+  while($data = db_fetch_object($result)){
+    $account = user_load($data->uid);
+    $faculty_secretaries[$data->uid] = theme('username', $account, 'nolink');
+  } 
+  return $faculty_secretaries;
+}
+
+
+function NUSL_user_profile_get_faculty_secretary($uid){
+  $query = "SELECT faculty_secretary_uid FROM {users_profile_faculty} where uid = %d";
+  return db_result(db_query($query, $uid));
+}
+
+
+
+function NUSL_user_profile_get_uid($nuid){
+  $query = "SELECT uid FROM {users} WHERE name = '%s'";
+  return db_result(db_query($query, $nuid));
+}
+
+
+function NUSL_user_profile_NUID_user_load($nuid){
+  return user_load(NUSL_user_profile_get_uid($nuid));
+}
+
+
+/**
+ * Implementation of hook_block().
+*/
+function NUSL_user_profile_block($op = 'list', $delta = 0, $edit = array()){
+  switch ($op) {
+    case 'list':
+      $blocks[0]['info'] = t('Account Menu');
+      $blocks[0]['cache'] = BLOCK_NO_CACHE;
+      return $blocks;
+  case 'view':
+    switch ($delta) {
+      case 0:
+        return NUSL_user_profile_block_actions();
+    }
+  }
+}
+
+
+
+function NUSL_user_profile_block_actions(){
+  $user_links = array();
+
+  if(arg(0) == 'user'){
+    global $user;
+    if(arg(1) == ''){
+      $uid = $user->uid;
+    }
+    else {    
+      $uid = is_numeric(arg(1)) ? arg(1) : NULL;
+    }
+    $user_links = module_invoke_all('NUSL_user_profile_create_links', $uid);
+
+    $block['content'] .= theme('item_list', $user_links);
+    $block['subject'] = "Account Menu";
+    return $block;
+  }
+}
+
+
+
+
+
+
+function NUSL_get_states(){
+  return array(
+    'AL' => 'Alabama',
+    'AK' => 'Alaska',
+    'AZ' => 'Arizona',
+    'CA' => 'California',
+    'CO' => 'Colorado',
+    'CT' => 'Connecticut',
+    'DE' => 'Deleware',
+    'DC' => 'District of Columbia',
+    'FL' => 'Florida',
+    'GA' => 'Georgia',
+    'HI' => 'Hawaii',
+    'ID' => 'Idaho',
+    'IL' => 'Illinois',
+    'IN' => 'Indiana',
+    'IA' => 'Iowa',
+    'KS' => 'Kansas',
+    'KY' => 'Kentucky',
+    'LA' => 'Louisiana',
+    'ME' => 'Maine',
+    'MD' => 'Maryland',
+    'MA' => 'Massachusetts',
+    'MI' => 'Michigan',
+    'MN' => 'Minnesota',
+    'MS' => 'Mississippi',
+    'MO' => 'Montana',
+    'NE' => 'Nebraska',
+    'NV' => 'Nevada',
+    'NH' => 'New Hampshire',
+    'NJ' => 'New Jersey',
+    'NM' => 'New Mexico',
+    'NY' => 'New York',
+    'NC' => 'North Carolina',
+    'ND' => 'North Dakota',
+    'OH' => 'Ohio',
+    'OK' => 'Oklahoma',
+    'OR' => 'Oregon',
+    'PA' => 'Pennsylvania',
+    'RI' => 'Rhode Island',
+    'SC' => 'South Carolina',
+    'SD' => 'South Dakota',
+    'TN' => 'Tennessee',
+    'TX' => 'Texas',
+    'UT' => 'Utah',
+    'VT' => 'Vermont',
+    'VA' => 'Virginia',
+    'WA' => 'Washington',
+    'WV' => 'West Virginia',
+    'WI' => 'Wisconsin',
+    'WY' => 'Wyoming'
+  );
+}
+
+

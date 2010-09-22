@@ -1,0 +1,8 @@
+; $Id$
+
+name = Public Interest
+description = Public Interest group type
+package = "NUSL"
+dependencies[] = og
+dependencies[] = views
+core = 6.x

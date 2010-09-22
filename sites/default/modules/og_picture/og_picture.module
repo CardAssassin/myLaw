@@ -1,0 +1,395 @@
+<?php
+
+//$Id$
+
+
+
+
+
+/**
+ * Implementation of hook_menu()
+*/
+function og_picture_menu(){
+
+  $items['admin/og/og_picture'] = array(
+    'title' => 'Organic groups picture configuration',
+    'description' => 'Choose settings for group picture on nodes.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('og_picture_admin_picture_settings'),
+    'access arguments' => array('administer site configuration'),
+  );
+
+  $items['node/%node/og/picture'] = array(
+    'title' => 'Group Picture',
+    'description' => 'Picture to associate with group posts',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('og_picture_form', 1),
+    'access callback' => 'og_picture_create_picture_access_callback', 
+    'access arguments' => array(1),
+  );
+
+
+
+  return $items;
+}
+
+
+function og_picture_create_picture_access_callback($group){
+  return (og_is_group_admin($group) && variable_get('group_pictures', 0));
+}
+
+
+function og_picture_group_access_create_links($group){
+  $links = array();
+  if(og_picture_create_picture_access_callback($group)){
+    $links[] = l(t('Picture'), 'node/'.$group->nid.'/og/picture');
+  }
+  return $links;
+}
+
+
+function og_picture_form($form_state, $group) {
+ // Picture/avatar:
+  if (variable_get('group_pictures', 0)) {   
+    if (isset($group->group_picture)) {
+      $picture = theme('group_picture', $group);
+      
+      $form['current_picture'] = array('#value' => $picture);
+    }
+/*      $form['picture_delete'] = array(
+        '#type' => 'checkbox', 
+        '#title' => t('Delete picture'), 
+        '#description' => t('Check this box to delete your current picture.')
+      );
+    }
+    else {
+      $form['picture_delete'] = array('#type' => 'hidden');
+    }
+*/    
+    $form['#attributes'] = array('enctype' => "multipart/form-data");
+    $form['picture_upload'] = array(
+      '#type' => 'file', 
+      '#title' => t('Upload picture'), 
+      '#size' => 48, 
+      '#description' => t('Your virtual face or picture. Maximum dimensions are %dimensions and the maximum size is %size kB.', array('%dimensions' => variable_get('group_picture_dimensions', '85x85'), '%size' => variable_get('group_picture_file_size', '30'))) .' '. variable_get('group_picture_guidelines', '')
+    );
+    $form['group_nid'] = array(
+      '#type' => 'hidden',
+      '#value' => $group->nid,
+    );
+    //$form['#validate'][] = 'group_profile_form_validate';
+
+    //$form['#validate'][] = 'og_picture_form_validate';
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => 'Upload',
+      '#weight' => 10,
+      '#validate' => array('og_picture_form_validate'),
+    );
+    $form['delete_picture'] = array(
+      '#type' => 'submit',
+      '#value' => 'Delete',
+      '#submit' => array('og_picture_form_delete_picture'),
+    );
+  }
+  
+  return $form;
+}
+
+
+function og_picture_form_validate(&$form, &$form_state) {
+  // If required, validate the uploaded picture.
+  $validators = array(
+    'file_validate_is_image' => array(),
+    'file_validate_image_resolution' => array(variable_get('group_picture_dimensions', '85x85')),
+    'file_validate_size' => array(variable_get('group_picture_file_size', '30') * 1024),
+  );
+ 
+  
+  if ($file = file_save_upload('picture_upload', $validators)) {
+
+    // Remove the old picture.
+    $group = node_load($form_state['values']['group_nid']);
+    og_picture_delete_picture($group);
+
+    // The image was saved using file_save_upload() and was added to the
+    // files table as a temporary file. We'll make a copy and let the garbage
+    // collector delete the original upload.
+    $info = image_get_info($file->filepath);
+    $destination = variable_get('group_picture_path', 'pictures') .'/grouppicture-'. $form_state['values']['group_nid'] .'.'. $info['extension'];
+
+    if (file_copy($file, $destination, FILE_EXISTS_REPLACE)) {
+      $form_state['values']['picture'] = $file->filepath;
+    }
+    else {
+      form_set_error('picture_upload', t("Failed to upload the picture image; the %directory directory doesn't exist or is not writable.", array('%directory' => variable_get('group_picture_path', 'pictures'))));
+    }
+  }
+}
+
+
+function og_picture_form_delete_picture($form, &$form_state) {
+  $group = node_load($form_state['values']['group_nid']);
+  // Delete picture if requested, and if no replacement picture was given.
+  drupal_set_message('delete picture');
+  //if (!empty($form_state['value']['picture_delete'])) {
+    og_picture_delete_picture($group);
+  //}
+}
+
+
+function og_picture_delete_picture($group){
+  if ($group->group_picture && file_exists($group->group_picture)) {
+    file_delete($group->group_picture);
+    unset($group->group_picture);
+  }
+}
+
+
+function og_picture_admin_picture_settings() {
+// If picture support is enabled, check whether the picture directory exists:
+  if (variable_get('group_pictures', 0)) {
+    $picture_path = file_create_path(variable_get('group_picture_path', 'pictures'));
+    file_check_directory($picture_path, 1, 'group_picture_path');
+  }
+
+  $form['pictures'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Pictures'),
+  );
+  $picture_support = variable_get('group_pictures', 0);
+  $form['pictures']['group_pictures'] = array(
+    '#type' => 'radios',
+    '#title' => t('Picture support'),
+    '#default_value' => $picture_support,
+    '#options' => array(t('Disabled'), t('Enabled')),
+    '#prefix' => '<div class="user-admin-picture-radios">',
+    '#suffix' => '</div>',
+  );
+  drupal_add_js(drupal_get_path('module', 'user') .'/user.js');
+  // If JS is enabled, and the radio is defaulting to off, hide all
+  // the settings on page load via .css using the js-hide class so
+  // that there's no flicker.
+  $css_class = 'user-admin-picture-settings';
+  if (!$picture_support) {
+    $css_class .= ' js-hide';
+  }
+  $form['pictures']['settings'] = array(
+    '#prefix' => '<div class="'. $css_class .'">',
+    '#suffix' => '</div>',
+  );
+  $form['pictures']['settings']['group_picture_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Picture image path'),
+    '#default_value' => variable_get('group_picture_path', 'pictures'),
+    '#size' => 30,
+    '#maxlength' => 255,
+    '#description' => t('Subdirectory in the directory %dir where pictures will be stored.', array('%dir' => file_directory_path() .'/')),
+  );
+  $form['pictures']['settings']['group_picture_default'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Default picture'),
+    '#default_value' => variable_get('group_picture_default', ''),
+    '#size' => 30,
+    '#maxlength' => 255,
+    '#description' => t('URL of picture to display for users with no custom picture selected. Leave blank for none.'),
+  );
+  $form['pictures']['settings']['group_picture_dimensions'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Picture maximum dimensions'),
+    '#default_value' => variable_get('group_picture_dimensions', '85x85'),
+    '#size' => 15,
+    '#maxlength' => 10,
+    '#description' => t('Maximum dimensions for pictures, in pixels.'),
+  );
+  $form['pictures']['settings']['group_picture_file_size'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Picture maximum file size'),
+    '#default_value' => variable_get('group_picture_file_size', '30'),
+    '#size' => 15,
+    '#maxlength' => 10,
+    '#description' => t('Maximum file size for pictures, in kB.'),
+  );
+  $form['pictures']['settings']['group_picture_guidelines'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Picture guidelines'),
+    '#default_value' => variable_get('group_picture_guidelines', ''),
+    '#description' => t("This text is displayed at the picture upload form in addition to the default guidelines. It's useful for helping or instructing your users."),
+  );
+
+  return system_settings_form($form);
+}
+
+
+function og_picture_form_node_type_form_alter(&$form, &$form_state) {
+  if (isset($form['identity']['type']['#default_value'])) {
+    $type = $form['identity']['type']['#default_value'];
+  }
+  else {
+    $type = $form['identity']['type']['#value'];
+  }
+  
+  if(og_is_group_type($type) && variable_get('group_pictures', 0)){
+    $form['default_picture'] = array(
+      '#type'  => 'fieldset',
+      '#title' => t('Default Picture'),
+      '#collapsible' => TRUE,
+      '#collapsed'   => TRUE,
+    );
+
+    $form['type'] = array('#value' => $type, '#type' => 'value'); 
+  
+    $group_picture_path = variable_get('group_picture_path', 'pictures');
+
+/*    $form['default_picture']['group_picture_path_'.$type] = array(
+      '#type' => 'textfield',
+      '#title' => t('Picture image path'),
+      '#default_value' => variable_get('group_picture_path_'.$type, ''),
+      '#size' => 30,
+      '#maxlength' => 255,
+      '#description' => t('Subdirectory in the directory %dir where pictures will be stored.  If left blank, the default value of %group_dir will be used', array('%dir' => file_directory_path() .'/'), '%group_dir' => $group_picture_path),
+    );
+*/
+    $form['default_picture']['group_picture_default_'.$type] = array(
+      '#type' => 'textfield',
+      '#title' => t('Default picture'),
+      '#default_value' => variable_get('group_picture_default_'.$type, ''),
+      '#size' => 30,
+      '#maxlength' => 255,
+      '#description' => t('URL of picture to display for users with no custom picture selected. Leave blank for none.'),
+    );
+
+    array_unshift($form['#submit'], 'og_picture_node_type_form_submit');
+  }
+}
+
+
+function og_picture_node_type_form_submit($form, &$form_state) {
+  $type = $form_state['values']['type'];
+
+  //$group_picture_path = $form_state['values']['group_picture_path_'.$type];
+  $group_picture_default = $form_state['values']['group_picture_default_'.$type];
+
+ // variable_set('group_picture_path_'.$type, $group_picture_path);
+  variable_set('group_picture_default_'.$type, $group_picture_default);
+}
+
+
+
+/**
+ * Implementation of hook_nodeapi()
+*/
+function og_picture_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
+  global $user;
+
+  switch($op){
+  case 'view':
+    if(isset($node->author_group_nid)){
+      $node->content['group_picture'] = array(
+        '#value' => theme('group-picture', $group),
+        '#weight' => -10,
+      );
+    }
+    break;
+  case 'load':
+    if (og_is_group_type($node->type)) {
+        //for now assume the file is a jpg
+
+      $group_picture_path = variable_get('group_picture_path', 'pictures');
+      
+      $group_picture_filepath = file_directory_path() . '/' . $group_picture_path .'/grouppicture-'. $node->nid .'.jpg';
+      if(file_exists($group_picture_filepath)){
+        $node->group_picture = $group_picture_filepath;
+      }        
+    }    
+    break;
+  }
+}
+
+
+
+
+
+
+
+
+
+/**
+ * Implementation of hook_file_download().
+ *
+ * Ensure that user pictures (avatars) are always downloadable.
+ */
+function og_picture_file_download($file) {
+  if (strpos($file, variable_get('group_picture_path', 'pictures') .'/grouppicture-') === 0) {
+    $info = image_get_info(file_create_path($file));
+    return array('Content-type: '. $info['mime_type']);
+  }
+}
+
+
+
+function og_picture_theme(){
+  return array(
+    'group_picture' => array(
+      'arguments' => array('group' => NULL),
+      'template' => 'group-picture',
+    ),
+  );
+}
+
+
+
+function og_picture_preprocess_node(&$variables) {
+  $node = $variables['node'];
+
+  if (isset($node->author_group_nid)) {
+    $author_group = node_load($node->author_group_nid);
+    $variables['author_group_picture'] = theme('group_picture', $author_group);
+  }
+
+}
+
+
+
+
+
+/**
+ * Process variables for group-picture.tpl.php.
+ *
+ * The $variables array contains the following arguments:
+ * - $account
+ *
+ * @see group-picture.tpl.php
+ */
+function template_preprocess_group_picture(&$variables) {
+  $group = $variables['group'];
+  $variables['group_picture'] = '';
+  if (variable_get('group_pictures', 0)) {
+    if (isset($group->group_picture) && $group->group_picture != '') {
+      $picture = file_create_url($group->group_picture);
+    }
+    else {
+      $picture = variable_get('group_picture_default_'.$group->type, '');
+      if(!$picture) {
+        $picture = variable_get('group_picture_default', '');
+      }
+      if($picture){
+        $picture = file_create_url($picture);
+      }
+    }
+
+    if (isset($picture)) {
+      $alt = t("@group's picture", array('@group' => $group->title));
+      $variables['group_picture'] = theme('image', $picture, '', $alt, '', FALSE);
+      if (!empty($group->nid) && og_group_access_get_access('view group', $group)) {
+        $attributes = array('attributes' => array('title' => t('View group')), 'html' => TRUE);
+        $variables['group_picture'] = l($variables['group_picture'], "node/$group->nid", $attributes);
+      }
+    }
+  }
+}
+
+
+
+
+

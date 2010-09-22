@@ -1,0 +1,148 @@
+<?php
+
+// $Id$
+
+function OSD_writing_competition_install(){
+  drupal_install_schema('OSD_writing_competition');
+}
+
+
+function OSD_writing_competition_schema(){
+  $schema = array();
+
+  $schema['OSD_writing_competition'] = array(
+    'description'     => 'OSD_writing_competition data',
+    'fields'          => array(
+      'nid'             => array(
+        'description'     => 'The nodes {node}.nid',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'sponsor'             => array(
+        'description'     => 'sponsor',
+        'type'            => 'varchar',
+        'length'          => 255,
+        'not null'        => FALSE,
+      ),
+      'run_by'             => array(
+        'description'     => 'Run By',
+        'type'            => 'varchar',
+        'length'          => 255,
+        'not null'        => FALSE,
+      ),
+      'website'             => array(
+        'description'     => 'Website',
+        'type'            => 'varchar',
+        'length'          => 255,
+        'not null'        => FALSE,
+      ),
+      'topic'             => array(
+        'description'     => 'topic',
+        'type'            => 'text',
+        'size'            => 'normal',
+        'not null'        => FALSE,
+      ),
+      'eligibility_year'     => array(
+        'description'     => 'Eligibility Year',
+        'type'            => 'varchar',
+        'length'          => 3,
+        'not null'        => TRUE,
+      ),
+      'eligibility'             => array(
+        'description'     => 'eligibility',
+        'type'            => 'text',
+        'size'            => 'normal',
+        'not null'        => FALSE,
+      ),
+      'coaching'             => array(
+        'description'     => 'coaching',
+        'type'            => 'text',
+        'size'            => 'normal',
+        'not null'        => FALSE,
+      ),
+      'award'             => array(
+        'description'     => 'award',
+        'type'            => 'text',
+        'size'            => 'normal',
+        'not null'        => FALSE,
+      ),
+      'travel'             => array(
+        'description'     => 'travel',
+        'type'            => 'text',
+        'size'            => 'normal',
+        'not null'        => FALSE,
+      ),
+      'registration_fee'   => array(
+        'description'     => 'Registration Fee',
+        'type'            => 'varchar',
+        'length'          => 255,
+        'not null'        => FALSE,
+      ),
+      'deadline_date'      => array(
+        'description'     => 'deadline date',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'competition_date'     => array(
+        'description'     => 'competition_date',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'notes'             => array(
+        'description'     => 'notes',
+        'type'            => 'text',
+        'size'            => 'normal',
+        'not null'        => FALSE,
+      ),
+      'notes_private'             => array(
+        'description'     => 'private notes - only admins can view',
+        'type'            => 'text',
+        'size'            => 'normal',
+        'not null'        => FALSE,
+      ),
+    ),
+    'primary_key'        => array('nid')
+  );
+
+  $schema['OSD_writing_competition_primary_area'] = array(
+    'description'     => 'OSD_writing_competition primary areas',
+    'fields'          => array(
+      'nid'             => array(
+        'description'     => 'The nodes {node}.nid',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'primary_area'             => array(
+        'description'     => 'Primary Area',
+        'type'            => 'varchar',
+        'length'          => 255,
+        'not null'        => FALSE,
+      ),
+    ),
+    'primary_key'        => array('nid')
+  );
+
+  $schema['OSD_writing_competition_secondary_area'] = array(
+    'description'     => 'OSD_writing_competition secondary areas',
+    'fields'          => array(
+      'nid'             => array(
+        'description'     => 'The nodes {node}.nid',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'secondary_area'             => array(
+        'description'     => 'Secondary Area',
+        'type'            => 'varchar',
+        'length'          => 255,
+        'not null'        => FALSE,
+      ),
+    ),
+    'primary_key'        => array('nid')
+  );
+  return $schema;
+}

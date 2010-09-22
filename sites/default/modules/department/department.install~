@@ -1,0 +1,35 @@
+<?php
+
+// $Id$
+
+function department_install(){
+  drupal_install_schema('department');
+  
+  //set weight higher than og
+  db_query("UPDATE {system} SET weight = 1 WHERE name = 'department'");
+
+  //set department nodes as group type
+  variable_set('og_content_type_usage_department', 'group');
+  
+
+}
+
+
+function department_schema(){
+  $schema = array();
+
+  $schema['departments'] = array(
+    'description'     => 'Stores information about each group',
+    'fields'          => array(
+      'nid'             => array(
+        'description'     => 'The nodes {node}.nid',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+    ),
+    'primary_key'        => array('nid')
+  );
+  
+  return $schema;
+}

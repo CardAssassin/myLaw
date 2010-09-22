@@ -1,0 +1,9 @@
+; $Id$
+name = Organic Groups Webform
+description = Allows users to create questionaires within a group setting.
+package = Organic groups
+dependencies[] = og_group_access
+dependencies[] = webform
+core = 6.x
+
+

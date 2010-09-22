@@ -1,0 +1,7 @@
+; $Id$
+
+name = evaluation
+description = Evaluation Node Type used by Course Group
+package = "NUSL"
+dependencies[] = course
+core = 6.x

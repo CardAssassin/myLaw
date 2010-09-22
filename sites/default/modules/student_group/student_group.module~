@@ -1,0 +1,431 @@
+<?php
+
+
+// Default delivery options for student_group
+
+define ('STUDENT_GROUPS_DEFAULT_CAN_SEND', 1);
+define ('STUDENT_GROUPS_DEFAULT_CAN_RECIEVE', 1);
+define ('STUDENT_GROUPS_DEFAULT_IS_MODERATED', 0);
+
+/**
+ * Implementation of hook_node_info().
+*/
+function student_group_node_info(){
+  return array(
+    'student_group' => array(
+      'name'   => t('Student Group'),
+      'module' => 'student_group',
+      'description' => "Student Group",
+      'has_title'   => TRUE,
+      'title_label' => t('Student group name'),
+      'has_teaser'  => FALSE,
+      'has_body'    => TRUE,
+      'body_label'  => t('Homepage'),
+    )
+  );
+}
+
+
+/**
+ *  Implementation of hook_menu().
+*/
+function student_group_menu(){
+  $items = array();
+
+  $items['node/%node/og/selective'] = array(
+    'title' => 'Membership requests',
+    'description' => 'How should membership requests be handled in this group?',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('student_group_selective_form', 1),
+    'access callback' => 'student_group_selective_access_callback',
+    'access arguments' => array(1),
+  );
+
+  return $items;
+}
+
+
+function student_group_selective_access_callback($group){
+  return ($group->type == 'student_group' && og_is_group_admin($group));
+}
+
+
+/**
+ * Implementations of hook_group_access_create_links()
+*/
+function student_group_group_access_create_links($group){
+  $links = array();
+  if(student_group_selective_access_callback($group)){
+    $links[] = l('Membership Requests', 'node/'. $group->nid . '/og/selective');
+  }
+  return $links;
+}
+
+/**
+ * Implementation of hook_perm
+*/
+function student_group_perm(){
+  return array('view student group', 'create student group');
+}
+
+
+/**
+ * Implementation of hook_group_access_view_access_level() of og_group_access
+ */
+function student_group_group_access_view_access_level($group){
+  return $group->perms['view group'];
+}
+
+
+
+/**
+ * Implementation of hook_access().
+ */
+function student_group_access($op, $node) {
+  if ($op == 'create') {
+    return user_access('create student group');
+  }
+  if ($op == 'view') {
+    return user_access('view student group');
+  }
+}
+
+
+/**
+ * Implementation of hook_form().
+ */
+function student_group_form(&$node) {
+/*
+$item2 = array(
+      'link_title' => 'Student Groups',
+      'link_path' => 'student-groups',
+      'menu_name' => 'primary-links',
+      'module' => 'student_group',
+      'plid' => 0,
+    );
+    menu_link_save($item2);
+*/
+
+  $type = node_get_types('type', $node);
+  
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => check_plain($type->title_label),
+    '#required' => TRUE,
+    '#default_value' => $node->title,
+    '#weight' => -5
+  );
+  
+  unset($form['menu']);
+
+  $form['body_field']['body'] = array(
+    '#type'   => 'textarea',
+    '#title'  => check_plain($type->body_label),
+    '#default_value' => $node->body,
+    '#rows'          => 4,
+    '#required'      => FALSE,
+    '#weight'        => -3
+  );
+
+  $form['body_field']['format'] = filter_form($node->format);
+  $form['body_field']['#prefix'] = '<div class="body-field-wrapper">';
+  $form['body_field']['#suffix'] = '</div>';
+
+ // $form['og_website'] = array();
+
+  $form['og_register'] = array('#type' => 'value', '#value' => 0);
+  $form['og_directory'] = array('#type' => 'value', '#value' => 1);
+
+  $default = $node->og_selective ? $node->og_selective : variable_get('og_content_type_usage_student-group', OG_INVITE_ONLY);
+
+
+  $options = array(
+    t('Open - membership requests are accepted immediately.'),
+    t('Moderated - membership requests must be approved.'),
+    t('Invite only - membership must be created by an administrator.'),
+    t('Closed - membership is exclusively managed by an administrator.'),
+  );
+
+  $form['og_selective'] = array(
+    '#type' => 'radios', 
+    '#title' => t('Membership requests'), 
+    '#required' => TRUE,
+    '#default_value' => $default, 
+    '#options' => $options, 
+    '#description' => t('How should membership requests be handled in this group? When you select <em>closed</em>, users will not be able to join <strong>or</strong> leave.')
+  );
+
+  return $form;
+}
+
+
+function student_group_nodeapi(&$node, $op, $teaser, $page) {
+  switch ($op) {
+  case 'view':
+    if (!$teaser && $page) {
+      if(isset($node->author_group_nid)){
+        $group = node_load($node->author_group_nid);
+      }
+      else{
+        $group = $node;
+      }
+      if($group->type == 'student_group'){
+        $bc = array();
+        $bc[] = l(t('Home'), "");
+        $bc[] = l(t('Student Groups'), 'student-groups');
+//        $bc[] = l($group->title, 'node/'.$group->nid);
+        drupal_set_breadcrumb($bc);
+      }
+    } 
+  }
+}
+
+
+
+
+/*
+ * Allow student group admin to change og_selective value in a seperate form
+ */
+function student_group_selective_form($form_state, $node){
+  $default = isset($node->og_selective) ? $node->og_selective : variable_get('og_content_type_usage_student-group', OG_INVITE_ONLY);
+
+  $options = array(
+    OG_OPEN => t('Open - membership requests are accepted immediately.'),
+    OG_MODERATED => t('Moderated - membership requests must be approved.'),
+    OG_INVITE_ONLY => t('Invite only - membership must be created by an administrator.'),
+    OG_CLOSED => t('Closed - membership is exclusively managed by an administrator.'),
+  );
+  $form['nid'] = array(
+    '#type' => 'value',
+    '#value' => $node->nid,
+  );
+
+  $form['og_selective'] = array(
+    '#type' => 'radios', 
+    '#title' => t('Membership requests'), 
+    '#required' => TRUE,
+    '#default_value' => $default, 
+    '#options' => $options, 
+    '#description' => t('How should membership requests be handled in this group? When you select <em>closed</em>, users will not be able to join <strong>or</strong> leave.')
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Save',
+    '#submit' => array('student_group_selective_form_submit'),
+  );
+
+  return $form;
+}
+
+
+function student_group_selective_form_submit($form, &$form_state){
+  $query = "UPDATE {og} SET og_selective = %d WHERE nid = %d";
+  db_query($query, $form_state['values']['og_selective'], $form_state['values']['nid']);
+}
+
+
+// page listing all student_groups
+function student_group_listing_page(){
+  $header = array(
+    array(
+      'data'  => 'Name',
+      'field' => 'title',
+    ),
+  );//header
+ 
+  $query = "SELECT n.nid, n.title FROM {node} n INNER JOIN {student_groups} sg ON n.nid = sg.nid";
+  $query .= tablesort_sql($header);
+  $result = db_query($query);
+
+  while($student_group = db_fetch_object($result)){
+    $rows[] = array(
+      l($student_group->title, "node/$student_group->nid"),
+    ); 
+  }  
+
+  // If we have rows for a table, theme the table
+  //    otherwise set output to a message
+  if ( count($rows) ) {
+    $output = theme('table', $header, $rows);
+  }
+  else {
+    $output = "No student groups were found";
+  }
+   
+  // And finally, produce the page
+  print theme('page', $output);
+}
+
+
+/**
+ * Implementation of hook_form_alter()
+*/
+function student_group_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form['#node']) && $form_id == $form['#node']->type .'_node_form') {
+    $node = $form['#node'];
+    if($node->type == 'student_group'){
+      unset($form['menu']);
+      unset($form['comment_settings']);
+      unset($form['revision_information']);
+      unset($form['author']);
+      $form['author']['name'] = array(
+        '#type'  => 'value',
+        '#value' => $node->name ? $node->name : '',
+      );
+      $form['author']['date'] = array(
+        '#type'  => 'value',
+        '#value' => $node->date ? $node->date : '',
+      );
+      unset($form['options']);
+      $form['options']['status'] = array(
+        '#type'  => 'value',
+        '#value' => $node->status,
+      );
+      $form['options']['promote'] = array(
+        '#type'  => 'value',
+        '#value' => $node->promote,
+      );
+      $form['options']['sticky'] = array(
+        '#type'  => 'value',
+        '#value' => $node->sticky,
+      );
+
+      
+    }//student_group
+  }
+}
+
+
+
+/*
+function student_group_form_node_type_form_alter(&$form, &$form_state) {
+  if (isset($form['#node_type']) && $form['#node_type']->type == 'student_group') {  
+  /*  // Built in content types do not allow changes to type machine name.
+    if (isset($form['identity']['type']['#default_value'])) {
+      $usage = variable_get('og_content_type_usage_'. $form['identity']['type']['#default_value'], 'omitted');
+    }
+    else {
+      $usage = variable_get('og_content_type_usage_'. $form['identity']['type']['#value'], 'omitted');
+    }
+    // Persist $usage so that we can rebuild node access as needed.
+    $form['old_og_content_type_usage'] = array(
+      '#type' => 'value',
+      '#value' => 'group',
+    );
+
+/*
+  $form['og'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Organic groups'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#access' => user_access('administer organic groups'),
+  );*/
+
+/*
+  $form['og'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Organic groups'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#access' => user_access('administer organic groups'),
+  );
+    $form['og']['og_content_type_usage'] = array(
+      '#type' => 'value',
+      '#value' => 'group'
+    );
+
+    $options = array(
+      t('open - membership requests are accepted immediately.'), 
+      t('moderated - membership requests must be approved.'), 
+      t('invite only - membership must be created by an administrator.'), 
+      t('closed - membership is exclusively managed by an administrator.'),
+    );
+    $form['og']['og_content_type_selective'] = array(
+      '#type' => 'radios', 
+      '#title' => t('Membership requests'), 
+      '#required' => TRUE,
+      '#default_value' => variable_get('og_content_type_selective_student_group', OG_INVITE_ONLY),
+      '#options' => $options, 
+      '#description' => t('How should membership requests be handled in this group? When you select <em>closed</em>, users will not be able to join <strong>or</strong> leave.')
+    );
+
+    $form['og']['delivery'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Delivery Options'),
+      '#collapsible' => FALSE,
+      '#collapsed' => FALSE,
+    );
+    $form['og']['delivery']['og_delivery_can_send'] = array(
+      '#type' => 'checkbox',
+      '#default_value' => variable_get('og_delivery_can_send_student_group', COURSE_DEFAULT_CAN_SEND),
+      '#description' => "Allow administrators to send content to other groups"
+    );
+    $form['og']['delivery']['og_delivery_can_recieve'] = array(
+      '#type' => 'checkbox',
+      '#default_value' =>  variable_get('og_delivery_can_recieve_student_group', COURSE_DEFAULT_CAN_RECIEVE),
+      '#description' => "Allow members to view content sent from other groups"
+    );
+    $form['og']['delivery']['og_delivery_is_moderated'] = array(
+      '#type' => 'checkbox',
+      '#default_value' =>  variable_get('og_delivery_is_moderated_student_group', COURSE_DEFAULT_IS_MODERATED),
+      '#description' => "Allow administrators to moderate content sent from other groups"
+    );
+
+  } 
+
+}
+*/
+
+
+/**
+ * Implementation of hook_insert().
+*/
+function student_group_insert($node){
+//  $query = "INSERT INTO {student_groups} (nid) VALUES (%d)";
+ // db_query($query, $node->nid);
+  //add primary link
+  student_group_create_primary_link($node);
+  
+}
+
+
+
+
+function student_group_create_primary_link($node){
+  $plid = student_group_get_plid();
+  $item = array(
+    'link_title' => $node->title,
+    'link_path' => 'node/'. $node->nid,
+    'menu_name' => 'primary-links',
+    'module' => 'student_group',
+    'plid' => $plid,
+  );
+  menu_link_save($item);
+}
+
+
+function student_group_get_plid(){
+  //get menu link id for the student_group primary link to be used as the parent menu
+  $query = "SELECT mlid FROM {menu_links} WHERE menu_name = 'primary-links' and plid = 0 and link_path = 'student-groups' and router_path = 'student-groups'";
+  return db_result(db_query($query));
+}
+
+
+/**
+ * Implement hook_enable()
+*/
+function student_group_enable(){
+  //set student_group nodes as group type
+  //putting this here, because it is not working in hook_install
+  variable_set('og_content_type_usage_student_group', 'group');
+}
+
+
+function student_group_views_api() {
+  return array(
+    'api' => 2,
+  );
+}
+

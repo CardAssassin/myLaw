@@ -1,0 +1,736 @@
+<?php
+
+//$Id$
+
+//define access levels
+define('OG_GROUP_ACCESS_PUBLIC', 0);
+define('OG_GROUP_ACCESS_AUTHENTICATED', 1);
+define('OG_GROUP_ACCESS_MEMBER', 2);
+define('OG_GROUP_ACCESS_ADMIN',  7);
+define('OG_GROUP_ACCESS_DENIED', 10);
+
+
+
+
+
+/**
+ * Implementation of hook_menu()
+*/
+function og_group_access_menu(){
+  $items['node/%node/og/permissions'] = array(
+    'title' => 'Permissions',
+    'description' => 'Determine access to features by selecting permissions for roles.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('og_group_access_admin_perms', 1),
+    'access callback' => 'og_is_group_admin', 
+    'access arguments' => array(1),
+  );
+  
+  return $items;
+}
+
+
+function og_group_access_og_create_links($group){
+  $links = array();
+  if (og_is_group_admin($group)) {
+    $links[] = l(t('Permissions'), 'node/'.$group->nid.'/og/permissions');
+  }
+  return $links;
+}
+
+
+/**
+ * Implementation of hook_group_access_perm()
+*/
+function og_group_access_perm(){
+  return array('view group');
+}
+
+
+/**
+ * Implementations of hook_group_access_view_access_level();
+*/
+function og_group_access_view_access_level($group) {
+    return $group->perms['view group'];
+}
+
+
+/**
+ * Implementation of hook_form_alter()
+ */
+function og_group_access_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form['#node']) && $form_id == $form['#node']->type .'_node_form') {
+    $node = $form['#node'];
+
+    if (og_group_access_is_group_access_type($node->type) && variable_get('og_group_access_privacy_' . $node->type, 0)) {
+      $options = array(
+        NULL  => t('Select Level'),
+        OG_GROUP_ACCESS_ADMIN => 'Admin',
+        OG_GROUP_ACCESS_MEMBER => 'Members',
+        OG_GROUP_ACCESS_AUTHENTICATED => 'Community',
+        OG_GROUP_ACCESS_PUBLIC => 'Public',
+      );
+      $form['group_privacy'] = array(
+        '#title' => t('Group Privacy'),
+        '#type'  => 'fieldset',
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+      );
+      $form['group_privacy']['view_access_level'] = array(
+        '#title' => t('Select your group privacy level'),
+        '#type'  => 'select',
+        '#options' => $options,
+        '#default_value' => og_group_access_get_private_view_access_level($node->nid),
+        '#description'  => t('Only those in the group with the following permission level will see this post.'),
+      );
+    }
+
+    //offer a way to pass author_group_nid through drupal_execute
+    if ($node->author_group_nid == null && $form_state['values']['author_group_nid']) {
+      $node->author_group_nid = $form_state['values']['author_group_nid'];
+    }
+
+    $form['author_group_nid'] = array(
+      '#type' => 'hidden',
+      '#value' => $node->author_group_nid,
+    );
+ 
+  }
+}
+
+
+/**
+ * Implementation of hook_form_node_type_form_alter()
+ */
+function og_group_access_form_node_type_form_alter(&$form, &$form_state) {
+  if (isset($form['identity']['type']['#default_value'])) {
+    $type = $form['identity']['type']['#default_value'];
+  }
+  else {
+    $type = $form['identity']['type']['#value'];
+  }
+
+  if (og_is_group_type($type)) {
+    $form['default_group_permissions'] = array(
+      '#type'  => 'fieldset',
+      '#title' => t('Default Permissions'),
+      '#collapsible' => TRUE,
+      '#collapsed'   => TRUE,
+      '#theme'       => 'og_group_access_admin_default_perms',
+    );
+
+    $default_perms = og_group_access_get_default_perms($type);
+
+   // print_r($group_perms);die;
+
+    $options = og_group_access_get_permission_options();
+
+    $form['type'] = array('#value' => $type, '#type' => 'value');
+
+    $module_list = module_implements('group_access_perm', TRUE);
+
+    $set_static = array();
+    foreach ($module_list as $module) {
+      $permissions = module_invoke($module, 'group_access_perm');
+      $module_field = 'module_'.$module;
+      $form['default_group_permissions'][$module_field] = array(
+        '#title'       => $module,
+        '#type'        => 'fieldset',
+        '#collapsible' => TRUE,
+        '#collapsed'   => FALSE,
+      );
+
+      asort($permissions);
+      foreach ($permissions as $perm) {
+        $perm_field = 'perm_'.$perm;
+
+        if (!isset($default_perms[$perm])) {
+          $default_perms[$perm] = array('access' => OG_GROUP_ACCESS_MEMBER, 'static' => 0);
+        }
+     
+        $set_closed[$perm] = '';
+        if ($default_perms[$perm]['closed'] == 1) {
+          $set_closed_values[$perm] = $perm;
+        } 
+      
+        $form['default_group_permissions'][$module_field][$perm_field] = array(
+          '#title'  => $perm,
+          '#type'   => 'select',
+          '#options' => $options,
+          '#default_value' => $default_perms[$perm]['access'],
+        );
+      }
+    }
+    $form['default_group_permissions']['set_closed_checkboxes'] = array(
+      '#type' => 'checkboxes', 
+      '#options' => $set_closed,
+      '#default_value' => $set_closed_values,
+    );
+
+    array_unshift($form['#submit'], 'og_group_access_node_type_form_submit');
+  }
+  else if(og_group_access_is_group_access_type($type)) {
+    $form['og_group_access'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Group Access'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+  
+    $form['og_group_access']['og_group_access_privacy'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Alter Group Privacy'),
+      '#default_value' => variable_get('og_group_access_privacy_'.$type, 0),
+      '#description' => t('Check if you wish to have the ability to change the group privacy level on a post by post basis'),
+    );
+  }
+}
+
+
+function og_group_access_node_type_form_submit($form, &$form_state) {
+  $values = $form_state['clicked_button']['#post'];
+  $type = $form_state['values']['type'];
+
+  $query = "DELETE FROM {og_group_access_defaults} WHERE type = '%s'";
+  db_query($query, $type);
+  
+  foreach ($values as $key => $access) {
+    if (substr($key, 0, 5) == 'perm_') {
+      $perm_key = substr($key, 5);
+      $perm = str_replace('_', ' ', $perm_key);
+      if (isset($values['set_closed_checkboxes'][$perm])) {
+        $closed = 1;
+      }
+      else {
+        $closed = 0;
+      }
+      $query = "INSERT INTO {og_group_access_defaults} (type, perm, access, closed) VALUES ('%s', '%s', %d, %d)";
+      db_query($query, $type, $perm, $access, $closed);
+    }
+  }
+  node_access_rebuild(TRUE);
+}
+
+
+function theme_og_group_access_admin_default_perms($form){
+  $header = array('Permission', 'Access Level', 'Closed');
+
+  $rows = array();
+  $attributes = array('id' => 'permissions');
+
+  foreach($form as $module_field => $module){
+    if(substr($module_field, 0, 7) == 'module_'){
+      $row = array();
+      $row[] = array(
+        'data' => t('@module module', array('@module' => substr($module_field, 7))),
+        'class' => 'module',
+        'colspan' => 7,
+      );
+      $rows[] = $row;
+      foreach($module as $perm_field => $perm){
+        if(substr($perm_field, 0, 5) == 'perm_'){
+          $perm_name = substr($perm_field, 5);
+          $perm_key = str_replace('_', ' ', $perm_name);
+          $perm_title = $perm['#title'];
+          $row = array();
+          $row[] = array(
+            'data' => $perm_title,
+            'class' => 'permission',
+          );
+          unset($form[$module_field][$perm_field]['#title']);
+          $row[] = drupal_render($form[$module_field][$perm_field]);
+          $row[] = drupal_render($form['set_closed_checkboxes'][$perm_key]);
+          $rows[] = $row;
+        }
+      }
+      unset($form[$module_field]);
+    }
+  }
+
+  $output .= theme('table', $header, $rows, $attributes);
+  $output .= "<br>";
+  $output .= drupal_render($form);
+  return $output;
+}
+
+
+/**
+ * Implementation of hook_nodeapi()
+*/
+function og_group_access_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
+  global $user;
+
+  switch($op){
+    case 'prepare':
+    case 'view':
+      if (arg(0) == 'node' && is_numeric(arg(1))) {
+        $query = "SELECT author_group_nid FROM {og_author} WHERE nid = %d";
+        $data = db_fetch_object(db_query($query, arg(1)));
+      
+        if (isset($data->author_group_nid)) {
+          og_set_group_context(node_load($data->author_group_nid));
+        }
+      }
+      break;
+    case 'load':
+      if (og_is_group_type($node->type)) {
+        $node->perms = og_group_access_get_perms($node);        
+      }
+      //if (og_group_access_is_group_access_type($node->type)) {
+        $query = "SELECT author_group_nid FROM {og_author} WHERE nid = %d";
+        $data = db_fetch_object(db_query($query, $node->nid));
+        $node->author_group_nid = $data->author_group_nid;
+      //}
+      break;
+    case 'insert':
+      og_group_access_save_ancestry($node);
+      break;
+  }
+
+  switch($op) {
+    case 'insert':
+    case 'update':
+      $query = "DELETE FROM {og_group_access_privacy} WHERE nid = %d";
+      db_query($query, $node->nid);
+      if($node->view_access_level != ''){
+        $query = "INSERT INTO {og_group_access_privacy} (nid, view_access_level) VALUES (%d, %d)";
+        db_query($query, $node->nid, $node->view_access_level);
+      }
+
+      //for some reason when group nodes get edited their view_access_level does not get saved.
+      if(og_is_group_type($node->type)){
+        $group = node_load($node->nid);
+        $query = "INSERT INTO {node_access} (nid, gid, realm, grant_view) VALUES (%d, %d, '%s', %d)";
+        db_query($query, $node->nid, $node->nid, 'og_group_access_'.$group->perms['view group'], 1);
+      }
+      
+      break;
+  }
+}
+
+
+function og_group_access_get_private_view_access_level($nid){
+  $query = "SELECT view_access_level FROM {og_group_access_privacy} WHERE nid = %d";
+  $data = db_fetch_object(db_query($query, $nid));
+  if(isset($data->view_access_level)){
+    return $data->view_access_level;
+  }
+  return NULL;
+}
+
+
+//performs the same as og_save_ancestry, only it checks for group_access nodes
+function og_group_access_save_ancestry($node) {
+  if(og_group_access_is_group_access_type($node->type)){
+    $sql = "DELETE FROM {og_author} WHERE nid = %d";
+    db_query($sql, $node->nid);
+    $sql = "INSERT INTO {og_author} (nid, author_group_nid) VALUES (%d, %d)";
+    db_query($sql, $node->nid, $node->author_group_nid);
+    
+    $sql = "DELETE FROM {og_ancestry} WHERE nid = %d";
+    db_query($sql, $node->nid);
+    if (is_array($node->og_groups)) {
+      $node->og_groups = array_unique($node->og_groups);
+      foreach ($node->og_groups as $gid) {
+        $sql = "INSERT INTO {og_ancestry} (nid, group_nid) VALUES (%d, %d)";
+        db_query($sql, $node->nid, $gid);
+      }
+    }
+  }
+}
+
+
+/*
+  any node type which calls hook_group_access
+*/
+function og_group_access_is_group_access_type($type){
+  $query = "SELECT module FROM {node_type} WHERE type = '%s'";
+  $data = db_fetch_object(db_query($query, $type));
+
+  if (!og_is_group_type($type)) {
+    return module_hook($data->module, 'group_access');
+  }
+  return FALSE;
+}
+
+
+/*
+function og_group_access_check_create($group, $type){
+  $group_context = og_get_group_context();
+  if($group->nid == $group_context->nid){
+    return node_access('create', $type, NULL, $group);
+  }
+  return FALSE;
+}
+*/
+
+
+function og_group_access_theme(){
+  return array(
+    'og_group_access_admin_perms' => array(
+      'arguments' => array('form' => NULL),
+    ),
+    'og_group_access_admin_default_perms' => array(
+      'arguments' => array('form' => NULL),
+    ),
+  );
+}
+
+
+function og_group_access_get_permission_options(){
+  $options = array();
+  $options[OG_GROUP_ACCESS_DENIED] = 'Disallow';
+  $options[OG_GROUP_ACCESS_ADMIN]  = 'Admin';
+  $options[OG_GROUP_ACCESS_MEMBER] = 'Members';
+  $options[OG_GROUP_ACCESS_AUTHENTICATED] = 'Community';
+  $options[OG_GROUP_ACCESS_PUBLIC] = 'Public';
+
+  return $options;
+}
+
+
+/**
+ * Menu callback: administer permissions.
+ */
+function og_group_access_admin_perms($form_state, $group) {
+  $group_perms = og_group_access_get_perms($group);
+  $closed_perms = og_group_access_get_closed_default_perms($group->type);
+  $options = og_group_access_get_permission_options();
+
+  $form['group_nid'] = array('#value' => $group->nid, '#type' => 'value');
+
+  $module_list = module_implements('group_access_perm', TRUE);
+  foreach ($module_list as $module) {
+    $permissions = module_invoke($module, 'group_access_perm');
+    $module_field = 'module_'.$module;
+    $form[$module_field] = array(
+      '#title'       => $module,
+      '#type'        => 'fieldset',
+      '#collapsible' => TRUE,
+      '#collapsed'   => FALSE,
+    );
+    asort($permissions);
+    $count = 0;
+    foreach ($permissions as $perm) {
+      if (!isset($closed_perms[$perm])) {
+        $perm_field = 'perm_'.$perm;
+        $perm_key = str_replace(" ", "_", $perm);
+      
+        $form[$module_field][$perm_field] = array(
+          '#title'  => $perm,
+          '#type'   => 'select',
+          '#options' => $options,
+          '#default_value' => isset($group_perms[$perm]) ? $group_perms[$perm] : OG_GROUP_ACCESS_DENIED,
+        );
+        $count++;
+      }
+    }
+    if ($count == 0) {
+      unset($form[$module_field]);
+    }
+  }
+  $form['submit'] = array('#type' => 'submit', '#value' => t('Save group permissions'));
+ // $form['#submit'] = array('og_group_access_admin_perms_submit');
+
+  return $form;
+}
+
+
+function theme_og_group_access_admin_perms($form){
+  $header = array('Permission', 'Access Level');
+  $rows = array();
+  $attributes = array('id' => 'permissions');
+
+  foreach ($form as $module_field => $module) {
+    if (substr($module_field, 0, 7) == 'module_') {
+      $row = array();
+      $row[] = array(
+        'data' => t('@module module', array('@module' => substr($module_field, 7))),
+        'class' => 'module',
+        'colspan' => 7,
+      );
+      $rows[] = $row;
+      foreach ($module as $perm_field => $perm) {
+        if (substr($perm_field, 0, 5) == 'perm_') {
+          $row = array();
+          $row[] = array(
+            'data' => $perm['#title'],
+            'class' => 'permission',
+          );
+          unset($form[$module_field][$perm_field]['#title']);
+          $row[] = drupal_render($form[$module_field][$perm_field]);
+          $rows[] = $row;
+        }
+      }
+      unset($form[$module_field]);
+    }
+  }
+
+  $output  = theme('table', $header, $rows, $attributes);
+  $output .= "<br>";
+  $output .= drupal_render($form);
+  return $output;
+}
+
+
+function og_group_access_admin_perms_submit($form, &$form_state) {
+  $default_perms = og_group_access_get_open_default_perms($group);
+  $values = $form_state['clicked_button']['#post'];
+  $group_nid = $form_state['values']['group_nid'];
+
+  $query = "DELETE FROM {og_group_access} WHERE group_nid = %d";
+  db_query($query, $group_nid);
+  
+  foreach ($values as $key => $access) {
+    if (substr($key, 0, 5) == 'perm_') {
+      $perm_key = substr($key, 5);
+      $perm = str_replace("_", " ", $perm_key);
+      if ($access != -1 && $access != $default_perms[$perm]) { 
+        $query = "INSERT INTO {og_group_access} (group_nid, perm, access) VALUES (%d, '%s', %d)";
+        db_query($query, $group_nid, $perm, $access);
+      }
+    }
+  }
+  node_access_rebuild(TRUE);
+}
+
+
+/*
+  returns true if the user has the permission within the group
+*/
+function og_group_access_get_access($perm, $group){
+  if($group == NULL || !isset($group->perms[$perm])){
+    return FALSE;
+  }
+  $user_perm_level = og_group_access_get_user_permission_level($group->nid);
+  
+//  drupal_set_message($perm.' '.$user_perm_level.'>='.$group->perms[$perm]);
+  return ($user_perm_level >= $group->perms[$perm]);
+}
+
+
+/**
+ * Implementation of hook_node_grants().
+*/
+function og_group_access_node_grants($account, $op) { 
+  $grants = array();
+
+  if ($op == 'view') {
+    // everyone can see a public node
+   // $grants['og_group_access_'.OG_GROUP_ACCESS_PUBLIC][] = 0; 
+    //need to add a check to make sure the user is authenticated.  Duplicate public for now
+    if ($account->uid != 0) {
+      $grants['authenticated'][] = 0;
+    }
+  }
+
+  // Subscribers get an admin or non-admin grant for each subscription
+  if ($subscriptions = og_get_subscriptions($account->uid)) {
+    foreach ($subscriptions as $key => $val) {
+      $grants['og_group_access_'.OG_GROUP_ACCESS_MEMBER][] = $key;
+      if ($val['is_admin']) {
+        $grants['og_group_access_'.OG_GROUP_ACCESS_ADMIN][] = $key;
+      }
+    }
+  }
+ 
+
+/*   
+  $mirrored_uids = mirrored_account_get_mirrored_uids($account->uid);
+  if (!empty($mirrored_uids)) {
+    foreach ($mirrored_uids as $host_uid) {
+      $host = user_load($host_uid);
+      //need to eliminate redundancy
+      
+      $grants = array_merge($grants, og_group_access_node_grants($host, 'view'));
+    }
+  }
+*/
+
+
+  return $grants;
+}
+ 
+
+/**
+ * Implementation of hook_node_access_records.
+*/
+function og_group_access_node_access_records($node) {
+  $module = node_get_types('module', $node);
+  if (module_hook($module, 'group_access_view_access_level')) {
+    if (isset($node->author_group_nid)) {
+      $group = node_load($node->author_group_nid);
+    }
+    else {
+      $group = $node;
+    }
+    
+    $view_access_level = og_group_access_get_private_view_access_level($node->nid);
+    if($view_access_level == NULL) {
+      $view_access_level = module_invoke($module, 'group_access_view_access_level', $group);
+    }
+    switch($view_access_level) {
+      case '':
+        return isset($grants) ? $grants : NULL;
+      case OG_GROUP_ACCESS_PUBLIC:
+        $grants[] = array(
+          'realm' => 'all', 
+          'gid' => 0, 
+          'grant_view' => 1, 
+          'grant_update' => 0, 
+          'grant_delete' => 0,
+          'priority' => 0,
+        );
+        break;
+      case OG_GROUP_ACCESS_AUTHENTICATED:
+        $grants[] = array(
+          'realm' => 'authenticated', 
+          'gid' => 0, 
+          'grant_view' => 1, 
+          'grant_update' => 0, 
+          'grant_delete' => 0,
+          'priority' => 0,
+        );
+        break;
+      default:
+        $grants[] = array(
+          'realm' => 'og_group_access_'.$view_access_level, 
+          'gid' => $group->nid, 
+          'grant_view' => 1, 
+          'grant_update' => 0, 
+          'grant_delete' => 0,
+          'priority' => 0,
+        );
+    }
+  }
+
+  return isset($grants) ? $grants : NULL;
+}
+ 
+
+
+/*
+  returns an array indexed by available group permissions
+  values are the numeric permission value allowed by the group
+*/
+function og_group_access_get_perms($group){
+  $query = "SELECT perm, access FROM {og_group_access} WHERE group_nid = %d";
+  $result = db_query($query, $group->nid);
+  
+  $perms = array();
+  $perms = og_group_access_get_open_default_perms($group->type);
+  while ($row = db_fetch_object($result)) {
+    $perms[$row->perm] = $row->access;
+  }
+  $closed_perms = og_group_access_get_closed_default_perms($group->type);
+  $perms = array_merge($perms, $closed_perms);
+
+  return $perms;
+}
+
+
+function og_group_access_get_open_default_perms($type){
+   $query = "SELECT perm, access FROM {og_group_access_defaults} WHERE type = '%s' AND closed = 0";
+  $result = db_query($query, $type);
+
+  $perms = array();
+  while ($row = db_fetch_object($result)) {
+    $perms[$row->perm] =  $row->access;
+  }
+
+  return $perms;
+}
+
+
+function og_group_access_get_closed_default_perms($type){
+   $query = "SELECT perm, access FROM {og_group_access_defaults} WHERE type = '%s' AND closed = 1";
+  $result = db_query($query, $type);
+
+  $perms = array();
+  while ($row = db_fetch_object($result)) {
+    $perms[$row->perm] =  $row->access;
+  }
+
+  return $perms;
+}
+
+
+function og_group_access_get_default_perms($type){
+  $query = "SELECT perm, access, closed FROM {og_group_access_defaults} WHERE type = '%s'";
+  $result = db_query($query, $type);
+
+  $perms = array();
+  while ($row = db_fetch_object($result)) {
+    $perms[$row->perm] = array('access' => $row->access, 'closed' => $row->closed);
+  }
+
+  return $perms;
+}
+
+
+/*
+ * retrieves the permission level that an account has within the specified group
+*/
+function og_group_access_get_user_permission_level($group_nid, $account = NULL){
+  if ($account == NULL) {
+    global $user;
+    $account = $user;
+  }
+ 
+/* 
+  $uids = array($account->uid);
+  $mirrored_uids = mirrored_account_get_mirrored_uids($account->uid);
+  if (!empty($mirrored_uids)) {
+    $uids = array_merge($uids, $mirrored_uids);
+  }
+  $uids = implode(", ", $uids);
+
+  $query = "SELECT count(*) FROM {og_uid} WHERE nid = %d and is_active = 1 and uid IN ($uids)";
+  $member_count = db_result(db_query($query, $group_nid));
+
+  
+  if ($member_count > 0) {
+    $query = "SELECT count(*) FROM {og_uid} WHERE nid = %d and is_active = 1 and is_admin = 1 and uid IN ($uids)";
+    $admin_count = db_result(db_query($query, $group_nid));
+
+    if ($admin_count > 0) {
+      return OG_GROUP_ACCESS_ADMIN;
+    }
+    else {
+      return OG_GROUP_ACCESS_MEMBER;
+    }
+  }
+*/
+  $query = "SELECT * FROM {og_uid} WHERE nid = %d and uid = %d";
+  $data = db_fetch_object(db_query($query, $group_nid, $account->uid));
+  if($data->is_active){
+    if($data->is_admin) {
+      return OG_GROUP_ACCESS_ADMIN;
+    }
+    else {
+      return OG_GROUP_ACCESS_MEMBER;
+    }
+  }
+  else {
+    //check if it is an authenticated user
+    if (array_key_exists(2, $account->roles)) {
+      return OG_GROUP_ACCESS_AUTHENTICATED;
+    }
+  }
+  return OG_GROUP_ACCESS_PUBLIC;
+}
+
+
+
+
+
+/**
+ * Implementation of hook_views_api().
+ */
+function og_group_access_views_api() {
+  return array(
+    'api' => 2,
+  );
+}
+
+

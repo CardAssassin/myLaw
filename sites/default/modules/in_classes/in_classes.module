@@ -1,0 +1,83 @@
+<?php
+
+
+
+/**
+ * Implementation of hook_form_alter
+*/
+function in_classes_form_alter(&$form, &$form_state, $form_id) {
+  // Add delivery selection to specified node forms
+  if (og_delivery_has_audience($form['type']['#value'])) {
+    /*$form['og_delivery']['in_classes'] = array(
+      '#type' => 'radios',
+      '#title' => '',
+      '#multiple' => FALSE,
+      '#options' => array(
+        'in_class' => 'In classes',
+        'out_of_class' => 'Not in classes',
+        'everyone' => 'Everyone',
+      ),
+      '#default_value' => $node->in_classes ? $node->in_classes : 'everyone',
+      
+    );
+    */
+    $form['og_delivery']['in_classes'] = array(
+      '#type' => 'value',
+      '#value' => 'everyone',
+    );
+  }
+}
+
+
+/**
+ * Implementation of hook_nodeapi()
+ */
+function in_classes_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  switch ($op) {
+    case 'insert':
+      if(isset($node->in_classes)){
+        $query = "INSERT INTO {in_classes} (nid, status) values (%d, '%s')";
+        db_query($query, $node->nid, $node->in_classes);
+      }
+      break;
+    case 'update':
+      if(isset($node->in_classes)){
+        $query = "UPDATE {in_classes} SET status = '%s' WHERE nid = %d";
+        db_query($query, $node->in_classes, $node->nid);
+      }
+      break;
+    case 'view':
+      break;
+    case 'load':
+      $query = "SELECT status FROM {in_classes} WHERE nid = %d";
+      $result = db_result(db_query($query, $node->nid));
+      if(isset($result)) {
+        $node->in_classes = $result;
+      } 
+      break;
+
+  }
+}
+
+
+/*
+function in_classes_user_is_in_classes($uid) {
+  $query = 'SELECT count(og.nid) FROM {og_uid} og INNER JOIN {courses} c on og.nid = c.nid WHERE og.is_active = 1 AND og.uid = %d AND ((c.is_first_year = 1 AND c.registration_term = %d) OR (c.is_first_year = 0 AND c.xsemester_number = %d))';
+  $result = db_result(db_query($query, $uid, variable_get('course_current_semester_1L', 0), variable_get('course_current_semester_UL', 0))); 
+  return ($result > 0);
+}
+*/
+
+//this needs work
+function in_classes_user_is_in_classes($uid){
+  $current_registration_terms = course_get_current_banner_registration_terms();
+  $query = "SELECT count(og.nid) FROM {og_uid} og INNER JOIN {courses} c on og.nid = c.nid WHERE og.is_active = 1 and og.uid = %d AND c.registration_term = %d";
+  $result = db_result(db_query($query, $uid, $current_registration_terms[0] ));
+  return ($result > 0);
+}
+
+
+function in_classes_audience_in_classes($nid) {
+  $query = 'SELECT status FROM {in_classes} WHERE nid = %d';
+  return db_result(db_query($query, $nid));
+}

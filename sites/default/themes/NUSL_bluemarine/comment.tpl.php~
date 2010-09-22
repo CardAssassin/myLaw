@@ -1,0 +1,26 @@
+<?php
+// $Id: comment.tpl.php,v 1.7 2008/01/04 19:24:23 goba Exp $
+?>
+
+  <table class="comment-table<?php print ' '. $status; ?>">
+  <?php /*<tr>
+    <td colspan=2 class="comment-header">
+      <h3 class="comment-title">
+        <?php print $title; 
+          if ($new != '') { ?><span class="new"><?php print $new; ?></span><?php } ?>
+      </h3>
+    </td>
+  </tr>
+*/?>
+  <tr>
+    
+    <td colspan=2 class="comment-content">
+      <?php print $content; ?>
+    </td>
+    <td class="comment-info">
+      <?php if ($picture) print $picture; ?>  
+      <div class="comment-submitted"><?php print $submitted; ?></div>
+      <div class="comment-links">&raquo; <?php print $links; ?></div>
+    </td>
+  </tr>
+  </table>

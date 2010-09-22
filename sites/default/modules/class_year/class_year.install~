@@ -1,0 +1,44 @@
+<?php
+
+// $Id$
+
+function class_year_install(){
+  drupal_install_schema('class_year');
+  
+  //set class_year nodes as group type
+  variable_set('og_content_type_usage_class_year', 'group');
+  
+
+}
+
+
+function class_year_schema(){
+  $schema = array();
+
+  $schema['class_year'] = array(
+    'description'     => 'Stores information about each group',
+    'fields'          => array(
+      'nid'             => array(
+        'description'     => 'The nodes {node}.nid',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'year'     => array(
+        'description'     => 'The year of the group',
+        'type'            => 'varchar',
+        'length'          => 4,
+        'not null'        => TRUE,
+      ),
+      'division'     => array(
+        'description'     => 'Class year division',
+        'type'            => 'varchar',
+        'length'          => 1,
+        'not null'        => FALSE,
+      ),
+    ),
+    'primary_key'        => array('nid')
+  );
+  
+  return $schema;
+}

@@ -1,0 +1,68 @@
+<div class="<?php print $node_classes ?>" id="node-<?php print $node->nid; ?>">
+
+  <table class="node-table">
+  <tr>
+    <td colspan=2 class="node-header">
+      <h2 class="title">
+      <a href="<?php print $node_url ?>"><?php print $title; ?></a>
+      </h2>
+    </td>
+  </tr>
+  <tr>
+    
+    <td class="node-info">
+      <?php 
+      if ($picture){
+        print $picture;   
+        print theme('username', $node);
+        print "<br>";
+      }
+      ?> 
+      <?php if ($submitted): ?>
+        <span class='submitted'>
+        <?php print format_date($node->created, 'custom', "F jS, Y"); ?>
+        </span>
+      <?php endif; ?> 
+      
+      
+      <?php if (count($taxonomy)): ?>
+        <div class="taxonomy"><?php print t(' in ') . $terms ?></div>
+      <?php endif; ?>
+  
+      
+    </td>
+
+    <td class="node-teaser">
+      <div class="content">
+        <?php print $teaser_content; ?>
+      </div>
+    </td>
+  </tr>
+  <?php if ($teaser < 1) : ?>
+  <tr>
+    <td colspan=2 class="node-body">
+      <div class="content">
+        <?php print $node->content['body']['#value']; ?>
+        <?php print $node->content['book_navigation']['#value']; ?>
+      </div>
+    </td>
+  </tr>
+  <?php endif; ?>
+  <tr>
+    <td colspan=2 class="node-footer">
+      <?//php if ($teaser == 1): ?>
+      <?// print $read_more_link; ?>
+      <? if ($links): ?>
+        <div class="links">
+          <?php print $links; ?>
+        </div>
+      <?php endif; ?>
+
+      <?php print $read_more_link; ?>
+      <?php if ($closure) print $closure; ?>
+    </td>
+  </tr>
+  </table>
+
+
+</div>

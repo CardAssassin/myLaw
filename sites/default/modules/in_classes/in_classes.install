@@ -1,0 +1,37 @@
+<?php
+
+
+
+
+
+
+function in_classes_install(){
+  drupal_install_schema('in_classes');
+
+  db_query("UPDATE {system} set weight=5 WHERE name='in_classes'");
+}
+
+
+function in_classes_schema(){
+  $schema = array();
+
+  $schema['in_classes'] = array(
+    'description'     => 'links node to whether the audience is in classes',
+    'fields'          => array(
+      'nid'             => array(
+        'description'     => 'nodes id',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'status'             => array(
+        'description'     => 'status of the node, can be in_classes, not_in_classes, everyone',
+        'type'            => 'varchar',
+        'length'          => 15,
+        'not null'        => TRUE,
+      ),
+    ),
+  );
+
+  return $schema;
+}

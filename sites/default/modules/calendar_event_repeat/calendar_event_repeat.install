@@ -1,0 +1,31 @@
+<?php
+// $Id: scheduler.install,v 1.5.2.3 2008/11/01 19:06:17 ericschaefer Exp $
+
+function calendar_event_repeat_install() {
+  drupal_install_schema('calendar_event_repeat');
+}
+
+function calendar_event_repeat_schema() {
+  return array(
+    'calendar_event_repeat' => array(
+      'description' => t('The main table to hold the list of scheduled nodes.'),
+      'fields' => array(
+        'nid' => array(
+          'description' => t('The foreign key to node.nid'),
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'next_nid' => array(
+          'description' => t('The next node.nid in the chain of repeated dates'),
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+      ),
+      'primary key' => array('nid'),
+    ),
+  );
+}
+
+

@@ -1,0 +1,33 @@
+<?php
+
+// $Id$
+
+function student_group_install(){
+  drupal_install_schema('student_group');
+
+  //set weight higher than og
+  db_query("UPDATE {system} SET weight = 1 WHERE name = 'student_group'");
+
+  //set department nodes as group type
+  variable_set('og_content_type_usage_student_group', 'group');
+}
+
+
+function student_group_schema(){
+  $schema = array();
+
+  $schema['student_groups'] = array(
+    'description'     => 'Stores information about each group',
+    'fields'          => array(
+      'nid'             => array(
+        'description'     => 'The nodes {node}.nid',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+    ),
+    'primary_key'        => array('nid')
+  );
+  
+  return $schema;
+}

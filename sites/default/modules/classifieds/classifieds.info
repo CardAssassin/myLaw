@@ -1,0 +1,6 @@
+; $Id$
+
+name = Classifieds
+description = "Classifieds node"
+package = "NUSL"
+core = 6.x

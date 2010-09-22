@@ -1,0 +1,8 @@
+; $Id$
+
+name = community
+description = Community group type
+package = "NUSL"
+dependencies[] = og
+dependencies[] = views
+core = 6.x

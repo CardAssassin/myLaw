@@ -1,0 +1,6 @@
+name = Group Access
+description = "Enable group access controls"
+package = "Organic groups"
+dependencies[] = og
+core = 6.x
+

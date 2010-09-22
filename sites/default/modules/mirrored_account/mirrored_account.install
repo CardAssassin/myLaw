@@ -1,0 +1,31 @@
+<?php
+
+
+function mirrored_account_install(){
+  drupal_install_schema('mirrored_account');
+}
+
+
+function mirrored_account_schema(){
+  $schema = array();
+
+  $schema['mirrored_uids'] = array(
+    'description'     => 'Profiles that share the same group access permissions',
+    'fields'          => array(
+      'parasite_uid'             => array(
+        'description'     => 'User id who is copying permissions',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'host_uid'             => array(
+        'description'     => 'user id who\'s permissions are being copied',
+        'type'            => 'int',
+        'size'          => 'normal',
+        'not null'        => TRUE,
+      ),
+    ),
+  );
+
+  return $schema;
+}

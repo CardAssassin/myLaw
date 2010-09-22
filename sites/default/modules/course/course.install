@@ -1,0 +1,140 @@
+<?php
+
+// $Id$
+
+function course_install(){
+  drupal_install_schema('course');
+
+  db_query("UPDATE {system} SET weight = 1 WHERE name = 'course'");
+
+  //set course nodes as group type
+  variable_set('og_content_type_usage_course', 'group');
+}
+
+
+function course_schema(){
+  $schema = array();
+
+  $schema['courses'] = array(
+    'description'     => 'Stores information about each course',
+    'fields'          => array(
+      'nid'             => array(
+        'description'     => 'The nodes {node}.nid',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'course_number'     => array(
+        'description'     => 'The course number',
+        'type'            => 'varchar',
+        'length'          => 7,
+        'not null'        => TRUE,
+      ),
+      'crn'               => array(
+        'description'     => 'CRN from Banner',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'registration_term' => array(
+        'description'     => 'The registration term number from Banner',
+        'type'            => 'int',
+        'size'          => 'normal',
+        'not null'        => TRUE,
+      ),
+      'registration_term_desc' => array(
+        'description'     => 'The registration term description from Banner',
+        'type'            => 'varchar',
+        'length'          => 63,
+        'not null'        => TRUE,
+      ),
+
+      'credits'     => array(
+        'description'     => 'Number of credits',
+        'type'            => 'int',
+        'size'          => 'tiny',
+        'not null'        => TRUE,
+      ),
+      'primary_instructor_nuid'     => array(
+        'description'     => 'The primary instructor NUID',
+        'type'            => 'varchar',
+        'length'          => 9,
+        'not null'        => TRUE,
+      ),
+      'secondary_instructor_nuid'     => array(
+        'description'     => 'The secondary instructor NUID',
+        'type'            => 'varchar',
+        'length'          => 9,
+        'not null'        => FALSE,
+      ),
+      'evaluation_description' => array(
+        'description'     => 'Description for the evaluations',
+        'type'            => 'text',
+        'size'          => 'normal',
+        'not null'        => FALSE,
+      ),
+      'evaluations_initialized' => array(
+        'description'     => 'Whether all of the evaluations have been initialized',
+        'type'            => 'int',
+        'size'          => 'tiny',
+        'not null'        => TRUE,
+      ),
+      'is_first_year' => array(
+        'description'     => 'Whether the class is for first year students',
+        'type'            => 'int',
+        'size'          => 'tiny',
+        'not null'        => TRUE,
+      ),
+      'is_performance_based' => array(
+        'description'     => 'Determines if instructor can see Student Names',
+        'type'            => 'int',
+        'size'          => 'tiny',
+        'not null'        => TRUE,
+      ),
+      'is_passfail'     => array(
+        'description'     => 'Determines the grading scale',
+        'type'            => 'int',
+        'size'          => 'tiny',
+        'not null'        => TRUE,
+      ),
+      'manual_entry'  => array(
+        'description'  => 'True if the course was created or edited manually, false if it was created by Banner',
+        'type'         => 'int',
+        'size'         => 'tiny',
+        'not null'     => TRUE,
+      ),
+    ),
+    'primary_key'        => array('nid')
+  );
+  
+  $schema['course_exam_numbers'] = array(
+    'description'     => 'student exam numbers',
+    'fields'          => array(
+      'student_nuid'     => array(
+        'description'     => 'uid for the student',
+        'type'            => 'varchar',
+        'length'            => 9,
+        'not null'        => TRUE,
+      ),
+      'exam_number'     => array(
+        'description'     => 'The exam number',
+        'type'            => 'varchar',
+        'length'          => 7,
+        'not null'        => TRUE,
+      ),
+      'registration_term'     => array(
+        'description'     => 'semester number',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'exam_type'     => array(
+        'description'     => 'laptop or school computer',
+        'type'            => 'varchar',
+        'length'          => 20,
+        'not null'        => FALSE,
+      ),
+    ),
+  );
+  return $schema;
+}

@@ -1,0 +1,7 @@
+; $Id$
+name = Hide Nodes
+description = Allows users to tag a node as hidden.
+core = 6.x
+
+
+

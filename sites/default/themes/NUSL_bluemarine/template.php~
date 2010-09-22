@@ -1,0 +1,92 @@
+<?php
+
+
+/**
+ * Format a username.
+ *
+ * @param $object
+ *   The user object to format, usually returned from user_load().
+ * @return
+ *   A string containing an HTML link to the user's page if the passed object
+ *   suggests that this is a site user. Otherwise, only the username is returned.
+ */
+function phptemplate_username($object) {
+  drupal_set_message('NUSL_user_profile_preprocess_username');
+  if ($object->uid && $object->name) {
+    // Shorten the name when it is too long or it will break many tables.
+    if (drupal_strlen($object->name) > 20) {
+      $name = drupal_substr($object->name, 0, 15) .'...';
+    }
+    else {
+      $name = $object->name;
+    }
+
+    if (user_access('access user profiles')) {
+      $output = l($name.'!', 'user/'. $object->uid, array('attributes' => array('title' => t('View user profile.'))));
+    }
+    else {
+      $output = check_plain($name);
+    }
+  }
+  else if ($object->name) {
+    // Sometimes modules display content composed by people who are
+    // not registered members of the site (e.g. mailing list or news
+    // aggregator modules). This clause enables modules to display
+    // the true author of the content.
+    if (!empty($object->homepage)) {
+      $output = l($object->name.'!', $object->homepage, array('attributes' => array('rel' => 'nofollow')));
+    }
+    else {
+      $output = check_plain($object->name);
+    }
+
+    $output .= ' ('. t('not verified') .')';
+  }
+  else {
+    $output = variable_get('anonymous', t('Anonymous'));
+  }
+  return $output;
+}
+
+
+
+//from http://www.disobey.com/node/1833
+function phptemplate_preprocess_node(&$variables) {
+ // print_r($variables);die;
+  // we like to display teasers on the node view pages in a different style,
+  // but only if they were NOT set to "show summary on full view" (which seems
+  // backward, but the implication with that checkbox is that the teaser is
+  // PART of the node's body, instead of an actual summary of the entire
+  // node's body). if a node's unbuilt body starts with <!--break-->, then
+  // a teaser has been manually set, and "show summary" is not checked.
+  $node = $variables['node'];
+
+
+  if ($variables['teaser'] && $node->teaser && !empty($node->readmore)) {
+      $read_more = array(
+        'title' => t('Read more'),
+        'href' => "node/$node->nid",
+        // The title attribute gets escaped when the links are processed, so
+        // there is no need to escape here.
+        'attributes' => array('title' => t('Read the rest of !title.', array('!title' => $node->title)))
+      );
+      $variables['read_more_link'] = theme('links', array('read_more' => $read_more));
+  }
+
+
+
+
+  //if ($variables['page'] == TRUE) { // only do this on full page views.
+    $node = node_load($variables['nid']); // we reload the node because
+    // by the time it gets here <!--break--> has already been filtered out.
+    // this if logic stolen from node.module's node_teaser_include_verify().
+   // if (strpos($node->body, '<!--break-->') === 0) {
+    //  $variables['style_teaser_differently'] = TRUE;
+      $variables['teaser_content'] = check_markup($node->teaser, $node->format, FALSE);
+   // }
+  //}
+  if($variables['teaser'] == TRUE){
+   // print_r($variables);die;
+    
+  }
+}

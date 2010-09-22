@@ -1,0 +1,6 @@
+; $Id$
+
+name = Announcement
+description = "Announcement node"
+package = "NUSL"
+core = 6.x

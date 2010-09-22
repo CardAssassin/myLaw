@@ -1,0 +1,927 @@
+<?php
+
+//require_once(drupal_get_path('module', 'modr8') .'/modr8_admin.inc');
+
+
+/**
+ *   Implementation of hook_perm();
+**/
+function og_delivery_perm(){
+  return array('create user to community posts', 'moderate posts to community');
+}
+
+
+/**
+ * Implementations of hook_group_access_perm();
+*/
+function og_delivery_group_access_perm(){
+  return array('view posts to group', 'create user to group posts', 'create group to group posts', 'moderate user to group posts', 'moderate group to group posts');
+}
+
+
+/**
+ * Implementation of hook_menu().
+ */
+function og_delivery_menu() {
+  $items = array();
+
+  $items['node/%node/og/modr8'] = array(
+    'title' => 'Moderated content',
+    'description' => 'Approve or delete moderated content.',
+    'access callback' => '_og_delivery_access_callback_moderate',
+    'access arguments' => array(1),
+    'page callback' => 'og_delivery_modr8_page',
+    'page arguments' => array(1),
+  );
+  $items['modr8'] = array(
+    'title' => 'Moderated content',
+    'description' => 'Approve or delete moderated content.',
+    'page callback' => 'og_delivery_modr8_all_page',
+    'access callback' => '_og_delivery_access_callback_moderate_any',
+  );
+  return $items;
+}
+
+function _og_delivery_access_callback_moderate($group){
+  return (og_group_access_get_access('moderate user to group posts', $group) || og_group_access_get_access('moderate group to group posts', $group));
+}
+
+function _og_delivery_access_callback_moderate_any(){
+  return (count(og_delivery_modr8_get_groups()) > 0);
+}
+
+
+/**
+ * Implementations of hook_group_access_create_links()
+*/
+function og_delivery_group_access_create_links($group){
+  $links = array();
+  if(_og_delivery_access_callback_moderate($group)){
+    $links[] = l('Moderate Posts ('.og_delivery_modr8_num($group->nid).')', 'node/'. $group->nid . '/og/modr8');
+  }
+  return $links;
+}
+
+
+function og_delivery_modr8_num($group_nid){
+  $query = 'SELECT COUNT(*) FROM {node} n INNER JOIN {og_ancestry} g ON n.nid = g.nid WHERE g.group_nid = %d AND n.moderate = 1';
+  return db_result(db_query($query, $group_nid));
+}
+
+
+function og_delivery_modr8_num_all(){
+  $group_nids = og_delivery_modr8_get_groups();
+  
+  $query = 'SELECT COUNT(*) FROM {node} n INNER JOIN {og_ancestry} g ON n.nid = g.nid WHERE g.group_nid IN ('.implode(',', $group_nids).') AND n.moderate = 1';
+  return db_result(db_query($query));
+}
+
+
+/**
+ * Menu callback; displays the content moderation form.
+ */
+function og_delivery_modr8_page($group) {
+  module_load_include('inc', 'modr8', 'modr8_admin');
+
+  $count_sql = 'SELECT COUNT(*) FROM {node} n INNER JOIN {og_ancestry} g ON n.nid = g.nid WHERE g.group_nid = %d AND n.moderate = 1';
+  $page_sql = 'SELECT n.nid FROM {node} n INNER JOIN {og_ancestry} g ON n.nid = g.nid WHERE g.group_nid = %d AND n.moderate = 1 ORDER BY n.changed DESC';
+
+  $result = pager_query($page_sql, 10, 0, $count_sql, $group->nid);
+  $result_count = pager_query($page_sql, 10, 0, $count_sql, $group->nid);
+//  $output = '<p>'. l(t('Show log of all actions on moderated content.'), 'admin/reports/modr8') .'</p>';
+
+  if (db_fetch_object($result_count)) {
+    $output .= drupal_get_form('modr8_form', $result);
+    $output .= theme('pager');
+  }
+  else {
+    $output .= '<p>'. t('@items in moderation', array('@items' => format_plural(0, '1 post', '@count posts'))) .'</p>';
+  }
+  return $output;
+}
+
+
+function og_delivery_modr8_get_groups() {
+  global $user;
+
+  $query = "SELECT nid FROM {og_uid} WHERE uid = %d";
+  $group_nids = db_fetch_array(db_query($query, $user->uid));
+
+  foreach($group_nids as $key => $group_nid){
+    drupal_set_message($group_nid);
+    if(!_og_delivery_access_callback_moderate(node_load($group_nid))) {
+      unset($group_nids[$key]);
+    }
+  }
+
+  return $group_nids;
+}
+
+
+/**
+ * Menu callback; displays the content moderation form.
+ */
+function og_delivery_modr8_all_page() {
+  module_load_include('inc', 'modr8', 'modr8_admin');
+
+  $group_nids = og_delivery_modr8_get_groups();
+  
+/*
+  if(user_access('moderate posts to community')){
+    $group_nids[] = -1;
+  }
+*/
+
+  $count_sql = 'SELECT COUNT(*) FROM {node} n INNER JOIN {og_ancestry} g ON n.nid = g.nid WHERE g.group_nid IN ('.implode(',', $group_nids).') AND n.moderate = 1';
+  $page_sql = 'SELECT n.nid, gn.title FROM {node} n INNER JOIN {og_ancestry} g ON n.nid = g.nid INNER JOIN {node} gn ON g.nid = gn.nid WHERE g.group_nid IN ('.implode(',', $group_nids).') AND n.moderate = 1 ORDER BY gn.title, n.changed DESC';
+
+  $result = pager_query($page_sql, 10, 0, $count_sql);
+  $result_count = pager_query($page_sql, 10, 0, $count_sql);
+//  $output = '<p>'. l(t('Show log of all actions on moderated content.'), 'admin/reports/modr8') .'</p>';
+  $output = '<p></p>';
+
+  if (db_fetch_object($result_count)) {
+    $output .= drupal_get_form('modr8_form', $result);
+    $output .= theme('pager');
+  }
+  else {
+    $output .= '<p>'. t('@items in moderation', array('@items' => format_plural(0, '1 post', '@count posts'))) .'</p>';
+  }
+  return $output;
+}
+
+/*
+function og_delivery_modr8_form($form_state, $result = NULL) {
+  $form = array(
+    '#theme' => 'og_delivery_modr8_form',
+    '#tree' => TRUE,
+  );
+
+  while ($r = db_fetch_object($result)) {
+    $op_options = array();
+    $node = node_load($r->nid);
+    // This flag can be used by modr8, or other modules to change the teaser specifically
+    // for when it's being shown in the moderation list.
+    $node->modr8_form_teaser = TRUE;
+    $teaser = node_view($node, TRUE, FALSE, FALSE);
+
+    $form[$node->nid] = array(
+      '#tree' => TRUE,
+    );
+
+    $op_options['approve'] = t('Approve');
+    if (node_access("delete", $node)) {
+      $op_options['delete'] = t('Delete');
+    }
+    $op_options['nada'] = t('No action');
+
+    $form[$node->nid]['ops'] = array(
+      '#type' => 'radios',
+      '#options' => $op_options,
+      '#default_value' => variable_get('modr8_default_option', 'nada'),
+    );
+    if (variable_get('modr8_send_approve', FALSE) || variable_get('modr8_send_deny', FALSE)) {
+      $form[$node->nid]['note'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Note to author'),
+        '#cols' => 15, // keep it narrow
+      );
+    }
+    $form[$node->nid]['preview'] = array(
+      '#type' => 'value',
+      '#value' => $teaser,
+    );
+
+    $log_link = '';
+    $events = db_query("SELECT modid FROM {modr8_log} WHERE nid = %d", $node->nid);
+    $count = db_result(db_query("SELECT COUNT(modid) FROM {modr8_log} WHERE nid = %d", $node->nid));
+    if ($count) {
+      if ($count == 1) {
+        $url = 'admin/reports/modr8/event/'. db_result($events);
+      }
+      else {
+        $url = 'node/'. $node->nid .'/modr8/';
+      }
+      $message = format_plural($count, 'See the 1 moderation log event for this post', 'Overview of the @count moderation log events for this post');
+      $log_link .= l($message, $url);
+    }
+    $form[$node->nid]['log_link'] = array(
+      '#value' => $log_link,
+    );
+    $form[$node->nid]['author_uid'] = array(
+      '#type' => 'value',
+      '#value' => $node->uid,
+    );
+    $form[$node->nid]['title'] = array(
+      '#type' => 'value',
+      '#value' => check_plain($node->title),
+    );
+
+    $form[$node->nid]['type'] = array(
+      '#type' => 'value',
+      '#value' => node_get_types('name', $node),
+    );
+  }
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
+
+  return $form;
+}
+*/
+
+
+
+/**
+ * Implementation of hook_node_grants().
+*/
+function og_delivery_node_grants($account, $op) { 
+  $grants = array();
+
+  if ($op == 'view') {
+    // everyone can see a public node
+  //  $grants['og_groups_'.OG_GROUP_ACCESS_PUBLIC][] = 0; 
+    //need to add a check to make sure the user is authenticated.  Duplicate public for now
+    if($account->uid != 0){
+      $grants['og_groups_authenticated'][] = 0;
+    }
+  }
+
+  // Subscribers get an admin or non-admin grant for each subscription
+  if ($subscriptions = og_get_subscriptions($account->uid)) {
+    foreach ($subscriptions as $key => $val) {
+      
+      if ($val['is_admin']) {
+        $grants['og_groups_'.OG_GROUP_ACCESS_ADMIN][] = $key;
+        $grants['og_groups_'.OG_GROUP_ACCESS_MEMBER . '_in'][] = $key;
+        $grants['og_groups_'.OG_GROUP_ACCESS_MEMBER . '_out'][] = $key;
+      }
+      else if (in_classes_user_is_in_classes($account->uid)){
+        $grants['og_groups_'.OG_GROUP_ACCESS_MEMBER . '_in'][] = $key;
+      }
+      else {
+        $grants['og_groups_'.OG_GROUP_ACCESS_MEMBER . '_out'][] = $key;
+      }
+    }
+  }
+  
+  if(!empty($account->mirrored_uids)){
+    foreach($account->mirrored_uids as $host_uid){
+      $host = user_load($host_uid);
+      //eliminate redundancy
+      $host->mirrored_uids = array();
+      $grants = array_merge($grants, og_delivery_node_grants($host, 'view'));
+    }
+  }
+
+  return $grants;
+}
+
+
+/**
+ * Implement hook_node_access_records
+*/
+function og_delivery_node_access_records($node) {
+  $grants = array();
+  $query = "SELECT group_nid FROM {og_ancestry} WHERE nid = %d";
+  $result = db_query($query, $node->nid);
+  while($data = db_fetch_object($result)){
+    $audience_group_nid = $data->group_nid;
+/*
+    if($audience_group_nid == -1){
+      $access_level = OG_GROUP_ACCESS_AUTHENTICATED;
+    }
+*/
+//    else{
+    $group = node_load($audience_group_nid);
+    $access_level = $group->perms['view posts to group'];
+//    }
+    if (!og_group_access_is_group_access_type($node->type)) {
+      if ($group->perms['create user to group posts'] < $access_level){
+        $access_level = $group->perms['create user to group posts'];
+      }
+    }
+
+
+    switch($access_level){
+      case '':
+        return isset($grants) ? $grants : NULL;
+        break;
+      case OG_GROUP_ACCESS_PUBLIC:
+        $grants[] = array(
+          'realm' => 'all', 
+          'gid' => 0, 
+          'grant_view' => 1, 
+          'grant_update' => 0, 
+          'grant_delete' => 0
+        );
+        break;
+      case OG_GROUP_ACCESS_AUTHENTICATED:
+        $grants[] = array(
+          'realm' => 'og_groups_authenticated', 
+          'gid' => 0, 
+          'grant_view' => 1, 
+          'grant_update' => 0, 
+          'grant_delete' => 0
+        );
+        break;
+
+      default:
+
+        switch(in_classes_audience_in_classes($node->nid)){
+          case 'in_class':
+            $grants[] = array(
+              'realm' => 'og_groups_'.$access_level . '_in', 
+              'gid' => $audience_group_nid, 
+              'grant_view' => 1, 
+              'grant_update' => 0, 
+              'grant_delete' => 0
+            );
+            break;
+          case 'out_of_class':
+            $grants[] = array(
+              'realm' => 'og_groups_'.$access_level . '_out', 
+              'gid' => $audience_group_nid, 
+              'grant_view' => 1, 
+              'grant_update' => 0, 
+              'grant_delete' => 0
+            );
+            break;
+          case 'everyone':
+            $grants[] = array(
+              'realm' => 'og_groups_'.$access_level . '_in', 
+              'gid' => $audience_group_nid, 
+              'grant_view' => 1, 
+              'grant_update' => 0, 
+              'grant_delete' => 0
+            );
+            $grants[] = array(
+              'realm' => 'og_groups_'.$access_level . '_out', 
+              'gid' => $audience_group_nid, 
+              'grant_view' => 1, 
+              'grant_update' => 0, 
+              'grant_delete' => 0
+            );
+            break;
+        }
+    }
+  }
+
+  return $grants;
+}
+
+
+
+
+/*
+function og_delivery_admin_settings(&$form){
+  $types = node_get_types();
+  $omitted = variable_get('og_omitted', array());
+  $group_types = variable_get('og_node_types', array('og'));
+  
+  foreach ($types as $type) {
+    if(in_array($type->type, $omitted) && !in_array($type->type, $group_types)){
+      $options[$type->type] = t($type->name);
+    }
+  }
+  $form['og_settings']['node_form']['og_delivery_types'] = array(
+    '#type' => 'select', 
+    '#title' => t('Delivery nodes'), 
+    '#default_value' => variable_get('og_delivery_types', array()),
+    '#options' => $options, 
+    '#description' => t('Select any node types which <em>should</em> participate in the Delivery targetting system. Only node types that have been ommitted from the Audience targetting system can be selected.'),
+    '#multiple' => TRUE
+  );
+}
+*/
+
+function og_delivery_remove_group_fieldset(){
+  //remove Groups option from the form
+  unset($form["og_nodeapi"]);
+  $form['og_groups'] = array();
+}
+
+
+
+
+
+
+
+function og_delivery_form_node_type_form_alter(&$form, &$form_state) {
+  
+
+// Built in content types do not allow changes to type machine name.
+  if (isset($form['identity']['type']['#default_value'])) {
+    $type = $form['identity']['type']['#default_value'];
+  }
+  else {
+    $type = $form['identity']['type']['#value'];
+  }
+
+  if(og_is_group_type($type)){
+    $form['og_delivery'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Moderation'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#access' => user_access('administer organic groups'),
+    );
+  
+    $form['og_delivery']['super_type'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Super Group Type'),
+      '#default_value' => variable_get('og_delivery_'.$type.'_super_type', 0),
+      '#description' => t('Check if this group type does not go through moderation'),
+    );
+  }
+  else{
+    if(og_group_access_is_group_access_type($type)){
+      $description = t('Add the audience field to the node form displaying groups where the "view posts to group" permission is not disabled');
+    }
+    else{
+      $description = t('Add the audience field to the node form displaying groups where the user has access to "create user to group posts"');
+    }
+
+    $form['og_delivery'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Audience Field'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#access' => user_access('administer organic groups'),
+    );
+  
+    $form['og_delivery']['audience'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Apply Audience field'),
+      '#default_value' => variable_get('og_delivery_'.$type.'_has_audience', 0),
+      '#description' => $description,
+    );
+  }
+
+  array_unshift($form['#submit'], 'og_delivery_node_type_form_submit');
+}
+
+
+function og_delivery_node_type_form_submit($form, &$form_state) {
+  $type = $form_state['values']['type'];
+  if(og_is_group_type($type)){
+    $is_super = $form_state['values']['super_type'];
+    variable_set('og_delivery_'.$type.'_super_type', $is_super);
+  }
+  else{
+    $has_audience = $form_state['values']['audience'];
+    variable_set('og_delivery_'.$type.'_has_audience', $has_audience);
+  }
+}
+
+
+
+/**
+ * Implementation of hook_form_alter
+*/
+function og_delivery_form_alter(&$form, &$form_state, $form_id) {
+  // Add delivery selection to specified node forms
+  if (og_delivery_has_audience($form['type']['#value'])) {
+    if (isset($form['#node']) && $form_id == $form['#node']->type .'_node_form') {
+      $node = $form['#node'];
+      $og_groups = $node->og_groups;
+    }
+    else{
+      $og_groups = array();
+    }
+    if(empty($og_groups)){
+      if(og_group_access_is_group_access_type($form['type']['#value'])){
+//        $og_groups[] = -1;
+      }
+      else{
+        $group = og_get_group_context();
+        $og_groups[] = $group->nid;
+      }
+    }
+
+    $audience_options = og_delivery_get_audience($form['type']['#value']);
+   // print_r($audience_options);die;
+
+    $num_options = 0;
+    foreach($audience_options as $group_type){
+      $num_options += count($group_type);
+    }
+    switch($num_options){
+    case 0:
+      drupal_set_message("error - og_delivery no groups to post to");
+      break;
+    case 1:
+      //pop off the group type
+      $audience_options = array_pop($audience_options);
+
+      $form['og_groups'] = array(
+        '#type' => 'value',
+        '#value' => $audience_options,
+      );
+      break;
+    default:
+      $form['og_delivery'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Groups'),
+        '#collapsible' => TRUE,
+        '#collapsed' => FALSE,
+        '#weight'  => -10
+      );
+
+      $form['og_delivery']['og_groups'] = array(
+        '#type' => 'select', 
+        '#title' => t('Audience'), 
+        '#options' => $audience_options, 
+        '#description' =>  'Post to these groups.  Groups marked with a * will be moderated before being posted.',
+        '#default_value' => $og_groups,
+        '#required' => TRUE, 
+        '#multiple' => TRUE
+      );
+    }
+  }
+
+}
+ 
+
+/*
+function og_delivery_form_add_delivery_fields(&$form, $form_state){ 
+
+  
+}
+*/
+
+
+/**
+ * Implementation of hook_nodeapi()
+ */
+function og_delivery_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  switch ($op) {
+    case 'insert':
+    case 'update':
+      if(og_delivery_has_audience($node->type)){
+        _og_delivery_insert_audience($node->nid, $node->og_groups);
+        _og_delivery_set_moderate($node);    
+      }
+ 
+      break;
+    case 'view':
+      break;
+    case 'load':
+      break;
+
+  }
+}
+
+
+function _og_delivery_insert_audience($nid, $audience_groups){
+  $query = "DELETE FROM {og_ancestry} WHERE nid=%d";
+  db_query($query, $nid);
+  foreach($audience_groups as $group_nid) {
+    $query = "INSERT INTO {og_ancestry} (nid, group_nid) VALUES (%d, %d)";
+    db_query($query, $nid, $group_nid);
+  }
+}
+
+
+function _og_delivery_set_moderate($node){
+  //group post
+  if(isset($node->author_group_nid)){
+    $group = node_load($node->author_group_nid);
+    if(variable_get('og_delivery_'.$group->type.'_super_type', 0)){
+      $moderate = FALSE;
+    }
+    else{
+      $moderate = FALSE;
+      foreach($node->og_groups as $group_nid) {
+/*        if($group_nid == -1){
+          $moderate = TRUE;
+        }
+*/
+//        else{
+          $audience_group = node_load($group_nid);
+          $moderate = ($audience_group->perms['moderate group to group posts'] != 10 && !og_group_access_get_access('moderate group to group posts', $audience_group));
+//        }
+      }
+      if($moderate){
+        $query = "UPDATE {node} set moderate = 1 WHERE nid = %d";
+        db_query($query, $node->nid);
+        return TRUE;
+      }
+    }
+  }
+  else{
+  //user post
+    $moderate = FALSE;
+    foreach($node->og_groups as $group_nid) {
+/*      if($group_nid == -1){
+        $moderate = FALSE;
+      }
+*/
+//      else{
+        $group = node_load($group_nid);
+        $moderate = ($group->perms['moderate user to group posts'] != 10 && !og_group_access_get_access('moderate user to group posts', $group));
+//      }
+      if($moderate){
+        $query = "UPDATE {node} set moderate = 1 WHERE nid = %d";
+        db_query($query, $node->nid);
+        return TRUE;
+      }
+    }
+  }
+  return FALSE;
+}
+
+
+function og_delivery_get_audience($type){
+  $group = og_get_group_context();
+
+  $audience_options = array();
+
+  $query = "SELECT g.nid, n.title, nt.name  FROM {og} g INNER JOIN {node} n ON g.nid = n.nid INNER JOIN {node_type} nt ON n.type = nt.type ORDER By nt.name, n.title";
+  $result = db_query($query);
+  $group_type_name = '';
+
+/*    
+  if(variable_get('og_delivery_'.$group->type.'_super_type', 0)){
+    $audience_options['Community'][-1] = 'All Community';
+  }
+  else{
+    $audience_options['Community'][-1] = 'All Community*';
+  }
+*/
+  if(og_group_access_is_group_access_type($type)){
+    if(!og_group_access_get_access('create group to group posts', $group)){
+      //if content cannot be posted, the audience will be the current group
+      return array($group->nid => $group->title);
+    }
+    else{
+      //get list of Groups that allow group posts
+      while($data = db_fetch_object($result)){
+        //there is room for performance improvement here
+        $grp = node_load($data->nid);
+        //a permission level of 10 indicates that it is not active
+        if($grp->perms['view posts from groups'] < 10){
+          //categorize groups by type
+          if($data->name != $group_type_name){
+           $group_type_name = $data->name;
+          }
+          if(($grp->perms['moderate group to group posts'] != 10 && !og_group_access_get_access('moderate group to group posts', $grp)) &&! variable_get('og_delivery_'.$group->type.'_super_type', 0)){
+            $audience_options[$group_type_name][$data->nid] = $data->title .'*';
+          }
+          else{
+            $audience_options[$group_type_name][$data->nid] = $data->title;
+          }
+        }
+      }
+    }
+  }//og_group_access_type
+  else{
+/*
+    if(user_access('create user to community posts')){
+      $audience_options['Community'][-1] = 'All Community';
+    }
+*/
+    while($data = db_fetch_object($result)){
+      //there is room for performance improvement here
+      $grp = node_load($data->nid);
+      if(og_group_access_get_access('create user to group posts', $grp)){
+        //categorize groups by type
+        if($data->name != $group_type_name){
+          $group_type_name = $data->name;
+        }
+        if(($grp->perms['moderate user to group posts'] != 10 && !og_group_access_get_access('moderate user to group posts', $grp))){
+          $audience_options[$group_type_name][$data->nid] = $data->title.'*';
+        }
+        else{
+          $audience_options[$group_type_name][$data->nid] = $data->title;
+        }
+      }
+    }
+  }
+  return $audience_options;
+}
+
+
+/**
+ * Can only send from groups you are an admin of, or subgroup of
+   1. Find admin Groups
+   2. Find sub groups of admin -- later
+*/
+function _og_delivery_get_user_admin_group(){
+  global $user;
+  $og_groups_admin = array();
+
+  $query = "Select n.nid, n.title FROM {node} n INNER JOIN {og_uid} ou ON n.nid = ou.nid WHERE ou.uid = %d and ou.is_admin = 1";
+  $result = db_query($query, $user->uid);
+  while($group = db_fetch_object($result)){
+    $admin_groups[$group->nid] = $group->title;
+  }
+  return $admin_groups;
+}
+
+
+
+/*
+function _og_delivery_get_default_is_moderated($group){
+  if(isset($group->og_delivery_is_moderated)){
+    return $group->og_delivery_is_moderated;
+  }
+  elseif(module_hook($group->module, 'default_is_moderated')){
+    return module_invoke($group->module, 'default_is_moderated');
+  }
+  else{
+    return 1;
+  }
+}*/
+
+
+
+
+
+/**
+ * API function for determining whether a given node type has been designated by admin to behave as a group delivery node
+ *
+ * @param string $type
+ * @return boolean
+ */
+function og_delivery_has_audience($type) {
+  return (variable_get('og_delivery_'.$type.'_has_audience', 0));
+}
+
+
+
+
+
+
+
+//views
+
+
+
+/*
+function og_delivery_views_tables(){
+  $tables['og_delivery_author'] = array(
+    'name' => "og_delivery_author",
+    'join' => array(
+      'left' => array('table'=>"node", 'field'=>"nid"),
+      'right' => array('field'=>"nid"),
+    ),
+    'filters' => array(
+      'group_nid' => array(
+        'name' => "OG: authoring group",
+        'operator' => 'views_handler_operator_eqneq',
+        'list' => 'views_handler_filter_groupcurrent',
+        'list-type' => 'select',
+        'handler' => 'og_delivery_handler_filter_author',
+      ),
+    )
+  ); 
+  return $tables;   
+}
+
+
+function og_delivery_views_arguments() {
+  $args['og_delivery_author_group_nid'] = array(
+    'name' => t("Og Delivery: Author Group nid"), 
+    'handler' => 'og_delivery_handler_argument_group_nid',
+    'help' => t('Filter for a given organic group'),
+  );
+  return $args;
+}
+*/
+
+/*
+ * Custom argument for filtering by an og.
+
+function og_delivery_handler_argument_group_nid($op, &$query, $argtype, $arg = '') {
+  switch ($op) {
+    case 'summary':
+      $query->ensure_table('og_delivery_author');
+      $query->ensure_table('og_node_data');
+      //$query->add_field('title', 'og_node_data');
+      $query->add_field('group_nid', 'og_delivery_author');
+      $fieldinfo['field'] = "og_node_data.nid";
+      return $fieldinfo;
+    case 'link':
+      $name = ($query->title ? $query->title : t('Unaffiliated'));
+      return l($name, "$arg/" . intval($query->group_nid));
+    case 'filter':
+      $query->ensure_table('og_delivery_author');
+      //print($arg);die;
+      if($arg == ''){
+        $query->add_where('og_delivery_author.group_nid = ***CURRENT_GID***');
+      }
+      else {
+        $query->add_where('og_delivery_author.group_nid = %d', $arg);
+      }
+
+      $node = node_load((int)$arg);
+      og_set_group_context($node);
+      break;
+    case 'title':
+      return db_result(db_query_range('SELECT title FROM {node} WHERE nid = %d', $query, 0, 1));;
+  }
+}
+*/
+
+/**
+ *
+ * @return void
+ *
+function og_delivery_handler_filter_author($op, $filter, $filterinfo, &$query) {
+  $query->ensure_table('og_delivery_author');
+  $query->add_where("og_delivery_author.group_nid = ***CURRENT_GID***");
+}
+*/
+
+/**
+ * Provide a view for getting posts sent from a group
+ 
+function og_delivery_views_default_views() {
+  $view = new stdClass();
+  $view->name = 'og_delivery_sent';
+  $view->description = t('Shows posts sent from group.');
+  $view->access = array();
+  $view->view_args_php = '';
+  $view->block = TRUE;
+  $view->block_title = 'Group posts sent';
+  $view->block_header = '';
+  $view->block_header_format = '1';
+  $view->block_footer = '';
+  $view->block_footer_format = '1';
+  $view->block_empty = '';
+  $view->block_empty_format = '1';
+  $view->block_type = 'list';
+  $view->nodes_per_block = '3';
+  $view->block_more = FALSE;
+  $view->block_use_page_header = FALSE;
+  $view->block_use_page_footer = FALSE;
+  $view->block_use_page_empty = FALSE;
+  $view->page = TRUE;
+  $view->page_title = t('Sent posts');
+  $view->page_header = '';
+  $view->page_header_format = '1';
+  $view->page_footer = '';
+  $view->page_footer_format = '1';
+  $view->page_empty = t('No posts have been made.');
+  $view->page_empty_format = '1';
+  $view->page_type = 'table';
+  $view->url = 'group/$arg/sent';
+  $view->use_pager = TRUE;
+  $view->nodes_per_page = '10';
+  $view->menu = TRUE;
+  $view->menu_title = t('Sent posts');
+  $view->menu_tab = TRUE;
+  $view->menu_tab_default = FALSE;
+  $view->menu_weight = '';
+  $view->sort = array (
+  );
+  $view->argument = array (
+   
+  );
+  $view->field = array (
+    array (
+      'tablename' => 'node',
+      'field' => 'title',
+   //   'label' => t('Title'),
+      'sortable' => '1',
+      'handler' => 'views_handler_field_nodelink',
+    ),
+    array (
+      'tablename' => 'og_node_data',
+      'field' => 'title',
+   //   'label' => t('Group'),
+      'sortable' => '1'
+    ),
+    array (
+      'tablename' => 'node',
+      'field' => 'type',
+ //     'label' => t('Type'),
+      'sortable' => '1',
+    ),
+    array (
+      'tablename' => 'node',
+      'field' => 'created',
+   //   'label' => t('Created'),
+      'sortable' => '1',
+      'handler' => 'views_handler_field_date_small',
+      'defaultsort' => 'DESC',
+    ),
+  );
+  $view->filter = array (
+    array (
+      'tablename' => 'og_delivery_author',
+      'field' => 'group_nid',
+      'operator' => '=',
+      'options' => '',
+      'value' => '***CURRENT_GID**',
+    )
+  );
+  $view->exposed_filter = array();
+  $view->requires = array(og_node_data, node);
+  $views[$view->name] = $view;
+
+  return $views;
+}
+*/

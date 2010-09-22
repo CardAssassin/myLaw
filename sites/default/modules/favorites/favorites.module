@@ -1,0 +1,172 @@
+<?php
+// $Id$
+
+
+/**
+ * Implementation of hook_perm()
+*/
+function favorites_perm() {
+  return array('mark nodes favorite', 'administer favorite nodes');
+}
+
+
+/**
+ * Implementation of hook_menu().
+ */
+function favorites_menu() {
+  global $user;
+  $items = array();
+
+  $items['admin/settings/favorites'] = array(
+      'title'            => 'Favorites',
+      'description'      => 'Settings for favorite nodes',
+      'page callback'    => 'drupal_get_form',
+      'page arguments'   => array('favorites_settings'),
+      'type'             => MENU_NORMAL_ITEM,
+      'access callback'  => 'user_access',
+      'access arguments' => array('administer favorite nodes')
+    );
+
+    $items['node/%node/favorite'] = array(
+      'page callback' => 'favorites_mark',
+      'page arguments' => array(1),
+      'type'     => MENU_CALLBACK,
+      'access callback'   => 'user_access',
+      'access arguments' => array('mark nodes favorite'),
+    );
+
+    $items['node/%node/unfavorite'] = array(
+      'page callback' => 'favorites_unmark',
+      'page arguments' => array(1),
+      'type'     => MENU_CALLBACK,
+      'access callback'   => 'user_access',
+      'access arguments' => array('mark nodes favorite'),
+    );
+
+  return $items;
+}
+
+
+/**
+ * Implementation of hook_user().
+ */
+function favorites_user($op, &$edit, &$user, $category = null) {
+  switch ($op) {
+    case 'delete':
+      db_query("DELETE FROM {favorites} WHERE uid = %d", $user->uid);
+      break;
+  }
+}
+
+
+/**
+ * Implementation of hook_nodeapi().
+ */
+function favorites_nodeapi(&$node, $op, $teaser = null, $page = null) {
+  switch ($op) {
+    case 'delete':
+      // Delete all entries of the node being deleted.
+      db_query("DELETE FROM {favorites} WHERE nid = %d", $node->nid);
+      break;
+  }
+}
+
+
+/**
+ * Implementation of hook_links().
+ */
+function favorites_link($type, $node = null, $teaser = false) {
+  $links = array();
+
+  if (favorites_is_favorite_type($node->type) && user_access('mark nodes hidden')) {
+    if (favorites_is_favorite($node->nid)) {
+      $links[] = array(
+        'title' => t('UnFavorite'), 
+        'href' => 'node/'. $node->nid.'/unfavorite',
+      );
+    }
+    else{
+      $links[] = array(
+        'title' => t('Favorite'), 
+        'href' => 'node/'. $node->nid.'/favorite',
+      );
+    }
+  }
+  return $links;
+}
+
+
+/**
+ * Settings page for this module.
+ */
+function favorites_settings() {
+  $form['favorites_settings'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Favorites Page Settings'),
+    '#collapsible' => true,
+    '#collapsed' => false,
+  );
+
+  $types = node_get_types();
+  foreach ($types as $type) {
+    $options[$type->type] = t($type->name);
+  }
+  $form['favorites_settings']['favorite_types'] = array(
+    '#type' => 'select',
+    '#title' => t('Allow these node types to be marked favorite by the user'),
+    '#default_value' => variable_get('favorite_types', array()),
+    '#options' => $options,
+    '#multiple' => TRUE
+  );
+  return system_settings_form($form);
+}
+
+
+
+
+
+
+
+
+/**
+ * Mark node as hidden
+*/
+function favorites_mark($node) {
+  global $user;
+  db_query("DELETE FROM {favorites} WHERE nid = %d AND uid = %d", $node->nid, $user->uid);
+  db_query("INSERT INTO {favorites} (nid, uid, timestamp) VALUES (%d, %d, %d)", $node->nid, $user->uid, time());
+  drupal_goto("node/$node->nid");
+}
+
+
+/**
+ * Unmark node as hidden
+ */
+function favoties_unmark($node) {
+  global $user;
+  db_query("DELETE FROM {favorites} WHERE nid = %d AND uid = %d", $node->nid, $user->uid);
+  drupal_goto("node/$node->nid");
+}
+
+
+function favorites_is_favorite_type($type){
+  $types = variable_get('favorite_types', array());
+  return (in_array($type, $types));
+}
+
+
+function favorites_is_favorite($nid) {
+  global $user;
+  $query = "SELECT COUNT(*) FROM {favorites} WHERE nid = %d AND uid = %d";
+  $result = db_result(db_query($query, $nid, $user->uid));
+  return ($result > 0);
+}
+
+
+/**
+ * Implementation of "contrib module views" hook_views_tables()
+ */
+function favorites_views_api() {
+  $info['api'] = 2;
+  return $info;
+}

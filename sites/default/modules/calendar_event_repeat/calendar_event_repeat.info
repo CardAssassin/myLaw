@@ -1,0 +1,5 @@
+name = Scheduler Repeat
+description = This module creates nodes for repeated scheduled dates
+core = 6.x
+dependencies[] = scheduler
+

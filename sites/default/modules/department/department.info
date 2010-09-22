@@ -1,0 +1,8 @@
+; $Id$
+
+name = department
+description = Department group type
+package = "NUSL"
+dependencies[] = og
+dependencies[] = views
+core = 6.x

@@ -1,0 +1,7 @@
+; $Id$
+name = Nodes Read
+description = Tracks which nodes have been read by each user
+core = 6.x
+
+
+

@@ -1,0 +1,34 @@
+<?php
+
+// $Id$
+
+function video_message_board_install(){
+  drupal_install_schema('video_message_board');
+
+}
+
+
+function video_message_board_schema(){
+  $schema = array();
+
+  $schema['video_message_board'] = array(
+    'description'     => 'Stores ppt slides for Video Message Board',
+    'fields'          => array(
+      'nid' => array(
+        'description'     => '{node}.nid the slide is associated with',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'ppt'     => array(
+        'description'     => 'blob of ppt data',
+        'type'            => 'blob',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+    ),
+    'primary_key'        => array('nid')
+  );
+  
+  return $schema;
+}

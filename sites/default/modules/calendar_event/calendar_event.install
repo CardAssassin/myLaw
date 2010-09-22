@@ -1,0 +1,59 @@
+<?php
+// $Id$ 
+
+/**
+ * Implementation of hook_install().
+ */
+function calendar_event_install() {
+  drupal_install_schema('calendar_event');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function calendar_event_schema() {
+  $schema = array();
+
+  $schema['calendar_event'] = array(
+    'fields' => array(
+      'nid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0
+      ),
+      'start' => array(
+        'type' => 'int',
+        'size' => 'normal',
+        'not null' => TRUE
+      ),
+      'end' => array(
+        'type' => 'int',
+        'size' => 'normal',
+        'not null' => TRUE
+      ),
+      'has_time' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 1
+      ),
+      'has_end_date' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 1
+       )
+    ),
+    'indexes' => array(
+      'start' => array('start'),
+      'end' => array('end'),
+    ),
+    'primary key' => array('nid'),
+  );
+
+  return $schema;
+}
+
+
+
+
+

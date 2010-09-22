@@ -1,0 +1,38 @@
+<?php
+// $Id$
+
+/**
+ * Implementation of hook_install().
+ */
+function nodes_read_install() {
+  drupal_install_schema('nodes_read');
+}
+
+
+
+function nodes_read_schema(){
+  return array(
+    'nodes_read' => array(
+      'description' => t('The main table to hold data for nodes that have been read.'),
+      'fields' => array(
+        'nid' => array(
+          'description' => t('The node.nid'),
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'uid' => array(
+          'description' => t('The user\'s uid'),
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0,
+        ),
+      ),
+      'indexes' => array(
+        'nodes_read_nid' => array('nid'),
+        'nodes_read_uid' => array('uid'),
+      ),
+    ),
+  );
+}

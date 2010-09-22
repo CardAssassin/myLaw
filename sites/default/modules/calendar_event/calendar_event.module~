@@ -1,0 +1,221 @@
+<?php
+// $Id$ 
+
+
+/**
+ * @defgroup event_nodeapi Functions for nodeapi integration
+ */
+
+/**
+ * Implementation of hook_form_alter
+ */
+function calendar_event_form_alter(&$form, $form_state, $form_id) {
+  global $user;
+
+  $node = isset($form['#node']) ? $form['#node'] : NULL;
+
+  if ($form_id == 'node_type_form') {
+    // node settings form
+    $type = (isset($form['old_type']) && isset($form['old_type']['#value'])) ? $form['old_type']['#value'] : NULL;
+    $form['calendar'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Event calendar'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+    $form['calendar']['calendar_event_nodeapi'] = array(
+      '#type' => 'radios',
+      '#title' => t('Show in event calendar'),
+      '#default_value' => variable_get('calendar_event_nodeapi_'. $type, 'never'),
+      '#options' => array('always' => t('Always create calendar event'), 'never' => t('Never'), 'optional' => t('Option to add to calendar')),
+    );
+  }
+  elseif (isset($form['type']) && $form_id == $form['type']['#value'] .'_node_form') {
+    // node edit form
+    $calendar_event_nodeapi_type = variable_get('calendar_event_nodeapi_'. $form['type']['#value'], 'never');
+    drupal_set_message($calendar_event_nodeapi_type);	
+    if ($calendar_event_nodeapi_type != 'never') {
+      
+      $form['calendar_event'] = array(
+        '#title' => 'Calendar Event',
+        '#type' => 'fieldset', 
+        '#tree' =>TRUE,
+        '#collapsible' => TRUE,
+        '#collapsed' => isset($node->calendar_event) ? FALSE : TRUE,
+      );
+      
+      if($calendar_event_nodeapi_type == 'optional'){
+        $form['calendar_event']['has_event'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Create Calendar Event'),
+          '#default_value' => isset($node->calendar_event) ? 1 : 0,
+          '#weight' => -20,
+        );
+      }
+      else{
+        $form['calendar_event']['has_event'] = array(
+          '#type' => 'value',
+          '#value' => 1,
+        );
+      }
+
+
+      global $user;
+      if (variable_get('configurable_timezones', 1) && $user->uid && strlen($user->timezone)) {
+        $timezone = $user->timezone;
+      }
+      else {
+        $timezone = variable_get('date_default_timezone', 0);
+      }
+
+
+      $now = time();
+      $format = $format = 'Y-m-d H:i';
+/*
+      drupal_set_message($timezone);
+      $test = $node->calendar_event['start'] + $timezone;
+      drupal_set_message($test);
+      $test = date_convert($test, DATE_UNIX, DATE_DATETIME);
+      drupal_set_message($test);
+      $test = date_convert($test, DATE_DATETIME, DATE_UNIX);
+      drupal_set_message($test);
+      drupal_set_message(format_date($node->calendar_event['start'],'medium' ,'' ,$timezone));
+*/
+
+      $week_from_now = date($format ,mktime(date('H',$now)-2, date('i',$now), 0, date('n',$now), date('j', $now)+7, date('Y', $now)));
+      $week_hours_from_now = date($format ,mktime(date('H',$now), date('i',$now), 0, date('n',$now), date('j', $now)+7, date('Y', $now)));
+
+
+      $form['calendar_event']['start'] = array(
+        '#title' => t('Start date'),
+        '#type'  => 'date_select',
+        '#format' => $format,
+        '#default_value' => $node->calendar_event['start'] ? date_convert($node->calendar_event['start'] + $timezone, DATE_UNIX, DATE_DATETIME) : $week_from_now,
+//        '#default_value' => $week_from_now,
+        '#date_timezone' => date_default_timezone_name(),
+        '#date_year_range' => '0:+1',
+        '#date_increment' => 5,
+      );
+
+      $form['calendar_event']['end'] = array(
+        '#title' => t('End date'),
+        '#type'  => 'date_select',
+        '#format' => $format,
+        '#default_value' => $node->calendar_event['end'] ? date_convert($node->calendar_event['end'] + $timezone, DATE_UNIX, DATE_DATETIME) : $week_hours_from_now,
+//        '#default_value' => $week_hours_from_now,
+        '#date_timezone' => date_default_timezone_name(),
+        '#date_year_range' => '0:+1',
+        '#date_increment' => 5,
+      ); 
+//      $form['#validate'][] = 'event_form_validate';
+
+    }
+  }
+}
+
+
+
+/**
+ * hook_nodeapi implementation
+ *
+ * @ingroup event_nodeapi
+ */
+function calendar_event_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
+  // make sure it's an event enabled node
+  if (variable_get('calendar_event_nodeapi_'. $node->type, 'never') != 'never') {
+    switch ($op) {
+    case 'load':
+      $query = "SELECT * FROM {calendar_event} WHERE nid = %d";
+      $node->calendar_event = db_fetch_array(db_query($query, $node->nid));
+      break;
+    case 'view':
+      if (isset($node->calendar_event)) {
+        if($node->calendar_event['has_end_date']){
+          $end_date = $node->calendar_event['end'];
+        }
+        else{
+          $end_date = NULL;
+        }
+        $node->content['calendar_event'] = array(
+          '#value' => theme('calendar_event', $node->calendar_event['start'], $end_date),
+          '#weight' => 90,
+        );
+      }
+      break;
+    case 'update':
+        // While the DELETE/INSERT is less efficient than single UPDATE, the
+        // UPDATE only works if there's an existing record in the events
+        // table. I.e. if you create a node and then enable the event module,
+        // there will be no record in the event table, so the dates cannot be
+        // changed.
+        db_query('DELETE FROM {calendar_event} WHERE nid = %d', $node->nid);
+        // no break
+    case 'insert':
+      if($node->calendar_event['has_event']){
+
+        global $user;
+        if (variable_get('configurable_timezones', 1) && $user->uid && strlen($user->timezone)) {
+          $timezone = $user->timezone;
+        }
+        else {
+          $timezone = variable_get('date_default_timezone', 0);
+        }
+
+        
+        $query = "INSERT INTO {calendar_event} (nid, start, end) VALUES (%d, '%s', '%s')";
+        $start = date_convert($node->calendar_event['start'], DATE_DATETIME, DATE_UNIX) - $timezone;
+        $end = date_convert($node->calendar_event['end'], DATE_DATETIME, DATE_UNIX)  - $timezone;
+        db_query($query, $node->nid, $start, $end);
+      }
+      break;
+    case 'delete':
+      db_query('DELETE FROM {calendar_event} WHERE nid = %d', $node->nid);
+      break;
+    }
+  }
+}
+
+
+function calendar_event_theme(){
+  return array(
+    'calendar_event' => array(
+      'arguments' => array('start_date' => NULL, 'end_date' => NULL),
+      'template' => 'calendar-event',
+    ),
+  );
+}
+
+
+function template_preprocess_calendar_event(&$variables){
+  $variables['start_link_path'] = 'calendar/'.date('Y-m-d', $variables['start_date']);
+  $variables['end_link_path'] = 'calendar/'.date('Y-m-d', $variables['end_date']);
+}
+
+
+
+
+/**
+ * Implementation of hook_views_api().
+ */
+function calendar_event_views_api() {
+  return array(
+    'api' => 2,
+  );
+}
+
+
+function calendar_event_date_api_fields($field) {
+  if ($field == 'calendar_event.start') {
+    return array(
+      'sql_type' => DATE_UNIX, // or DATE_UNIX or DATE_DATETIME
+      'tz_handling' => 'site', // or 'none' or 'date' or 'utc'
+//      'fromto' => array('calendar_event_start','calendar_event_start'),
+//      'related_fields' => array('calendar_event_start','calendar_event_end'),
+   ); }
+  if ($field == 'calendar_event.end') {
+    return array(
+      'sql_type' => DATE_UNIX, // or DATE_UNIX or DATE_DATETIME
+      'tz_handling' => 'site', // or 'none' or 'date' or 'utc'
+    ); 
+  }
+}

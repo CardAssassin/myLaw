@@ -1,0 +1,550 @@
+<?php
+
+define ('EVALUATION_GRADE_INCOMPLETE', -1);
+define ('EVALUATION_GRADE_FAIL', 0);
+define ('EVALUATION_GRADE_PASS', 1);
+define ('EVALUATION_GRADE_HONORS', 2);
+define ('EVALUATION_GRADE_HIGH_HONORS', 3);
+
+
+
+/**
+ * Implementation of hook_node_info().
+*/
+function evaluation_node_info(){
+  return array(
+    'evaluation' => array(
+      'name'   => t('Evaluation'),
+      'module' => 'evaluation',
+      'description' => "course group",
+      'has_title'   => FALSE,
+      'has_teaser'  => FALSE,
+      'has_body'    => TRUE,
+  //    'body_label'  => 'Evaluation'
+    )
+  );
+}
+
+
+function evaluation_menu(){
+  $items['node/%node/og/evaluation/%node/view_final'] = array(
+    'type' => MENU_CALLBACK, 
+    'page callback' => 'evaluation_view_final',
+    'page arguments' => array(4), 
+    'access callback' => 'evaluation_access_view',
+    'access arguments' => array(1),
+    'title' => 'View Final Evaluation',
+    'file' => 'evaluation.final.inc',
+  );
+  $items['node/%node/og/evaluation/%node/finalize'] = array(
+    'title'  => 'Finalize Evaluation',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('evaluation_finalize_form',4, 1),
+    'access callback' => 'evaluation_can_submit_final',
+    'access arguments' => array(1),
+    'file' => 'evaluation.final.inc',
+  );
+  $items['node/%node/evaluations/create'] = array(
+    'title'  => 'Create Evaluations',
+    'page callback' => 'evaluation_create_evaluations',
+    'page arguments' => array(1),
+    'access callback' => 'user_access',
+    'access arguments' => array('create evaluations'),
+  );
+  $items['node/%node/evaluations/initialize'] = array(
+    'type' => MENU_CALLBACK, 
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('evaluation_complete_initialization_confirm', 1), 
+    'access callback' => 'evaluation_can_complete_initialization', 
+    'access arguments' => array(1),
+    'title' => 'Complete Initialization',
+    'file' => 'evaluation.list.inc',
+  );
+  $items['node/%node/evaluations/list'] = array(
+    'type' => MENU_CALLBACK, 
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('evaluation_list_evaluations', 1), 
+    'access callback' => 'evaluation_access_view', 
+    'access arguments' => array(1),
+    'title' => 'Complete Initialization',
+    'file' => 'evaluation.list.inc',
+    'theme' => 'evaluation_list_evaluations'
+  );
+  return $items;
+}
+
+
+function evaluation_can_submit_final($course){
+  if($course->evaluations_initialized){
+    return og_group_access_get_access('finalize evaluation', $course);
+  }
+  return FALSE;
+}
+
+
+function evaluation_access_view($group){
+  return (user_access('can view evaluations') || og_group_access_get_access('view all evaluations', $group));  
+}
+
+
+function evaluation_can_complete_initialization($course){
+  return (!$course->evaluations_initialized && evaluation_are_evaluations_initialized($course) && og_group_access_get_access('finalize evaluation', $course));
+}
+
+
+function evaluation_are_evaluations_initialized($course){
+  foreach(evaluation_get_evaluations($course->nid) as $eval_nid => $student_uid){
+    $query = "SELECT count(*) FROM {node_revisions} WHERE nid = %d";
+    $count = db_result(db_query($query, $eval_nid));
+    if($count <= 1){
+      return FALSE;
+    }
+  }
+  return TRUE;
+}
+
+
+function evaluation_get_evaluations($course_nid){
+  $evaluations = array();
+  $query = "SELECT evaluation_nid, student_uid FROM {course_evaluations} e INNER JOIN {og_author} a ON e.evaluation_nid = a.nid WHERE a.author_group_nid = %d";
+  $result = db_query($query, $course_nid);
+  while($data = db_fetch_object($result)){
+    $evaluations[$data->evaluation_nid] = $data->student_uid;
+  }
+  return $evaluations;
+}
+
+
+
+/**
+ * Implementations of hook_group_access_perm();
+*/
+function evaluation_perm(){
+  return array('unlock evaluations', 'always view student names', 'view all evaluations', 'can reset grade');
+}
+
+/**
+ * Implementations of hook_group_access_perm();
+*/
+function evaluation_group_access_perm(){
+  return array('update evaluation', 'view evaluation', 'finalize evaluation');
+}
+
+
+/**
+ * Implementation of hook_access().
+ */
+function evaluation_access($op, $node) {
+  if ($op == 'view'){
+    return user_access('view all evaluations');
+  }
+}
+
+
+/**
+ * Implementation of hook_group_access().
+*/
+function evaluation_group_access($op, $node, $group) {
+  switch($op){
+  case 'view':
+    return og_group_access_get_access('view evaluation', $group);
+  case 'create':
+    //return og_group_access_get_access('create exam', $group);
+    return user_access('create exam');
+  case 'update':
+    return og_group_access_get_access('update evaluation', $group);
+  case 'delete':
+    return false;  //only admin can delete evaluation
+  }
+}
+
+
+/**
+ * Implementations of hook_group_access_view_access_level();
+*/
+function evaluation_group_access_view_access_level($group) {
+    return $group->perms['view evaluation'];
+}
+
+
+function evaluation_group_access_create_links($group){
+  $links = array();
+  if($group->type == 'course'){
+    if(user_access('create evaluations')){
+      $links[] = l('Create Evaluations', 'node/'. $group->nid .'/evaluations/create');
+    }
+    if((og_group_access_get_access('view evaluation', $group) || user_access('view all evaluations')) && _evaluation_count_evaluations($group->nid) > 0){
+      $links[] = l('View Evaluations', 'node/'. $group->nid .'/evaluations/list');
+    }
+  }
+  return $links;
+}
+
+
+/**
+ * Implementation of hook_form().
+ */
+function evaluation_form(&$node, $form_state){
+  $type = node_get_types('type', $node);
+
+  $form['#theme'] = 'theme_evaluation_node_form';
+  
+  
+  if(isset($form_state['values']['student_uid'])){
+    $form['student_uid'] = array(
+      '#type'       => 'hidden',
+      '#value'      => $form_state['values']['student_uid']
+    );
+  }
+  if(isset($form_state['values']['author_group_nid'])){
+    $form['author_group_nid'] = array(
+      '#type'      => 'hidden',
+      '#value'     => $form_state['values']['author_group_nid'],
+    );
+  }
+
+
+  if(isset($form_state['values']['exam_nid'])){
+    $form['exam_nid'] = array(
+      '#type'       => 'hidden',
+      '#value'      => $form_state['values']['exam_nid']
+    );
+  }
+  else{
+    $node->revision = 1;  
+  }
+
+  $course = node_load($node->author_group_nid);
+
+  if(evaluation_can_view_student_names($course)){
+    $form['student_name'] = array(
+    '#title' => t('Student Name'),
+    '#type'  => 'item',
+    '#value' => $node->student_name,
+    '#weight' => -7
+  );
+  }
+
+  $form['exam_number'] = array(
+    '#title' => t('Exam Number'),
+    '#type'  => 'item',
+    '#value' => $node->exam_number,
+    '#weight' => -6
+  );
+  
+  if($course->evaluations_initialized){
+    $list_grades = evaluation_list_grade_values($course->is_passfail, $node->grade_value);
+  }
+  else{
+    $list_grades = evaluation_list_grade_values($course->is_passfail);
+  }
+
+  $form['grade_value'] = array(
+    '#type'          => 'select',
+    '#title'         => t('Select Grade'),
+    '#options'       => $list_grades,
+    '#default_value' => variable_get('grade_value',$node->grade_value),
+    '#weight'        => -5
+  );
+
+  $form['body_field']['format'] = filter_form($node->format);
+  $form['body_field']['#prefix'] = '<div class="body-field-wrapper">';
+  $form['body_field']['#suffix'] = '</div>';
+  $form['body_field']['#weight'] = -3;
+
+  $form['body_field']['body'] = array(
+    '#type'   => 'textarea',
+    '#title'  => check_plain($type->body_label),
+    '#default_value' => $node->body,
+    '#rows'          => 4,
+    '#required'      => FALSE,
+    '#weight'        => -3
+  );
+
+  $form['notes_field']['format'] = filter_form($node->format);
+  $form['notes_field']['#prefix'] = '<div class="notes-field-wrapper">';
+  $form['notes_field']['#suffix'] = '</div>';
+
+  $form['notes_field']['notes'] = array(
+    '#type'   => 'textarea',
+    '#title'  => 'Private notes to student',
+    '#default_value' => $node->notes,
+    '#rows'          => 4,
+    '#required'      => FALSE,
+    '#weight'        => 0
+  );
+  
+  if(og_group_access_get_access('finalize evaluation', $course) && count($node->final_submissions) > 0){
+    $form['#redirect'] = 'node/'.$node->author_group_nid.'/og/evaluation/'.$node->nid.'/finalize';
+  }
+  else{
+    $form['#redirect'] = 'node/'.$node->author_group_nid.'/evaluations/list';
+  }
+
+  return $form;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Implementation of hook_theme()
+ */
+function evaluation_theme() {
+  return array(
+    'evaluation_node_form' => array(
+      'arguments' => array(
+        'form' => NULL, 
+      ),
+      'function' => 'theme_evaluation_node_form',
+    ),
+    'evaluation_list_evaluations' => array(
+      'arguments' => array('form' => NULL),
+      'file' => 'evaluation.list.inc'
+    ),
+  );
+}
+
+
+function theme_evaluation_node_form($form){
+  $node = $form['#node'];
+  $course = node_load($node->author_group_nid);
+  $output = "<div id=exam-description>$course->evaluation_description</div>";
+
+  $output.= drupal_render($form);
+  
+  return $output;
+}
+
+
+
+/**
+ * Implementation of hook_insert().
+*/
+function evaluation_insert($node){
+  $query = "INSERT INTO {course_evaluations} (evaluation_nid, student_uid, is_locked) values (%d, %d, 0)";
+  db_query($query, $node->nid, $node->student_uid);
+}
+
+
+/**
+ * Implementation of hook_update().
+*/
+function evaluation_update($node){
+  $query = "INSERT INTO {course_evaluation_grades} (vid, grade_value, notes) values (%d, %d, '%s')";
+  db_query($query, $node->vid, $node->grade_value, $node->notes);
+}
+
+
+function evaluation_lock($evaluation_nid){
+  $query = "UPDATE {course_evaluations} set is_locked = 1 WHERE evaluation_nid = %d";
+  db_query($query, $evaluation_nid);
+}
+
+function evaluation_unlock($evaluation_nid){
+  $query = "UPDATE {course_evaluations} set is_locked = 0 WHERE evaluation_nid = %d";
+  db_query($query, $evaluation_nid);
+}
+
+
+/**
+ * Implementation of hook_load()
+ */
+function evaluation_load($node){
+  $query = "SELECT student_uid, is_locked FROM {course_evaluations} WHERE evaluation_nid = %d";
+  $evaluation = db_fetch_object(db_query($query, $node->nid));
+
+  //set exam info
+  $evaluation->can_view_student_names = evaluation_can_view_student_names(node_load($evaluation->exam_nid));
+
+  //$evaluation->revision_user_name = $revision_user_name['display'];
+
+
+  if($evaluation->can_view_student_names){
+    $evaluation->student_name = theme('username',user_load($evaluation->student_uid));
+  }
+
+  $query = "SELECT num.exam_number, num.exam_type FROM {course_exam_numbers} num INNER JOIN {courses} c ON c.semester_number = num.semester_number INNER JOIN {og_author} auth ON auth.author_group_nid = c.nid WHERE num.student_uid = %d AND auth.nid = %d";
+  $course_exam_numbers = db_fetch_object(db_query($query, $evaluation->student_uid, $node->nid));
+  $evaluation->exam_number = $course_exam_numbers->exam_number;
+  $evaluation->exam_type =  $course_exam_numbers->exam_type;
+
+  $query = "SELECT grade_value, notes FROM {course_evaluation_grades} WHERE vid = %d";
+  $course_evaluation_grades = db_fetch_object(db_query($query, $node->vid));
+  $evaluation->notes = $course_evaluation_grades->notes;
+  $evaluation->grade_value = $course_evaluation_grades->grade_value;
+  if($evaluation->grade_value == NULL){
+    $evaluation->grade_value = EVALUATION_GRADE_INCOMPLETE;
+  }
+  else{
+    $evaluation->grade_value = $course_evaluation_grades->grade_value;
+  }
+  $evaluation->grade = evaluation_get_grade($evaluation->grade_value);
+
+  $evaluation->revision_count = evaluation_get_num_revisions($node->nid);
+  
+  $evaluation->final_submissions = evaluation_get_final_submissions($node->nid);
+
+  return $evaluation;
+}
+
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function evaluation_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'evaluation_node_form') {
+    $node = $form['#node'];
+    if($node->revision_count == 0){
+      //the first entry does not need a log entry
+      //but the revision should be set 
+      unset($form['revision_information']);
+      $form['revision_information']['revision'] = array(
+        '#type' => 'value',
+        '#value' => 1,
+      );
+      $form['revision_information']['log'] = array(
+        '#type' => 'value',
+        '#value' => '[INITIAL REVISION]',
+      );
+    }
+    else{
+      //set revision to true
+      //hide the option to the user
+      $form['revision_information']['revision'] = array(
+        '#type' => 'value',
+        '#value' => 1,
+      );
+    }
+
+  }
+}
+
+
+function evaluation_list_grade_values($is_passfail = TRUE, $current_grade_value = EVALUATION_GRADE_INCOMPLETE){
+  $grade_values =  array();
+
+  switch($current_grade_value){
+  case EVALUATION_GRADE_INCOMPLETE:
+    $grade_values[EVALUATION_GRADE_INCOMPLETE] = 'Incomplete';
+  case EVALUATION_GRADE_FAIL:
+    $grade_values[EVALUATION_GRADE_FAIL] = 'Fail';
+  case EVALUATION_GRADE_PASS:
+    $grade_values[EVALUATION_GRADE_PASS] = 'Pass';
+  case EVALUATION_GRADE_HONORS:
+    if(!$is_passfail){
+      $grade_values[EVALUATION_GRADE_HONORS] = 'Honors';
+    }
+  case EVALUATION_GRADE_HIGH_HONORS:
+    if(!$is_passfail){
+      $grade_values[EVALUATION_GRADE_HIGH_HONORS] = 'High Honors';
+    }
+  }
+
+  return $grade_values;
+}
+
+
+function evaluation_get_grade($grade_value){
+  switch($grade_value){
+  case EVALUATION_GRADE_INCOMPLETE:
+    return "Incomplete";
+  case EVALUATION_GRADE_FAIL:
+    return "Fail";
+  case EVALUATION_GRADE_PASS:
+    return "Pass";
+  case EVALUATION_GRADE_HONORS:
+    return "Honors";
+  case EVALUATION_GRADE_HIGH_HONORS:
+    return "High Honors";
+  }
+}
+
+
+function _evaluation_count_evaluations($course_nid){
+  $query = "SELECT COUNT(e.evaluation_nid) as count FROM {course_evaluations} e INNER JOIN {og_author} a ON e.evaluation_nid = a.nid WHERE a.author_group_nid = %d";
+  $data = db_fetch_object(db_query($query, $course_nid));
+  return $data->count;
+}
+
+
+function evaluation_get_num_revisions($evaluation_nid){
+  $query = "SELECT count(*) as revision_count FROM {node_revisions} WHERE nid = %d";
+  $data = db_fetch_object(db_query($query, $evaluation_nid));
+  //the first revision is created by the exam
+  //we subtract 1 to reflect the revisions created by the user
+  return $data->revision_count -1;
+}
+
+
+function evaluation_can_update($evaluation){
+  if(!$evaluation->is_locked){
+    $course = node_load($evaluation->author_group_nid);
+    return (og_group_access_get_access('update evaluation', $course));
+  }
+  return FALSE;
+}
+
+
+
+
+function evaluation_get_final_submissions($evaluation_nid){
+  $final_submissions = array();
+  db_set_active('final_evaluations');
+  $query = "SELECT vid, submitted_uid, timestamp, comment FROM {final_evaluations} WHERE nid = %d ORDER BY timestamp DESC";
+  $result = db_query($query, $evaluation_nid);
+
+  db_set_active('default');
+  while($data = db_fetch_array($result)){
+    $final_submissions[] = $data;
+  }
+  
+  return $final_submissions;
+}
+
+
+function evaluation_create_evaluations($node){
+  module_load_include('inc', 'node', 'node.pages'); 
+  $evaluation_node = array('type' => 'evaluation'); 
+  $evaluation_object = (object)$evaluation_node;
+  
+
+  //create an evaluation node for every student selected
+  foreach(course_get_students($node->nid) as $student_uid => $student_name){
+    $query = "SELECT evaluation_nid FROM {course_evaluations} WHERE student_uid = %d";
+    $data = db_fetch_object(db_query($query, $student_uid));
+    if(!isset($data->evaluation_nid)){
+      $form_state = array();
+      $form_state['values'] = array(
+        'uid'         => $node->uid,
+        'name'        => $node->name,
+        'student_uid' => $student_uid,
+        'author_group_nid' => $node->nid,
+        'op'          => t('Save')
+      );
+      drupal_execute('evaluation_node_form', $form_state, $evaluation_object);
+    }
+  }
+
+  drupal_set_message('evaluations created');
+  drupal_goto('node/'.$node->nid.'/evaluations/list');
+}
+
+function evaluation_can_view_student_names($course){
+  if(user_access('always view student names')){
+    return TRUE;
+  }
+  if($course>evaluations_initialized){
+    return TRUE;
+  }
+  if($course->is_performance_based){
+    return TRUE;
+  }
+  return FALSE;
+}

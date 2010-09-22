@@ -1,0 +1,105 @@
+<?php
+
+
+/**
+ * Implementation of hook_install()
+*/
+function og_group_access_install(){
+  drupal_install_schema('og_group_access');
+}
+
+
+/**
+ * Implementation of hook_schema()
+*/
+function og_group_access_schema(){
+$schema = array();
+
+  $schema['og_group_access'] = array(
+    'fields'          => array(
+      'group_nid'         => array(
+        'description'     => 'The group\'s {node}.nid',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'perm'       => array(
+        'description'     => 'Permission name',
+        'type'            => 'varchar',
+        'length'            => 255,
+        'not null'        => TRUE,
+      ),
+      'access'    => array(
+        'description'     => 'Integer value of the role that gains permission.  Higher the value, the more access is restricted.',
+        'type'            => 'int',
+        'size'            => 'tiny',
+        'not null'        => TRUE,
+      ),
+    ),
+  );
+
+  $schema['og_group_access_defaults'] = array(
+    'fields'          => array(
+      'type'         => array(
+        'description'     => 'The group type to set the default permission for',
+        'type'            => 'varchar',
+        'length'          => '255',
+        'not null'        => TRUE,
+      ),
+      'perm'       => array(
+        'description'     => 'Permission name',
+        'type'            => 'varchar',
+        'length'            => 255,
+        'not null'        => TRUE,
+      ),
+      'access'    => array(
+        'description'     => 'Integer value of the role that gains permission.  Higher the value, the more access is restricted.',
+        'type'            => 'int',
+        'size'            => 'tiny',
+        'not null'        => TRUE,
+      ),
+      'closed'    => array(
+        'description'     => 'A value of 1 does not allow a group to override the value',
+        'type'            => 'int',
+        'size'            => 'tiny',
+        'not null'        => TRUE,
+      ),
+    ),
+  );
+
+  $schema['og_group_access_privacy'] = array(
+    'fields'          => array(
+      'nid'    => array(
+        'description'     => 'nid of the corresponding node',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'view_access_level'    => array(
+        'description'     => 'Access level for the node',
+        'type'            => 'int',
+        'size'            => 'tiny',
+        'not null'        => TRUE,
+      ),
+    ),
+  );
+
+  $schema['og_author'] = array(
+    'fields' => array(
+      'nid'    => array(
+        'description' => 'Node id',
+        'type'        => 'int',
+        'size'        => 'normal',
+        'not null'    => TRUE
+      ),
+      'author_group_nid' => array(
+        'description' => 'Node Id for the authoring group',
+        'type'        => 'int',
+        'size'        => 'normal',
+        'not null'    => TRUE,
+      ),
+    ),
+  );
+
+  return $schema;
+}

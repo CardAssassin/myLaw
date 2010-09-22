@@ -1,0 +1,74 @@
+diff -urp includes/calendar_plugin_display_attachment.inc new_includes/calendar_plugin_display_attachment.inc
+--- includes/calendar_plugin_display_attachment.inc	2009-03-17 14:03:36.000000000 -0400
++++ new_includes/calendar_plugin_display_attachment.inc	2009-11-10 13:31:53.000000000 -0500
+@@ -161,10 +161,10 @@ class calendar_plugin_display_attachment
+    */
+   function options(&$display) {
+     parent::options($display);
+-    $display->display_options['inherit_argments'] = TRUE;
+-    $display->display_options['inherit_filters'] = TRUE;
+-    $display->display_options['attachment_position'] = 'after';
+-    $display->display_options['calendar_type'] = $this->calendar_type();
++    $display['display_options']['inherit_argments'] = TRUE;
++    $display['display_options']['inherit_filters'] = TRUE;
++    $display['display_options']['attachment_position'] = 'after';
++    $display['display_options']['calendar_type'] = $this->calendar_type();
+   }  
+ 
+   /**
+diff -urp includes/calendar_plugin_display_block.inc new_includes/calendar_plugin_display_block.inc
+--- includes/calendar_plugin_display_block.inc	2008-12-06 09:56:15.000000000 -0500
++++ new_includes/calendar_plugin_display_block.inc	2009-11-10 13:31:53.000000000 -0500
+@@ -47,15 +47,15 @@ class calendar_plugin_display_block exte
+ 
+   function options(&$display) {
+     parent::options($display);
+-    $display->display_options['displays'] = array();
+-    $display->display_options['style_plugin'] = 'calendar_nav';
+-    $display->display_options['items_per_page'] = 0;
+-    $display->display_options['row_plugin'] = '';
+-    $display->display_options['defaults']['style_plugin'] = FALSE;
+-    $display->display_options['defaults']['style_options'] = FALSE;
+-    $display->display_options['defaults']['items_per_page'] = FALSE;
+-    $display->display_options['defaults']['row_plugin'] = FALSE;
+-    $display->display_options['defaults']['row_options'] = FALSE;
++    $display['display_options']['displays'] = array();
++    $display['display_options']['style_plugin'] = 'calendar_nav';
++    $display['display_options']['items_per_page'] = 0;
++    $display['display_options']['row_plugin'] = '';
++    $display['display_options']['defaults']['style_plugin'] = FALSE;
++    $display['display_options']['defaults']['style_options'] = FALSE;
++    $display['display_options']['defaults']['items_per_page'] = FALSE;
++    $display['display_options']['defaults']['row_plugin'] = FALSE;
++    $display['display_options']['defaults']['row_options'] = FALSE;
+   } 
+   
+   function option_definition () {
+diff -urp includes/calendar_plugin_display_page.inc new_includes/calendar_plugin_display_page.inc
+--- includes/calendar_plugin_display_page.inc	2009-11-10 13:21:09.000000000 -0500
++++ new_includes/calendar_plugin_display_page.inc	2009-11-10 13:31:53.000000000 -0500
+@@ -44,15 +44,15 @@ class calendar_plugin_display_page exten
+ 
+   function options(&$display) {
+     parent::options($display);
+-    $display->display_options['displays'] = array();
+-    $display->display_options['style_plugin'] = 'calendar_nav';
+-    $display->display_options['items_per_page'] = 0;
+-    $display->display_options['row_plugin'] = '';
+-    $display->display_options['defaults']['style_plugin'] = FALSE;
+-    $display->display_options['defaults']['style_options'] = FALSE;
+-    $display->display_options['defaults']['row_plugin'] = FALSE;
+-    $display->display_options['defaults']['row_options'] = FALSE;
+-    $display->display_options['defaults']['items_per_page'] = FALSE;
++    $display['display_options']['displays'] = array();
++    $display['display_options']['style_plugin'] = 'calendar_nav';
++    $display['display_options']['items_per_page'] = 0;
++    $display['display_options']['row_plugin'] = '';
++    $display['display_options']['defaults']['style_plugin'] = FALSE;
++    $display['display_options']['defaults']['style_options'] = FALSE;
++    $display['display_options']['defaults']['row_plugin'] = FALSE;
++    $display['display_options']['defaults']['row_options'] = FALSE;
++    $display['display_options']['defaults']['items_per_page'] = FALSE;
+   } 
+   
+   function option_definition () {

@@ -1,0 +1,7 @@
+; $Id$
+
+name = Calendar Entry
+description = "Calendar Entry node"
+package = "NUSL"
+core = 6.x
+dependencies[] = calendar_event

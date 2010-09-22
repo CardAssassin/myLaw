@@ -1,0 +1,5 @@
+name = NUSL
+description = "Configures site for NUSL"
+package = "NUSL"
+core = 6.x
+

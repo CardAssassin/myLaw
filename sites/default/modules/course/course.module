@@ -1,0 +1,1216 @@
+<?php
+
+
+/**
+ * Implementation of hook_node_info().
+*/
+function course_node_info(){
+  return array(
+    'course' => array(
+      'name'   => t('Course'),
+      'module' => 'course',
+      'description' => "course group",
+      'has_title'   => TRUE,
+      'title_label' => t('Course name'),
+      'has_teaser'  => FALSE,
+      'has_body'    => TRUE,
+      'body_label'  => t('Description'),
+    )
+  );
+}
+
+
+/**
+ *  Implementation of hook_menu().
+*/
+function course_menu(){
+  $items = array();
+
+  $items['courses'] = array(
+    'title' => 'Courses',
+    'page callback' => 'course_listing_page',
+    'access callback' => true,
+    'menu_name' => 'primary-links',
+  );
+  $items['admin/settings/course'] = array(
+    'title' => 'Course Settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('course_settings_form'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+  );
+  $items['node/%node/course/settings'] = array(
+    'type' => MENU_CALLBACK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('course_edit_settings', 1),
+    'access callback' => 'user_access',
+    'access arguments' => array('adjust course settings'),
+  );
+/*
+  $items['admin/settings/course/create-exam-numbers'] = array(
+    'title' => 'Create Exam Numbers',
+    'page callback' => 'course_create_exam_numbers',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+  );
+  $items['admin/settings/course/create-courses'] = array(
+    'title' => 'Update courses',
+    'page callback' => 'course_update_courses',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+  );
+*/
+
+  $items['user/%user/exam-type'] = array(
+    'title' => 'Get Exam Number',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('course_get_exam_number', 1),
+    'access callback' => 'course_get_exam_number_access_callback',
+    'access arguments' => array(1),
+  );
+  return $items;
+}
+
+
+function course_get_exam_number_access_callback($account){
+  return (($GLOBALS['user']->uid == $account->uid) || user_access('view exam types')) && $account->uid > 0;
+}
+
+
+function course_get_exam_number($form_state, $user){
+  $registration_terms =  array();
+  db_set_active('banner');
+  $query = "SELECT DISTINCT(registration_term) FROM {courses}";
+  $result = db_query($query);
+  db_set_active('default');
+  while($data = db_fetch_object($result)){
+    $registration_terms[] = $data->registration_term;
+  }
+
+
+  $query = "SELECT * FROM {course_exam_numbers} WHERE student_nuid = '%s' AND registration_term IN (" . implode(', ', $registration_terms) . ")";
+  $exam_number = db_fetch_object(db_query($query, $user->name));
+  if(isset($exam_number->exam_number)){
+    if(isset($exam_number->exam_type)){
+      $form['exam_number'] = array(
+        '#title' => t('Exam Number'),
+        '#type' => 'item',
+        '#value' => $exam_number->exam_number,
+      );
+    }
+    $form['student_nuid'] = array(
+      '#type' => 'hidden',
+      '#value' => $user->name,
+    );
+    $form['registration_term'] = array(
+      '#type'  => 'hidden',
+      '#value' => $exam_number->registration_term,
+    );
+    $form['exam_type'] = array(
+      '#title'   => t('Select Exam Type'),
+      '#type' => 'select',
+      '#options' => array('laptop' => 'Laptop', 'lab computer' => 'Lab Computer', 'writing' => 'Writing'),
+      '#default_value' =>  $exam_number->exam_type,
+    );
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Save'),
+    );
+  }
+  else {
+    drupal_set_message('There is no exam number on record for the current semester');
+  }
+  return $form;
+
+}
+
+
+function course_get_exam_number_submit($form, &$form_state){
+  drupal_set_message('submitted');
+  $query = "UPDATE {course_exam_numbers} SET exam_type = '%s' WHERE student_nuid = '%s' AND registration_term = '%s'";
+  db_query($query, $form_state['values']['exam_type'], $form_state['values']['student_nuid'], $form_state['values']['registration_term']); 
+}
+
+
+function course_NUSL_user_profile_create_links(){
+  $links = array();
+  if(arg(0) == 'user' && is_numeric(arg(1))){
+    $links[] = l('Get Exam Number', 'user/'. arg(1) . '/exam-type');
+  }
+  return $links;
+}
+
+
+function course_NUSL_home_links(){
+  $links = array();
+  if(node_access('create', 'course')){
+    $links[] = l('Create Course', 'node/add/course');
+  } 
+  return $links; 
+}
+
+
+/**
+ * Implementation of hook_perm
+*/
+function course_perm(){
+  return array('create course', 'view all courses', 'adjust course settings');
+}
+
+/**
+ * Implementation of hook_group_access_view_access_level() of og_group_access
+ */
+function course_group_access_view_access_level($group){
+  return $group->perms['view group'];
+}
+
+
+function course_og_create_links($group){
+  $links = array();
+  if($group->type == 'course'){
+    if(user_access('adjust course settings')){
+      $links[] = l('Edit Course Settings', 'node/'. $group->nid .'/course/settings');
+    }
+  }
+  return $links;
+}
+
+
+
+/**
+ * Implementation of hook_access().
+ */
+function course_access($op, $node) {
+  switch($op){
+  case 'view':
+    return user_access('view all courses');
+  case 'create':
+    return user_access('create course');
+  }
+  return FALSE;
+}
+
+
+
+function course_settings_form($form_state) {
+  $form['class_years'] = array(
+    '#title' => 'Class Years',
+    '#type' => 'fieldset',
+  );
+  $class_years = array();
+  $query = "SELECT nid, title FROM {node} WHERE type = 'class_year'";
+  $result = db_query($query);
+  while($data = db_fetch_object($result)){
+    $class_years[$data->nid] = $data->title;
+  }
+  $form['class_years']['course_3L_nid'] = array(
+    '#title' => '3L Class Year',
+    '#type' => 'select',
+    '#options' => $class_years,
+    '#default_value' => variable_get('course_3L_nid',0),
+  );
+  $form['class_years']['course_2L_nid'] = array(
+    '#title' => '2L Class Year',
+    '#type' => 'select',
+    '#options' => $class_years,
+    '#default_value' => variable_get('course_2L_nid',0),
+  );
+  $form['class_years']['course_1L_nid'] = array(
+    '#title' => '1L Class Year',
+    '#type' => 'select',
+    '#options' => $class_years,
+    '#default_value' => variable_get('course_1L_nid',0),
+  );
+
+  $form['course_create_exam_numbers'] = array(
+    '#type' => 'submit',
+    '#value' => 'Create Exam Numbers',
+  );
+
+  $form['course_update_courses_hour'] = array(
+    '#type' => 'select',
+    '#title' => 'Hour',
+    '#options' => array(0 => '00:00', 1 => '01:00', 2 => '02:00', 3 => '03:00', 4 => '04:00', 5 => '05:00', 6 => '06:00', 7 => '07:00', 8 => '08:00', 9 => '09:00', 10 => '10:00', 11 => '11:00', 12 => '12:00',  13 => '13:00', 14 => '14:00', 15 => '15:00', 16 => '16:00', 17 => '17:00', 18 => '18:00', 19 => '19:00', 20 => '20:00', 21 => '21:00', 22 => '22:00', 23 => '23:00'),
+    '#default_value' => variable_get('course_update_courses_hour', '00:00'),
+    '#description' => 'Select the hour of the day to update the course listings. The first cron run after this hour will trigger the updates.',
+  );
+
+
+
+  return system_settings_form($form);
+}
+
+/*
+function course_settings_form_submit($form, $form_alter){
+  $plid = course_get_plid();
+  $query = "DELETE FROM {menu_links} WHERE plid = %d";
+  db_query($query, $plid);
+
+  //create first year menu links
+  $current_semester = variable_get('course_current_semester_1L', 0);
+  $query = "SELECT n.nid, n.title FROM {node} n INNER JOIN {courses} c on n.nid = c.nid WHERE is_first_year = 1 AND semester_number = %d";
+  $result = db_query($query, $current_semester);
+  while($data = db_fetch_object($result)){
+    _course_create_primary_link_current($data->title, $data->nid, $plid);
+  }
+
+//create first year menu links for previous semester
+  $query = "SELECT n.nid, n.title FROM {node} n INNER JOIN {courses} c on n.nid = c.nid WHERE is_first_year = 1 AND semester_number = %d";
+  $result = db_query($query, $current_semester-2);
+  while($data = db_fetch_object($result)){
+    _course_create_primary_link_previous($data->title, $data->nid, $plid);
+  }
+ 
+  //create upper level menu links
+  $current_semester = variable_get('course_current_semester_UL', 0);
+  $query = "SELECT n.nid, n.title FROM {node} n INNER JOIN {courses} c on n.nid = c.nid WHERE is_first_year = 0 AND  semester_number = %d";
+  $result = db_query($query, $current_semester);
+  while($data = db_fetch_object($result)){
+    _course_create_primary_link_current($data->title, $data->nid, $plid);
+  }
+
+//create upper level menu links for the previous semester
+  $query = "SELECT n.nid, n.title FROM {node} n INNER JOIN {courses} c on n.nid = c.nid WHERE is_first_year = 0 AND  semester_number = %d";
+  $result = db_query($query, $current_semester -1);
+  while($data = db_fetch_object($result)){
+    _course_create_primary_link_previous($data->title, $data->nid, $plid);
+  }
+
+
+  menu_rebuild();
+}
+*/
+
+
+function course_edit_settings($form_state, $course){
+   $current_terms = course_get_current_banner_registration_terms();
+  if(!isset($current_terms[$course->registration_term])){
+    $form['title'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Course Title'),
+      '#required' => TRUE,
+      '#default_value' => $course->title,
+      '#weight' => -7
+    );
+    $form['course_number'] = array(
+      '#type' => 'textfield',
+      '#title' => 'Course Number',
+      '#required' => TRUE,
+      '#default_value' => $course->course_number,
+      '#weight' => -6
+    );
+    $form['crn'] = array(
+      '#type' => 'textfield',
+      '#title' => 'CRN',
+      '#required' => TRUE,
+      '#default_value' => $course->crn,
+      '#weight' => -6,
+    );
+    $form['credits'] = array(
+      '#type' => 'textfield',
+      '#title' => 'Credits',
+      '#required' => FALSE,
+      '#default_value' => $course->credits,
+      '#weight' => -5
+    );
+$form['registration_term'] = array(
+      '#type' => 'select',
+      '#title' => 'Registration Term Number',
+      '#required' => TRUE,
+      '#options' => course_get_past_registration_terms(),
+      '#default_value' => $course->registration_term,
+      '#weight' => -4,
+    );
+
+    $form['primary_instructor_nuid'] = array(
+      '#type' => 'select',
+      '#title' => 'Primary Instructor',
+      '#options' => course_instructor_list(),
+      '#required' => FALSE,
+      '#default_value' => $course->primary_instructor_nuid,
+      '#weight' => -3
+    );
+    $form['secondary_instructor_nuid'] = array(
+      '#type' => 'select',
+      '#title' => 'Secondary Instructor',
+      '#options' => course_instructor_list(),
+      '#required' => FALSE,
+      '#default_value' => $course->secondary_instructor_nuid,
+      '#weight' => -2
+    );
+    $form['body_field']['course_desc'] = array(
+      '#type'   => 'textarea',
+      '#title'  => t('Course Description'),
+      '#default_value' => $course->body,
+      '#rows'          => 4,
+      '#required'      => FALSE,
+      '#weight'        => -3
+    );
+    $form['body_field']['format'] = filter_form($course->format);
+    $form['body_field']['#prefix'] = '<div class="body-field-wrapper">';
+    $form['body_field']['#suffix'] = '</div>';
+
+
+  }
+
+  $form['course_nid'] = array(
+    '#type' => 'value',
+    '#value' => $course->nid,
+  );
+  $form['is_first_year'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'First Year Course',
+    '#default_value' => $course->is_first_year,
+  );
+  $form['is_performance_based'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'Performance Based',
+    '#default_value' => $course->is_performance_based,
+  );
+
+  $form['is_passfail'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'Pass/Fail',
+    '#default_value' => $course->is_passfail,
+  );
+
+  $form['#redirect'] = 'node/'.$course->nid;
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit')
+  );
+
+  return $form;
+}
+
+
+function course_edit_settings_submit($form, &$form_state){
+  if(isset($form_state['values']['crn'])){
+    $past_registration_terms = course_get_past_registration_terms();
+    $query = "UPDATE {courses} SET manual_entry = 1, course_number = '%s', crn = %d, credits = %f, primary_instructor_nuid = '%s', secondary_instructor_nuid = '%s', registration_term = %d, registration_term_desc = '%s' WHERE nid = %d";
+    db_query($query, $form_state['values']['course_number'], $form_state['values']['crn'], $form_state['values']['credits'], $form_state['values']['primary_instructor_nuid'], $form_state['values']['secondary_instructor_nuid'], $form_state['values']['registration_term'], $past_registration_terms[$form_state['values']['registration_term']], $form_state['values']['course_nid']);
+
+    $query = "UPDATE {node} SET title = '%s' WHERE nid = %d";
+    db_query($query, $form_state['values']['title'], $form_state['values']['course_nid']);
+
+    //I have to look into the right way to do this
+    $course = node_load($form_state['values']['course_nid']);
+    $query = "UPDATE {node_revisions} SET body = '%s' WHERE vid = %d";
+    db_query($query, $form_state['values']['course_desc'], $course->vid);
+  }
+
+  $query = "UPDATE {courses} SET is_first_year = %d, is_performance_based = %d, is_passfail = %d WHERE nid = %d";
+  db_query($query, $form_state['values']['is_first_year'], $form_state['values']['is_performance_based'], $form_state['values']['is_passfail'], $form_state['values']['course_nid']);
+}
+
+
+/*
+ * returns an array of students who are enrolled in classes for the current semester
+ */
+function course_get_current_students(){
+  $students = array();
+
+  $current_semester = variable_get('course_current_semester_1L', 0);
+  $query = "SELECT u.uid FROM {courses} c INNER JOIN {og_uid} u ON c.nid = u.nid WHERE c.registration_term = %d AND c.is_first_year = 1 AND u.is_active = 1 AND u.is_admin = 0";
+  $result = db_query($query, $current_semester);
+  while($data = db_fetch_object($result)){
+    $students[$data->uid] = $data->uid;
+  }
+
+  $current_semester = variable_get('course_current_semester_UL', 0);
+  $query = "SELECT u.uid FROM {courses} c INNER JOIN {og_uid} u ON c.nid = u.nid WHERE c.registration_term = %d AND c.is_first_year = 0 AND u.is_active = 1 AND u.is_admin = 0";
+  $result = db_query($query, $current_semester);
+  while($data = db_fetch_object($result)){
+    $students[$data->uid] = $data->uid;
+  }
+  return $students;
+}
+
+
+function course_student_get_class_year($uid){
+  if(course_student_in_class_year("3L", $uid)){
+    return "3L";
+  }elseif(course_student_in_class_year("2L", $uid)){
+    return "2L";
+  }elseif(course_student_in_class_year("1L", $uid)){
+    return "1L";
+  }
+  return "0L";
+}
+
+
+function course_student_in_class_year($class_year, $uid){
+  switch($class_year){
+  case "1L":
+    $group_nid = variable_get('course_1L_nid',0);
+    break;
+  case "2L":
+    $group_nid = variable_get('course_2L_nid',0);
+    break;
+  case "3L":
+    $group_nid = variable_get('course_3L_nid',0);
+    break;
+  default:
+    return false;
+  }
+  $query = "SELECT COUNT(uid) FROM {og_uid} WHERE nid = %d AND uid = %d";
+  return db_result(db_query($query, $group_nid, $uid));
+}
+
+
+/**
+ * Implementation of hook_node_access_records.
+*/
+function course_node_access_records($node) {
+  if($node->type == 'course'){
+    $grants[] = array(
+      'realm' => 'view all courses', 
+      'gid' => 1, 
+      'grant_view' => 1, 
+      'grant_update' => 0, 
+      'grant_delete' => 0,
+      'priority' => 0,
+    );
+  }
+
+  return isset($grants) ? $grants : NULL;
+}
+
+
+/**
+ * Implementation of hook_node_grants().
+*/
+function course_node_grants($account, $op) { 
+  if ($op == 'view' && user_access('view all courses')) {
+    $grants['view all courses'][] = 1;
+  }
+
+  return isset($grants) ? $grants : array();
+}
+
+
+/**
+ * Implementation of hook_view().
+*/
+function course_view($node, $teaser = FALSE, $page = FALSE) {
+  if($node->manual_entry){
+    drupal_set_message(t('This course has been modified manually, there is no guarantee that this information is consistent with Banner'));
+  }
+ 
+  return $node;
+}
+
+
+/**
+ * Implementation of hook_form().
+ */
+function course_form(&$node, $form_state) {
+/*
+I would like this to be a part of the install file, but it's not working there.
+$item2 = array(
+      'link_title' => 'Courses',
+      'link_path' => 'courses',
+      'menu_name' => 'primary-links',
+      'module' => 'course',
+      'plid' => 0,
+    );
+    menu_link_save($item2);
+*/
+
+  $type = node_get_types('type', $node);
+
+  if(!isset($node->nid)){
+    $form['title'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Course Title'),
+      '#required' => TRUE,
+      '#weight' => -7
+    );
+    $form['course_number'] = array(
+      '#type' => 'textfield',
+      '#title' => 'Course Number',
+      '#required' => TRUE,
+      '#weight' => -6
+    );
+    $form['crn'] = array(
+      '#type' => 'textfield',
+      '#title' => 'CRN',
+      '#required' => TRUE,
+      '#weight' => -6,
+    );
+    $form['credits'] = array(
+      '#type' => 'textfield',
+      '#title' => 'Credits',
+      '#required' => FALSE,
+      '#weight' => -5
+    );
+    $form['registration_term'] = array(
+      '#type' => 'select',
+      '#title' => 'Registration Term Number',
+      '#required' => TRUE,
+      '#options' => course_get_past_registration_terms(),
+      '#weight' => -4,
+    );
+    $form['primary_instructor_nuid'] = array(
+      '#type' => 'select',
+      '#title' => 'Primary Instructor',
+      '#options' => course_instructor_list(),
+      '#required' => FALSE,
+      '#weight' => -3
+    );
+    $form['secondary_instructor_nuid'] = array(
+      '#type' => 'select',
+      '#title' => 'Secondary Instructor',
+      '#options' => course_instructor_list(),
+      '#required' => FALSE,
+      '#weight' => -2
+    );
+    $form['body_field']['body'] = array(
+      '#type'   => 'textarea',
+      '#title'  => t('Course Description'),
+      '#rows'          => 4,
+      '#required'      => FALSE,
+      '#weight'        => -3
+    );
+    $form['body_field']['format'] = filter_form($node->format);
+    $form['body_field']['#prefix'] = '<div class="body-field-wrapper">';
+    $form['body_field']['#suffix'] = '</div>';
+
+    $form['manual_entry'] = array(
+      '#type' => 'value',
+      '#value' => 1,
+    );
+  }
+
+  
+  $form['og_description'] = array(
+    '#type' => 'value',
+    '#value' => 'Course',
+  );
+
+  //for edits made by drupal_execute (course_update_courses)
+  $current_terms = course_get_current_banner_registration_terms();
+  if(isset($form_state['values']['registration_term']) && isset($current_terms[$form_state['values']['registration_term']])){
+
+    $form['title'] = array(
+      '#type' => 'value',
+      '#value' => isset($form_state['values']['title']) ? $form_state['values']['title'] : $node->title,
+    );
+    $form['course_number'] = array(
+      '#type' => 'value',
+      '#value' => isset($form_state['values']['course_number']) ? $form_state['values']['course_number'] : $node->course_number,
+    );
+    $form['crn'] = array(
+      '#type' => 'value',
+      '#value' => isset($form_state['values']['crn']) ? $form_state['values']['crn'] : $node->crn,
+    );
+    $form['credits'] = array(
+      '#type' => 'value',
+      '#value' => isset($form_state['values']['credits']) ? $form_state['values']['credits'] : $node->credits,
+    );
+    $form['registration_term'] = array(
+      '#type' => 'value',
+      '#value' => isset($form_state['values']['registration_term']) ? $form_state['values']['registration_term'] : $node->registration_term,
+    );
+    $form['registration_term_desc'] = array(
+      '#type' => 'value',
+      '#value' => isset($form_state['values']['registration_term_desc']) ? $form_state['values']['registration_term_desc'] : $node->registration_term_desc,
+    );
+$form['primary_instructor_nuid'] = array(
+      '#type' => 'value',
+      '#value' => isset($form_state['values']['primary_instructor_nuid']) ? $form_state['values']['primary_instructor_nuid'] : $node->primary_instructor_nuid,
+    );
+    $form['secondary_instructor_nuid'] = array(
+      '#type' => 'value',
+      '#value' => isset($form_state['values']['secondary_instructor_nuid']) ? $form_state['values']['secondary_instructor_nuid'] : $node->secondary_instructor_nuid,
+    );
+
+  }//current term
+
+
+  unset($form['menu']);
+
+  $form['og_register'] = array('#type' => 'value', '#value' => 0);
+  $form['og_directory'] = array('#type' => 'value', '#value' => 1);
+
+  $form['og_selective'] = array(
+    '#type' => 'value',
+    '#value' => $node->og_selective ? $node->og_selective : variable_get('og_content_type_selective_course', OG_INVITE_ONLY),
+  );
+
+  return $form;
+}
+
+
+// page listing all courses
+function course_listing_page(){
+  //global $user;
+  //print_r($user);die;  
+
+  $header = array(
+    array(
+      'data'  => 'Course #',
+      'field' => 'course_number'
+    ),
+    array(
+      'data' => 'CRN',
+      'field' => 'crn',
+    ),
+    array(
+      'data'  => 'Name',
+      'field' => 'title',
+    ),
+    array(
+      'data' => 'Registration Term',
+      'field' => 'registration_term'
+    ),
+    array(
+      'data' => 'Instructor',
+      'field' => 'primary_instructor_nuid'
+    )
+  );//header
+ 
+  $query = "SELECT n.nid, n.title, c.course_number, c.registration_term_desc, c.crn, c.primary_instructor_nuid, c.secondary_instructor_nuid FROM {node} n INNER JOIN {courses} c ON n.nid = c.nid";
+  $query .= tablesort_sql($header);
+  $result = db_query($query);
+
+  while($course = db_fetch_object($result)){
+    if(user_access('view all courses') || og_group_access_get_access('view group', node_load($course->nid))){
+      if($course->primary_instructor_nuid == NULL){
+        $instructor = '';
+      } 
+      else {
+        
+        $instructor = theme('username', (object)array('name' => $course->primary_instructor_nuid), 'normal', 1);
+        if($course->secondary_instructor_nuid != NULL){
+          $instructor .= " | " . theme('username', (object)array('name' => $course->secondary_instructor_nuid), 'normal', 1);
+        }
+      }
+      $rows[] = array(
+        l($course->course_number, "node/$course->nid"),
+        l($course->crn, "node/$course->nid"),
+        l($course->title, "node/$course->nid"),
+        $course->registration_term_desc,
+        $instructor
+      );
+    } 
+  }  
+
+  // If we have rows for a table, theme the table
+  //    otherwise set output to a message
+  if ( count($rows) ) {
+    $output = theme('table', $header, $rows);
+  }
+  else {
+    $output = "No courses were found";
+  }
+   
+  // And finally, produce the page
+  print theme('page', $output);
+}
+
+
+/**
+ * Implementation of hook_form_alter()
+*/
+function course_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form['#node']) && $form_id == $form['#node']->type .'_node_form') {
+    $node = $form['#node'];
+    if($node->type == 'course'){
+      unset($form['menu']);
+      unset($form['comment_settings']);
+      unset($form['revision_information']);
+      unset($form['author']);
+      $form['author']['name'] = array(
+        '#type'  => 'value',
+        '#value' => $node->name ? $node->name : '',
+      );
+      $form['author']['date'] = array(
+        '#type'  => 'value',
+        '#value' => $node->date ? $node->date : '',
+      );
+      unset($form['options']);
+      $form['options']['status'] = array(
+        '#type'  => 'value',
+        '#value' => $node->status,
+      );
+      $form['options']['promote'] = array(
+        '#type'  => 'value',
+        '#value' => $node->promote,
+      );
+      $form['options']['sticky'] = array(
+        '#type'  => 'value',
+        '#value' => $node->sticky,
+      );
+
+      $form['og_private'] = array('#type' => 'value', '#value' => 0);
+
+    }//course
+  }
+}
+
+
+function course_form_node_type_form_alter(&$form, &$form_state) {
+  //set the type usage to group 
+/*
+  if (isset($form['#node_type']) && $form['#node_type']->type == 'course') {  
+    $form['og']['og_content_type_usage'] = array(
+      '#type' => 'value',
+      '#value' => 'group'
+    );
+    $form['og']['og_content_type_usage_override'] = array(
+      '#type' => 'value',
+      '#value' => 0,
+    );
+  } 
+*/
+}
+
+
+function course_nodeapi(&$node, $op, $teaser, $page) {
+  switch ($op) {
+  case 'view':
+    if (!$teaser && $page) {
+      if(isset($node->author_group_nid)){
+        $group = node_load($node->author_group_nid);
+      }
+      else{
+        $group = $node;
+      }
+      if($group->type == 'course'){
+        $bc = array();
+        $bc[] = l(t('Home'), "");
+        $bc[] = l(t('Courses'), 'courses');
+        $bc[] = l($group->title, 'node/'.$group->nid);
+        drupal_set_breadcrumb($bc);
+      }
+    } 
+  }
+}
+
+
+
+
+/**
+ * Implementation of hook_insert().
+*/
+function course_insert($node){
+  $query = "INSERT INTO {courses} (nid, course_number, crn, registration_term, registration_term_desc, primary_instructor_nuid, secondary_instructor_nuid, evaluations_initialized, credits, manual_entry) VALUES (%d, '%s', %d, %d, '%s', '%s', '%s', %d, %f, %d)";
+  db_query($query, $node->nid, $node->course_number, $node->crn, $node->registration_term, $node->registration_term_desc, $node->primary_instructor_nuid, $node->secondary_instructor_nuid, $node->evaluations_initialized, $node->credits, $node->manual_entry);
+  //add primary link
+  course_create_primary_link($node);
+
+  $primary_instructor_uid = NUSL_user_profile_get_uid($node->primary_instructor_nuid);
+  $secondary_instructor_uid = NUSL_user_profile_get_uid($node->secondary_instructor_nuid);
+  if($primary_instructor_uid != NULL){
+    og_save_subscription($node->nid, $primary_instructor_uid, array('is_active' => 1, 'is_admin' => 1));
+  }
+  if($secondary_instructor_uid != NULL){
+    og_save_subscription($node->nid, $secondary_instructor_uid, array('is_active' => 1, 'is_admin' => 1)); 
+  }
+
+//  node_access_rebuild(TRUE);
+  
+}
+
+
+/**
+ * Implementation of hook_update().
+*/
+function course_update($node){
+  $query = "UPDATE {courses} SET course_number = '%s', crn = %d, registration_term = %d, registration_term_desc = '%s', primary_instructor_nuid = '%s', secondary_instructor_nuid = '%s', evaluations_initialized = %d, credits = %f WHERE nid = %d";
+  db_query($query, $node->course_number, $node->crn, $node->registration_term, $node->registration_term_desc, $node->primary_instructor_nuid, $node->secondary_instructor_nuid, $node->evaluations_initialized, $node->credits, $node->nid);
+
+ // node_access_rebuild(TRUE);
+}
+
+
+/**
+ * Implementation of hook_load()
+*/
+function course_load(&$node){
+  $query = "SELECT course_number, crn, registration_term, registration_term_desc, credits, primary_instructor_nuid, secondary_instructor_nuid, evaluation_description, evaluations_initialized, is_first_year, is_performance_based, is_passfail, manual_entry FROM {courses} WHERE nid = %d";
+  $result = db_fetch_object(db_query($query, $node->nid));
+  $node->course_number = $result->course_number;
+  $node->crn = $result->crn;
+  $node->registration_term = $result->registration_term;
+  $node->registration_term_desc = $result->registration_term_desc;
+  $node->credits = $result->credits;
+  $node->primary_instructor_nuid = $result->primary_instructor_nuid;
+  $node->secondary_instructor_nuid = $result->secondary_instructor_nuid;
+  $node->evaluation_description = $result->evaluation_description;
+  $node->evaluations_initialized = $result->evaluations_initialized;
+  $node->is_first_year = $result->is_first_year;
+  $node->is_performance_based = $result->is_performance_based;
+  $node->is_passfail = $result->is_passfail;
+  $node->manual_entry = $result->manual_entry;
+
+
+
+}
+
+
+
+
+
+
+function course_theme(){
+  return array(
+    'course_mission' => array(
+      'arguments' => array(
+        'course_nid' => NULL, 
+      ),
+      'template' => 'course-mission',
+    ),
+    'course_header' => array(
+      'arguments' => array(
+        'course_nid' => NULL,
+      ),
+      'template' => 'course-header',
+    ),
+  );
+}
+
+
+//if the node is a course, or if the author of the node is a course
+// add the course header to the page
+function course_preprocess_page(&$variables){
+  $node = $variables['node'];
+  if($node->type == 'course'){
+    $course_nid = $node->nid;
+  }
+  else if(isset($node->author_group_nid)){
+    $author_group_node = node_load($node->author_group_nid);
+    if($author_group_node->type == 'course'){
+      $course_nid = $author_group_node->nid;
+    }
+  }
+  if($course_nid != null){
+    $variables['mission'] = theme('course_header', $course_nid);
+  }
+}
+
+
+
+/**
+ * Process variables for course-header.tpl.php
+ *
+ * The $variables array contains the following arguments:
+ * - $course_nid
+ *
+ * @see course-header.tpl.php
+ */
+function template_preprocess_course_header(&$variables) {
+  
+  $course = node_load($variables['course_nid']);
+
+  if($course->primary_instructor_nuid != NULL){  
+    $variables['instructor1']  = theme('username', (object)array('name' => $course->primary_instructor_nuid), 'normal', 1);
+  }
+  else {
+    $variables['instructor1'] = '';
+  }
+  if($course->secondary_instructor_nuid != NULL){
+    $variables['instructor2'] = theme('username', (object)array('name' => $course->secondary_instructor_nuid), 'normal', 1);
+  }
+  else{
+    $variables['instructor2'] = '';
+  }
+  
+  $variables['course_number']    = $course->course_number;
+  $variables['crn']              = $course->crn;
+  $variables['credits']          = $course->credits;
+  $variables['registration_term_desc']    = $course->registration_term_desc;
+  $variables['description']      = $course->body;
+  
+}
+
+
+function course_get_current_banner_registration_terms(){
+  db_set_active('banner');
+  $query = "SELECT DISTINCT(registration_term), registration_term_desc FROM {courses}";
+  $result = db_query($query);
+  db_set_active('default');
+  $registration_terms = array();
+  while($data = db_fetch_object($result)){
+    $registration_terms[$data->registration_term] = $data->registration_term_desc;
+  }
+  return $registration_terms;
+}
+
+function course_get_past_registration_terms(){
+  $past_registration_terms = array();
+  $current_registration_terms = course_get_current_banner_registration_terms();
+  $query = "SELECT DISTINCT(registration_term), registration_term_desc FROM {courses} ORDER BY registration_term DESC";
+  $result = db_query($query);
+  while($data = db_fetch_object($result)){
+    if(!isset($current_registration_terms[$data->registration_term])){
+      $past_registration_terms[$data->registration_term] = $data->registration_term_desc;
+    }
+  }
+  return $past_registration_terms;
+}
+
+
+
+function course_create_primary_link($node){
+  $current_registration_terms = course_get_current_banner_registration_terms();
+  if(isset($current_registration_terms[$node->registration_term])){
+    $plid = course_get_plid();
+    $item = array(
+      'link_title' => $node->title,
+      'link_path' => 'node/'. $node->nid,
+      'menu_name' => 'primary-links',
+      'module' => 'course',
+      'plid' => $plid,
+    );
+    menu_link_save($item);
+  }
+}
+
+
+//remove old links
+function course_update_primary_links(){
+  $current_registration_terms = course_get_current_banner_registration_terms();
+
+  $query = "SELECT nid, registration_term FROM {courses}";
+  $result = db_query($query);
+  while($data = db_fetch_object($result)){
+    if(empty($current_registration_terms) || !isset($current_registration_terms[$data->registration_term])){
+//      $query = "DELETE FROM {menu_links} WHERE link_path = '%s' AND menu_name = 'primary-links' AND module = 'course'";
+//      db_query($query, 'node/'. $data->nid);
+      menu_link_delete(NULL, 'node/'.$data->nid);
+    }
+  }
+}
+
+
+
+function course_get_plid(){
+  //get menu link id for the course primary link to be used as the parent menu
+  $query = "SELECT mlid FROM {menu_links} WHERE menu_name = 'primary-links' and plid = 0 and link_path = 'courses' and router_path = 'courses'";
+  return db_result(db_query($query));
+}
+
+
+function course_instructor_list(){
+  $instructor_list = array();
+  $instructor_list[NULL] = "Select Instructor";
+
+  db_set_active('banner');
+  $query = "SELECT * FROM {userinfo} WHERE role = 'faculty' OR role = 'sponsored_faculty' ORDER BY last_name, first_name";
+  $result = db_query($query);
+  db_set_active('default');
+  while($data = db_fetch_object($result)){
+    $instructor_list[$data->NUID] = $data->last_name . ", " . $data->first_name;
+  }
+  return $instructor_list;
+}
+
+
+function course_student_list(){
+  $student_list = array();
+  $student_list[NULL] = "Select Student";
+
+  db_set_active('banner');
+  $query = "SELECT * FROM {userinfo} WHERE role = 'student' ORDER BY last_name, first_name";
+  $result = db_query($query);
+  db_set_active('default');
+  while($data = db_fetch_object($result)){
+    $student_list[$data->NUID] = $data->last_name . ", " . $data->first_name;
+  }
+  return $student_list;
+
+}
+
+
+
+// Select all student members of the course
+function course_get_students($course_nid){
+  $query = "SELECT u.uid, u.name FROM {og_uid} ou INNER JOIN {users} u ON ou.uid = u.uid WHERE ou.nid = %d AND u.status > 0 AND ou.is_admin = 0 ORDER BY u.name";
+  $result = db_query($query, $course_nid);
+
+  $students = array();
+  while($data = db_fetch_object($result)){
+    $students[$data->uid] = theme('username', user_load($data->uid), 'nolink', 0);
+  }
+  
+  return $students;
+}
+
+
+function course_get_students_banner($registered_course_crn){
+  $students = array();  
+  db_set_active('banner');
+  $query = "SELECT id FROM {courses} WHERE registered_course_crn = %d";
+  $result = db_query($query, $registered_course_crn);
+  db_set_active('default');
+  while($data = db_fetch_object($result)){
+    $students[] = $data->id;
+  }
+  return $students;
+}
+
+
+//semester name is derived from the semester_number
+//semester_number starts with the fall 1968 semester
+function course_get_semester_name($semester_number){
+  $year = 1968 + (int)ceil($semester_number / 4);
+  switch($semester_number % 4){
+  case 0:
+    return $year . " Fall";
+  case 1:
+    return $year . " Winter";
+  case 2:
+    return $year . " Spring";
+  case 3:
+    return $year . " Summer";
+  }
+}
+
+
+/**
+ * Implement hook_enable()
+*/
+function course_enable(){
+  //set course nodes as group type
+  //putting this here, because it is not working in hook_install
+  variable_set('og_content_type_usage_course', 'group');
+}
+
+
+
+
+function course_update_courses(){
+  module_load_include('inc', 'node', 'node.pages');
+
+  db_set_active('banner');
+  $query_banner = "SELECT DISTINCT(registered_course_crn), registration_term, registration_term_desc, course_identification, course_title, course_desc, credits, primary_instructor_id, secondary_instructor_id FROM {courses}";
+  $result = db_query($query_banner);
+  db_set_active('default');
+
+  while($course_data = db_fetch_object($result)){
+    $query = "SELECT nid FROM {courses} WHERE crn = %d";
+    $nid = db_result(db_query($query, $course_data->registered_course_crn));
+    
+    drupal_set_message($course_data->registered_course_crn . '=' .$nid);
+    if($nid){
+      //update course
+      $query = "UPDATE {courses} SET registration_term = %d, registration_term_desc = '%s', course_number = '%s', credits = %f, primary_instructor_nuid = '%s', secondary_instructor_nuid = '%s' WHERE nid = %d";
+      db_query($query, $course_data->registration_term, $course_data->registration_term_desc, $course_data->course_identification, $course_data->credits, $course_data->primary_instructor_id, $course_data->secondary_instructor_id, $nid);
+     
+      $query = "UPDATE {node} SET title = '%s'  WHERE nid = %d";
+      db_query($query, $course_data->course_title, $nid);
+      
+
+      $query = "UPDATE {node_revisions} SET body = '%s' WHERE nid = %d";
+      db_query($query, $course_data->course_desc, $nid);
+      
+    }
+    else {
+      drupal_set_message('create course');
+      //create course
+      $course_node = array('type' => 'course');
+      $course_object = (object)$course_node;
+
+      $form_state = array();
+      $form_state['values'] = array(
+        'title'         => $course_data->course_title,
+        'course_number' => $course_data->course_identification,
+        'crn' => $course_data->registered_course_crn,
+        'credits' => $course_data->credits,
+        'primary_instructor_nuid' => $course_data->primary_instructor_id,
+        'secondary_instructor_nuid' => $course_data->secondary_instructor_id,
+        'body' => $course_data->course_desc,
+        'registration_term' => $course_data->registration_term,
+        'registration_term_desc' => $course_data->registration_term_desc,
+        'op'          => t('Save')
+      );
+      drupal_execute('course_node_form', $form_state, $course_object);
+    }
+    course_update_primary_links();
+    course_set_instructor_subscriptions();
+    if(module_exists('class_year')){
+      class_year_update_class_years();
+    }
+    if(module_exists('evaluation')){
+      evaluation_update_evaluations();
+    }
+
+//    node_access_rebuild();
+  }
+}
+
+
+function course_set_instructor_subscriptions(){
+  db_set_active('banner');
+  $query = "SELECT DISTINCT(registered_course_crn), primary_instructor_id, secondary_instructor_id FROM {courses}";
+  $result = db_query($query, $account->name, $account->name);
+  db_set_active('default');
+
+  $course_nids = array();
+  while($course_data = db_fetch_object($result)){
+    $query = "SELECT nid FROM {courses} WHERE crn = %d";
+    $nid = db_result(db_query($query, $course_data->registered_course_crn));
+    
+    $primary_uid = NUSL_user_profile_get_uid($course_data->primary_instructor_id);
+    $secondary_uid = NUSL_user_profile_get_uid($course_data->secondary_instructor_id);
+
+    if($primary_uid){
+      _course_update_subscription($nid, $primary_uid);
+      $faculty_secretary_uid = NUSL_user_profile_get_faculty_secretary($primary_uid);
+      if($faculty_secretary_uid){
+        _course_update_subscription($nid, $faculty_secretary_uid);
+      } 
+    }
+
+    if($secondary_uid){
+      _course_update_subscription($nid, $secondary_uid);
+      $faculty_secretary_uid = NUSL_user_profile_get_faculty_secretary($secondary_uid);
+      if($faculty_secretary_uid){
+        _course_update_subscription($nid, $faculty_secretary_uid);
+      }
+    }
+  }
+}
+
+
+function _course_update_subscription($nid, $uid){
+  $subscriptions = og_get_subscriptions($uid);
+  $sub_exists = FALSE;
+  foreach($subscriptions as $sub){
+    if($sub['nid'] == $nid){
+      $sub_exists = TRUE;
+      break;
+    }
+  }
+  if(!$sub_exists){
+    og_save_subscription($nid, $uid, array('is_active' => 1, 'is_admin' => 1));
+  }
+}
+
+
+function course_cron(){
+  $current_time = time();
+  $next_time_execute = variable_get('course_update_courses_next_time', 0);
+  if($next_time_execute && $next_time_execute < $current_time){
+    $last_time_execute = variable_get('course_update_courses_last_time', 0);
+    course_update_courses();
+
+  }
+  if($next_time_execute == 0 || $next_time_execute < $current_time){
+    variable_set('course_update_courses_last_time', $current_time);
+
+    $timezone = variable_get('date_default_timezone', 0);
+    $hour = variable_get('course_update_courses_hour',0);
+    //$adjusted_last_time_sent = $last_time_sent + $timezone;
+    $next_time_execute = gmmktime($hour, 0, 0, gmdate('n', $current_time), gmdate('j', $current_time) + 1, gmdate('Y', $current_time)) - $timezone;
+    variable_set('course_update_courses_next_time', $next_time_execute);
+
+    watchdog('course_update_courses', 'last time executed =  %last_time_executed next time executed = %next_time_executed', array('%last_time_executed' => format_date($current_time, 'small'), '%next_time_executed' => format_date($next_time_execute, 'small')), WATCHDOG_WARNING  );
+  }
+}
+
+
+

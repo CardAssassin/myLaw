@@ -1,0 +1,764 @@
+<?php
+// $Id
+
+
+/**
+ * Implementation of hook_menu().
+ */
+function og_webform_menu() {
+  $items = array();
+
+  $items['node/%node/og/webform/add'] = array(
+    'title'  => 'Create Form',
+    'page callback' => 'node_add',
+    'page arguments' => array('webform', 1),
+    'access callback' => 'node_access',
+    'access arguments' => array('create', 'webform', NULL, 1),
+    'file' => 'node.pages.inc',
+    'file path' => drupal_get_path('module', 'node'),
+  );
+
+
+  // Submissions listing.
+  $items['node/%node/og/webform/admin'] = array(
+    'title' => 'Webforms',
+    'page callback' => 'og_webform_admin_content',
+    'page arguments' => array(1),
+    'access callback' => 'og_group_access_get_access',
+    'access arguments' => array('access webform results', 1),
+    'description' => 'View and edit all the available webforms for your group.',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+/*
+  // Node webform results.
+  $items['node/%node/og/webform/%webform_menu/results'] = array(
+    'title' => 'Results',
+    'page callback' => 'webform_results_submissions',
+    'page arguments' => array(4, FALSE, '50'),
+    'access callback' => 'og_webform_results_access',
+    'access arguments' => array(1, 4, 'access webform results'),
+    'file path' => drupal_get_path('module', 'webform'),
+    'file' => 'webform_report.inc',
+    'weight' => 2,
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['node/%node/og/webform/%webform_menu/results/submissions'] = array(
+    'title' => 'Submissions',
+    'page callback' => 'webform_results_submissions',
+    'page arguments' => array(1, FALSE, '50'),
+    'access callback' => 'og_webform_results_access',
+    'access arguments' => array(1, 4, 'access webform results'),
+    'file path' => drupal_get_path('module', 'webform'),
+    'file' => 'webform_report.inc',
+    'weight' => 4,
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  $items['node/%node/og/webform/%webform_menu/results/analysis'] = array(
+    'title' => 'Analysis',
+    'page callback' => 'webform_results_analysis',
+    'page arguments' => array(1),
+    'access callback' => 'og_webform_results_access',
+    'access arguments' => array(1, 4, 'access webform results'),
+    'file path' => drupal_get_path('module', 'webform'),
+    'file' => 'webform_report.inc',
+    'weight' => 5,
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['node/%node/og/webform/%webform_menu/results/table'] = array(
+    'title' => 'Table',
+    'page callback' => 'webform_results_table',
+    'page arguments' => array(1, '50'),
+    'access callback' => 'og_webform_results_access',
+    'access arguments' => array(1, 4, 'access webform results'),
+    'file path' => drupal_get_path('module', 'webform'),
+    'file' => 'webform_report.inc',
+    'weight' => 6,
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['node/%node/og/webform/%webform_menu/results/download'] = array(
+    'title' => 'Download',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('webform_results_download_form', 1),
+    'access callback' => 'og_webform_results_access',
+    'access arguments' => array(1, 4, 'access webform results'),
+    'file path' => drupal_get_path('module', 'webform'),
+    'file' => 'webform_report.inc',
+    'weight' => 7,
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['node/%node/og/webform/%webform_menu/results/clear'] = array(
+    'title' => 'Clear',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('webform_results_clear_form', 1),
+    'access callback' => 'og_webform_results_access',
+    'access arguments' => array(1, 4, 'clear webform results'),
+    'file path' => drupal_get_path('module', 'webform'),
+    'file' => 'webform_report.inc',
+    'weight' => 8,
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  // Node submissions.
+  $items['node/%node/og/webform/%webform_menu/submissions'] = array(
+    'title' => 'Submissions',
+    'page callback' => 'webform_results_submissions',
+    'page arguments' => array(1, TRUE, '50'),
+    'access callback' => 'og_webform_submission_access',
+    'access arguments' => array(1, 4, NULL, 'list'),
+    'file path' => drupal_get_path('module', 'webform'),
+    'file' => 'webform_report.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['node/%node/og/webform/%webform_menu/submission/%webform_menu_submission'] = array(
+    'title' => 'Webform submission',
+    'load arguments' => array(4),
+    'page callback' => 'webform_client_form_load',
+    'page arguments' => array(4, 6, FALSE, FALSE),
+    'access callback' => 'og_webform_submission_access',
+    'access arguments' => array(1, 4, 6, 'view'),
+    'file path' => drupal_get_path('module', 'webform'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['node/%node/og/webform/%webform_menu/submission/%webform_menu_submission/view'] = array(
+    'title' => 'View',
+    'load arguments' => array(4),
+    'page callback' => 'webform_client_form_load',
+    'page arguments' => array(4, 6, FALSE, FALSE),
+    'access callback' => 'og_webform_submission_access',
+    'access arguments' => array(1, 4, 6, 'view'),
+    'file path' => drupal_get_path('module', 'webform'),
+    'weight' => 0,
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  $items['node/%node/og/webform/%webform_menu/submission/%webform_menu_submission/edit'] = array(
+    'title' => 'Edit',
+    'load arguments' => array(4),
+    'page callback' => 'webform_client_form_load',
+    'page arguments' => array(4, 6, TRUE, FALSE),
+    'access callback' => 'og_webform_submission_access',
+    'access arguments' => array(1, 4, 6, 'edit'),
+    'file path' => drupal_get_path('module', 'webform'),
+    'weight' => 1,
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['node/%node/og/webform/%webform_menu/submission/%webform_menu_submission/delete'] = array(
+    'title' => 'Delete',
+    'load arguments' => array(4),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('webform_submission_delete_form', 4, 6),
+    'access callback' => 'og_webform_submission_access',
+    'access arguments' => array(1, 4, 6, 'delete'),
+    'file path' => drupal_get_path('module', 'webform'),
+    'weight' => 2,
+    'type' => MENU_LOCAL_TASK,
+  );
+*/
+  return $items;
+}
+
+function og_webform_menu_alter(&$items){
+  $items['node/%webform_menu/webform-results']['access callback'] = 'og_webform_results_access';
+  $items['node/%webform_menu/webform-results/submissions']['access callback'] = 'og_webform_results_access'; 
+  $items['node/%webform_menu/webform-results/analysis']['access callback'] = 'og_webform_results_access';
+  $items['node/%webform_menu/webform-results/table']['access callback'] = 'og_webform_results_access';
+  $items['node/%webform_menu/webform-results/download']['access callback'] = 'og_webform_results_access';
+  $items['node/%webform_menu/webform-results/clear']['access callback'] = 'og_webform_results_access';
+
+  $items['node/%webform_menu/submissions']['access callback'] = 'og_webform_submission_access';
+  $items['node/%webform_menu/submission/%webform_menu_submission']['access callback'] = 'og_webform_submission_access';
+  $items['node/%webform_menu/submission/%webform_menu_submission/view']['access callback'] = 'og_webform_submission_access';
+  $items['node/%webform_menu/submission/%webform_menu_submission/edit']['access callback'] = 'og_webform_submission_access';
+  $items['node/%webform_menu/submission/%webform_menu_submission/delete']['access callback'] = 'og_webform_submission_access';
+  
+}
+
+
+function og_webform_results_access($node, $perm) {
+  $group = isset($node->author_group_nid) ? node_load($node->author_group_nid) : NULL;
+  return node_access('view', $node) && (user_access($perm) || og_group_access_get_access($perm, $group));
+}
+
+
+function og_webform_submission_access($node, $submission, $op = 'view', $account = NULL) {
+  global $user;
+  $account = isset($account) ? $account : $user;
+  $group = isset($node->author_group_nid) ? node_load($node->author_group_nid) : NULL;
+
+  switch ($op) {
+    case 'view':
+      return og_group_access_get_access('access webform results', $group) || user_access('access webform results') || (user_access('access own webform submissions') && ($account->uid == $submission->uid));
+    case 'edit':
+      return og_group_access_get_access('edit webform submissions', $group) || user_access('edit webform submissions') || (user_access('edit own webform submissions') && ($account->uid == $submission->uid));
+    case 'delete':
+      return og_group_access_get_access('edit webform submissions', $group) || og_group_access_get_access('clear webform results', $group) || user_access('edit webform submissions') || (user_access('edit own webform submissions') && ($account->uid == $submission->uid)) || user_access('clear webform results');
+    case 'list':
+      return og_group_access_get_access('access webform results', $group) || og_group_access_get_access('access webform submissions', $group) || user_access('access webform results') || user_access('access webform submissions') || (user_access('access own webform submissions')  && $user->uid);
+  }
+}
+
+
+function webform_group_access_perm(){
+  return array('create webforms', 'edit webforms', 'access webform results', 'clear webform results', 'edit webform submissions');
+}
+
+
+/**
+ * Implementations of hook_group_access();
+*/
+function webform_group_access($op, $node, $group) {
+  switch($op){
+  case 'create':
+    return og_group_access_get_access('create webforms', $group);
+  case 'update':
+  case 'delete':
+    return og_group_access_get_access('edit webforms', $group);
+  }
+}
+
+
+
+function og_webform_og_create_links($group){
+  $links = array();
+  if(og_group_access_get_access('create webforms', $group)){
+    $links[] = l('Create Questionaire', 'node/' . $group->nid . '/og/webform/add');
+  }
+  if(og_group_access_get_access('access webform results', $group)){
+    $links[] = l('View Questionaires', 'node/' . $group->nid . '/og/webform/admin');
+  }
+
+  return $links;
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function og_webform_theme() {
+  $theme = array(
+    'og_webform_admin_content' => array(
+      'arguments' => array('nodes' => NULL, 'group' => NULL),
+    ),
+  );
+  return $theme;
+}
+
+/**
+ * Implementation of hook_node_info().
+function og_webform_node_info() {
+  return array(
+    'group_webform' => array(
+      'name' => t('Group Webform'),
+      'module' => 'og_webform',
+      'description' => t('Create a new form or questionnaire accessible to users. Submission results and statistics are recorded and accessible to privileged users within a group.'),
+    )
+  );
+}
+*/
+
+/**
+ * Implementation of hook_access().
+ */
+function og_webform_access($op, $node, $account) {
+  return webform_access($op, $node, $account);
+}
+
+/**
+ * Implementation of hook_forms().
+ * All webform_client_form forms share the same form handler
+function og_webform_forms($form_id) {
+  drupal_set_message('og_webform_forms ' . $form_id);
+  $forms = array();
+  if (strpos($form_id, 'og_webform_client_form_') === 0) {
+    $forms[$form_id]['callback'] = 'og_webform_client_form';
+  }
+  return $forms;
+}
+*/
+
+
+/**
+ * Implementation of hook_file_download().
+ *
+ * Only allow users with view webform submissions to download files.
+function og_webform_file_download($file) {
+  $file = file_check_location(file_directory_path() .'/'. $file, file_directory_path() .'/webform/');
+  if ($file && og_group_access_get_access('access webform results', og_get_group_context())) {
+    $info = image_get_info(file_create_path($file));
+    if (isset($info['mime_type'])) {
+      $headers = array('Content-type: '. $info['mime_type']);
+    }
+    else {
+      $headers = array(
+        'Content-type: force-download',
+        'Content-disposition: attachment',
+      );
+    }
+    return $headers;
+  }
+}
+ */
+
+
+/**
+ * Implementation of hook_insert().
+function og_webform_insert($node) {
+  return webform_insert($node);
+}
+ */
+
+
+/**
+ * Implementation of hook_update().
+function og_webform_update($node) {
+  return webform_update($node);
+}
+ */
+
+
+/**
+ * Implementation of hook_delete().
+function og_webform_delete(&$node) {
+  return webform_delete($node);
+}
+ */
+
+
+/**
+ * Implementation of hook_load().
+function og_webform_load($node) {
+  return webform_load($node);
+}
+*/
+
+/**
+ * Implementation of hook_link().
+ * Always add a "view form" link.
+function og_webform_link($type, $node = NULL, $teaser = FALSE) {
+  $links = array();
+  if (isset($node->type) && $node->type === 'og_webform') {
+    if ($teaser && !$node->webform['teaser']) {
+      $links['webform_goto'] = array(
+        'title' => t('Go to form'),
+        'href' => 'node/'. $node->nid,
+        'attributes' => array('title' => t('View this form.'), 'class' => 'read-more')
+      );
+    }
+  }
+  return $links;
+}
+ */
+
+/**
+ * Implementation of hook_form().
+ * Creates the standard form for editing or creating a webform.
+function og_webform_form(&$node, &$param) {
+  return webform_form($node, $param);
+}
+ */
+
+/**
+ * Implementation of hook_content_extra_fields().
+function webform_content_extra_fields($type_name) {
+  $extra = array();
+
+  if ($type_name == 'webform') {
+    $extra['webform'] = array(
+      'label' => t('Webform'),
+      'description' => t('Webform settings and display.'),
+      'weight' => 1,
+    );
+  }
+
+  return $extra;
+}
+*/
+
+/*
+ * Implementation of hook_validate().
+function og_webform_validate(&$node) {
+  return webform_validate($node);
+}
+ */
+
+/**
+ * Implementation of hook_submit().
+function og_webform_submit(&$node) {
+  return webform_submit($node);
+}
+ */
+
+/**
+ * Implementation of hook_form_alter().
+function og_webform_form_alter(&$form, $form_state, $form_id) {
+  if ($form_id == 'og_webform_node_form' && empty($form['nid']['#value'])) {
+    $form['buttons']['submit']['#submit'][] = 'webform_form_submit';
+    // Force webforms to be unpublished initially.
+    if (user_access('administer nodes')) {
+      $form['options']['status']['#default_value'] = FALSE;
+    }
+    else {
+      $form['status']['#value'] = FALSE;
+    }
+  }
+}
+ */
+
+/**
+ * Submit handler for the webform node form.
+ *
+ * Redirect the user to the components form on new node inserts. Note that this
+ * fires after the hook_submit() function above.
+function og_webform_form_submit($form, &$form_state) {
+  return webform_form_submit($form, $form_state); 
+}
+ */
+
+/**
+ * Implementation of hook_view().
+function og_webform_view(&$node, $teaser = 0, $page = 0) {
+  global $user;
+
+  // If a teaser, do not display the form.
+  if ($teaser && !$node->webform['teaser']) {
+    $node->content['teaser'] = array('#value' => check_markup($node->teaser, $node->format, FALSE));
+    return $node;
+  }
+
+  $submission = array();
+  $submission_count = 0;
+  $enabled = TRUE;
+  $preview = FALSE;
+  $logging_in = FALSE;
+  $limit_exceeded = FALSE;
+
+  if ($node->build_mode == NODE_BUILD_PREVIEW) {
+    $preview = TRUE;
+    $additions = webform_load($node);
+    $node->webform['components'] = $additions->webform['components'];
+  }
+
+  // When logging in using a form on the same page as a webform node, surpress
+  // output messages so that they don't show up after the user has logged in.
+  // See http://drupal.org/node/239343.
+  if (isset($_POST['op']) && isset($_POST['name']) && isset($_POST['pass'])) {
+    $logging_in = TRUE;
+  }
+
+  // Check if the user's role can submit this webform.
+  if (variable_get('webform_submission_access_control', 1)) {
+    $allowed_roles = array();
+    foreach ($node->webform['roles'] as $rid) {
+      $allowed_roles[$rid] = isset($user->roles[$rid]) ? TRUE : FALSE;
+    }
+    if (array_search(TRUE, $allowed_roles) === FALSE && $user->uid != 1) {
+      $enabled = FALSE;
+    }
+  }
+  else {
+    // If not using Webform submission access control, allow for all roles.
+    $allowed_roles = array_keys(user_roles());
+  }
+
+  // Check if the user can add another submission.
+  if ($node->webform['submit_limit'] != -1) { // -1: Submissions are never throttled.
+    module_load_include('inc', 'webform', 'webform_submissions');
+
+    if ($limit_exceeded = _webform_submission_limit_check($node)) {
+      $enabled = FALSE;
+    }
+  }
+
+  // Get a count of previous submissions by this user.
+  if (og_webform_submission_access($node, NULL, 'list', $user)) {
+    $submission_count = db_result(db_query('SELECT count(*) FROM {webform_submissions} WHERE nid = %d AND uid = %d', $node->nid, $user->uid));
+  }
+
+  // Render the form and generate the output.
+  $form = drupal_get_form('og_webform_client_form_'. $node->nid, $node, $submission, $enabled, $preview);
+  $output = theme('webform_view', $node, $teaser, $page, $form, $enabled);
+
+  // Remove the surrounding <form> tag if this is a preview.
+  if ($preview) {
+    $output = preg_replace('/<\/?form[^>]*>/', '', $output);
+  }
+
+  // Print out messages for the webform.
+  if (!$preview && !$logging_in) {
+    theme('webform_view_messages', $node, $teaser, $page, $submission_count, $limit_exceeded, $allowed_roles);
+  }
+
+  // Add the output to the node.
+  $node = node_prepare($node, $teaser);
+  if (isset($output)) {
+    $node->content['webform'] = array('#value' => $output, '#weight' => 1);
+  }
+
+  return $node;
+}
+ */
+
+
+/**
+ * Implementation of hook_mail().
+function og_webform_mail($key, &$message, $params) {
+  return webform_mail($key, $message, $params);
+}
+ */
+
+/*
+ * Client form generation function. If this is displaying an existing
+ * submission, pass in the $submission variable with the contents of the
+ * submission to be displayed.
+ *
+ * @param $form_state
+ *   The current form values of a submission, used in multipage webforms.
+ * @param $node
+ *   The current webform node.
+ * @param $submission
+ *   An object containing information about the form submission if we're
+ *   displaying a result.
+ * @param $enabled
+ *   If displaying a result, specify if form elements are enabled for
+ *   editing.
+ */
+function og_webform_client_form(&$form_state, $node, $submission, $enabled = FALSE, $preview = FALSE) {
+  drupal_set_message('og_webform_client_form');
+  module_load_include('inc', 'webform', 'webform_components');
+  webform_load_components();
+
+  if (isset($submission->sid)) {
+    drupal_set_title(t('Submission #@sid', array('@sid' => $submission->sid)));
+  }
+
+  $group = node_load($node->author_group_nid);
+  // Set a header for navigating results.
+  if ($submission && (user_access('access webform results') || og_group_access_get_access('access webform results', $group))) {
+    // Add CSS to display submission info. Don't preprocess because this CSS file is used rarely.
+    drupal_add_css(drupal_get_path('module', 'webform') .'/webform.css', 'module', 'all', FALSE);
+
+    $previous = db_result(db_query('SELECT MAX(sid) FROM {webform_submissions} WHERE nid = %d AND sid < %d', array($node->nid, $submission->sid)));
+    $next = db_result(db_query('SELECT MIN(sid) FROM {webform_submissions} WHERE nid = %d AND sid > %d', array($node->nid, $submission->sid)));
+
+    $form['submission'] = array(
+      '#type' => 'value',
+      '#value' => $submission,
+    );
+    $form['navigation'] = array(
+      '#prefix' => '<div class="webform-submission-navigation">',
+      '#suffix' => '</div>',
+    );
+    $form['navigation']['previous'] = array(
+      '#value' => $previous ? l(t('Previous submission'), 'node/'. $group->nid . '/og/webform/' .  $node->nid .'/submission/'. $previous . ($enabled ? '/edit' : '') , array('attributes' => array('class' => 'webform-submission-previous'), 'query' => ($enabled ? 'destination=node/'. $group->nid . '/og/webform/' . $node->nid .'/submission/'. $previous .'/edit' : NULL))) : '<span class="webform-submission-previous">'. t('Previous submission') .'</span>',
+    );
+    $form['navigation']['next'] = array(
+      '#value' => $next ? l(t('Next submission'), 'node/'. $group->nid . '/og/webform/' . $node->nid .'/submission/'. $next . ($enabled ? '/edit' : ''), array('attributes' => array('class' => 'webform-submission-next'), 'query' => ($enabled ? 'destination=node/'. $group->nid . '/og/webform/' . $node->nid .'/submission/'. $next .'/edit' : NULL))) : '<span class="webform-submission-next">'. t('Next submission') .'</span>',
+    );
+
+    $form['submission_info'] = array(
+      '#title' => t('Submission Information'),
+      '#type' => 'fieldset',
+      '#collapsible' => FALSE,
+    );
+    $account = user_load(array('uid' => $submission->uid));
+    $form['submission_info']['user_picture'] = array(
+      '#value' => theme('user_picture', $account),
+    );
+    $form['submission_info']['form'] = array(
+      '#value' => '<div>'. t('Form: !form', array('!form' => l($node->title, 'node/'. $node->nid))) .'</div>',
+    );
+    $form['submission_info']['submitted'] = array(
+      '#value' => '<div>'. t('Submitted by !name', array('!name' => theme('username', $account))) .'</div>',
+    );
+    $form['submission_info']['time'] = array(
+      '#value' => '<div>'. format_date($submission->submitted, 'large') .'</div>',
+    );
+    $form['submission_info']['ip_address'] = array(
+      '#value' => '<div>'. $submission->remote_addr .'</div>',
+    );
+  }
+
+  // Add a theme function for this form.
+  $form['#theme'] = array('webform_form_'. $node->nid, 'webform_form');
+
+  // Add a css class for all client forms.
+  $form['#attributes'] = array('class' => 'webform-client-form');
+
+  // Set the encoding type (necessary for file uploads).
+  $form['#attributes']['enctype'] = 'multipart/form-data';
+
+  // Set the form action to the node ID in case this is being displayed on the
+  // teaser, subsequent pages should be on the node page directly.
+  if (arg(2) != 'submission') {
+    $form['#action'] = url('node/'. $node->nid);
+  }
+
+  $form['#submit'][] = 'webform_client_form_submit';
+  $form['#validate'][] = 'webform_client_form_validate';
+
+  if (is_array($node->webform['components']) && !empty($node->webform['components'])) {
+    // Prepare a new form array.
+    $form['submitted'] = array(
+      '#tree' => TRUE
+    );
+    $form['details'] = array(
+      '#tree' => TRUE,
+    );
+
+    // Put the components into a tree structure.
+    $component_tree = array();
+    $page_count = 1;
+    $page_num = 1;
+    _webform_components_tree_build($node->webform['components'], $component_tree, 0, $page_count);
+
+    if ((!$preview && $enabled)) {
+      if ($page_count > 1) {
+        $next_page = t('Next Page >');
+        $prev_page = t('< Previous Page');
+
+        // Check if we're in a multipage form and determine the page number.
+        if (!empty($form_state['storage']['submitted'])) {
+          $page_num = $form_state['values']['details']['page_num'];
+          $errors = form_get_errors();
+          if (empty($errors)) {
+            if ($form_state['values']['op'] == $prev_page && $page_num > 1) {
+              $page_num--;
+            }
+            elseif ($form_state['values']['op'] == $next_page && $page_num < $page_count) {
+              $page_num++;
+            }
+          }
+        }
+        else {
+          $page_num = 1;
+        }
+
+        $form['details']['page_num'] = array(
+          '#type'      => 'hidden',
+          '#value'     => $page_num,
+        );
+
+        $form['details']['page_count'] = array(
+          '#type'      => 'hidden',
+          '#value'     => $page_count,
+        );
+
+        $form['details']['page_count'] = array(
+          '#type'      => 'hidden',
+          '#value'     => $page_count,
+        );
+
+        // Add the submit button(s).
+        if ($page_num > 1) {
+          $form['previous'] = array(
+            '#type' => 'submit',
+            '#value' => $prev_page,
+            '#weight' => 1000,
+          );
+        }
+        if ($page_num == $page_count) {
+          $form['submit'] = array(
+            '#type' => 'submit',
+            '#value' => empty($node->webform['submit_text']) ? t('Submit') : $node->webform['submit_text'],
+            '#weight' => 1001,
+          );
+        }
+        elseif ($page_num < $page_count) {
+          $form['next'] = array(
+            '#type' => 'submit',
+            '#value' => $next_page,
+            '#weight' => 1001,
+          );
+        }
+      }
+      else {
+        $page_num = 1;
+        // Add the submit button.
+        $form['submit'] = array(
+          '#type' => 'submit',
+          '#value' => empty($node->webform['submit_text']) ? t('Submit') : $node->webform['submit_text'],
+          '#weight' => 1000,
+        );
+      }
+    }
+
+    // Recursively add components to the form. Microweights keep things in webform order.
+    $microweight = 0.001;
+    foreach ($component_tree['children'] as $cid => $component) {
+      $component_value = isset($form_state['values']['submitted'][$component['form_key']]) ? $form_state['values']['submitted'][$component['form_key']] : NULL;
+      _webform_client_form_add_component($cid, $component, $component_value, $form['submitted'], $form, $submission, $page_num, $enabled);
+      if (isset($form['submitted'][$component['form_key']])) {
+        $form['submitted'][$component['form_key']]['#weight'] += $microweight;
+        $microweight += 0.001;
+      }
+    }
+    // Do not display the submit button if this is a preview or submission view.
+    if ((!$preview && $enabled)) {
+      // Additional hidden elements.
+      $form['details']['email_subject'] = array(
+        '#type'      => 'hidden',
+        '#value'     => $node->webform['email_subject'],
+      );
+      $form['details']['email_from_name'] = array(
+        '#type'      => 'hidden',
+        '#value'     => $node->webform['email_from_name'],
+      );
+      $form['details']['email_from_address'] = array(
+        '#type'      => 'hidden',
+        '#value'     => $node->webform['email_from_address'],
+      );
+      $form['details']['nid'] = array(
+        '#type'      => 'value',
+        '#value'     => $node->nid,
+      );
+      if (isset($submission->sid)) {
+        $form['details']['sid'] = array(
+          '#type'      => 'hidden',
+          '#value'     => $submission->sid,
+        );
+      }
+    }
+  }
+
+  return $form;
+}
+
+
+/**
+ * Menu callback for admin/content/webform. Displays all webforms on the site.
+ */
+function og_webform_admin_content($group) {
+  $result = db_query("SELECT n.* FROM {node} n INNER JOIN {og_author} auth ON n.nid = auth.nid WHERE auth.author_group_nid = %d AND n.type = 'webform'", $group->nid);
+  $nodes = array();
+  while ($node = db_fetch_object($result)) {
+    $nodes[] = $node;
+  }
+
+  return theme('webform_admin_content', $nodes, $group);
+}
+
+
+/**
+ * Generate a list of all webforms avaliable on this site.
+ */
+function theme_og_webform_admin_content($nodes, $group) {
+  $header = array(
+    t('Title'),
+    array('data' => t('View'), 'colspan' => '4'),
+    array('data' => t('Operations'), 'colspan' => '2')
+  );
+
+  $rows = array();
+  foreach ($nodes as $node) {
+    $rows[] = array(
+      l($node->title, 'node/'. $node->nid),
+      l(t('Submissions'), 'node/'. $group->nid . '/og/webform/' . $node->nid .'/results'),
+      l(t('Analysis'), 'node/'. $group->nid . '/og/webform/' . $node->nid .'/results/analysis'),
+      l(t('Table'), 'node/'. $group->nid . '/og/webform/' . $node->nid .'/results/table'),
+      l(t('Download'), 'node/'. $group->nid . '/og/webform/' . $node->nid .'/results/download'),
+      node_access('update', $node) ? l(t('Edit'), 'node/'. $node->nid .'/edit') : '',
+      og_group_access_get_access('clear webform results', $group) ? l(t('Clear'), 'node/'. $group->nid . '/og/webform/' . $node->nid .'/results/clear') : '',
+    );
+  }
+
+  return theme('table', $header, $rows);
+}

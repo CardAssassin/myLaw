@@ -1,0 +1,144 @@
+<?php
+
+//$Id
+
+
+
+
+/**
+ * Implementation of hook_menu().
+ */
+function og_webform_menu(){
+  $items['node/%node/og/webform/add'] = array(
+    'title'  => 'Create Form',
+    'page callback' => 'node_add',
+    'page arguments' => array('webform', 1),
+    'access callback' => 'node_access',
+    'access arguments' => array('create', 'webform', NULL, 1),
+    'file' => 'node.pages.inc',
+    'file path' => drupal_get_path('module', 'node'),
+  );
+
+  return $items;
+}
+
+
+
+function og_webform_results_access($node, $perm) {
+  return node_access('view, $node) && og_group_access_get_access($perm);
+}
+
+/**
+ * Implementation of hook_node_info().
+function og_webform_node_info() {
+  return array(
+    'webform' => array(
+      'name' => t('Group Webform'),
+      'module' => 'og_webform',
+      'description' => t('Create a new form or questionnaire accessible to users. Submission results and statistics are recorded and accessible to privileged users.'),
+    )
+  );
+}
+*/
+
+/*
+function og_webform_form(&$node, &$param) {
+  return webform_form($node, $param);
+}
+
+
+function og_webform_validate(&$node){
+  return webform_validate($node);
+}
+
+
+function og_webform_submit(&$node){
+  return webform_submit($node);
+}
+*/
+
+/**
+ * Implementation of hook_form_alter().
+function og_webform_form_alter(&$form, $form_state, $form_id) {
+  if ($form_id == 'og_webform_node_form' && empty($form['nid']['#value'])) {
+    $form['buttons']['submit']['#submit'][] = 'webform_form_submit';
+    // Force webforms to be unpublished initially.
+    if (user_access('administer nodes')) {
+      $form['options']['status']['#default_value'] = FALSE;
+    }
+    else {
+      $form['status']['#value'] = FALSE;
+    }
+  }
+}
+*/
+
+/**
+ * Implementation of hook_view().
+function og_webform_view(&$node, $teaser = 0, $page = 0) {
+  return webform_view($node, $teaser, $page);
+}
+*/
+
+
+function webform_group_access_perm(){
+  return array('create webforms', 'edit webforms', 'access webform results', 'clear webform results', 'edit webform submissions');
+}
+
+
+/**
+ * Implementations of hook_group_access();
+*/
+function webform_group_access($op, $node, $group) {
+  switch($op){
+  case 'create':
+    return og_group_access_get_access('create webform', $group);
+  case 'update':
+  case 'delete':
+    return og_group_access_get_access('edit webform', $group);
+  }
+}
+
+
+function hook_menu_alter(&$items) {
+  $items['node/%webform_menu/webform-results']['access callback'] = 'og_webform_results_access';
+  $items['node/%webform_menu/webform-results/submissions']['access callback'] = 'og_webform_results_access';
+  $items['node/%webform_menu/webform-results/analysis']['access callback'] = 'og_webform_results_access';
+  $items['node/%webform_menu/webform-results/table']['access callback'] = 'og_webform_results_access';
+  $items['node/%webform_menu/webform-results/download']['access callback'] = 'og_webform_results_access';
+  $items['node/%webform_menu/webform-results/clear']['access callback'] = 'og_webform_results_access';
+  
+  $items['node/%webform_menu/submissions']['access callback'] = 'og_webform_submission_access';
+  $items['node/%webform_menu/submission/%webform_menu_submission']['access callback'] = 'og_webform_submission_access';
+  $items['node/%webform_menu/submission/%webform_menu_submission/view']['access callback'] = 'og_webform_submission_access';
+  $items['node/%webform_menu/submission/%webform_menu_submission/edit']['access callback'] = 'og_webform_submission_access';
+  $items['node/%webform_menu/submission/%webform_menu_submission/delete']['access callback'] = 'og_webform_submission_access';
+
+}
+
+
+function og_webform_submission_access($node, $submission, $op = 'view', $account = NULL) {
+  global $user;
+  $account = isset($account) ? $account : $user;
+  $group = isset($node->author_group_nid) ? node_load($node->author_group_nid) : NULL;
+
+  switch ($op) {
+    case 'view':
+      return og_group_access_get_access('access webform results', $group) || user_access('access webform results') || (user_access('access own webform submissions') && ($account->uid == $submission->uid));
+    case 'edit':
+      return og_group_access_get_access('edit webform submissions', $group) || user_access('edit webform submissions') || (user_access('edit own webform submissions') && ($account->uid == $submission->uid));
+    case 'delete':
+      return og_group_access_get_access('edit webform submissions', $group) || og_group_access_get_access('clear webform results', $group) || user_access('edit webform submissions') || (user_access('edit own webform submissions') && ($account->uid == $submission->uid)) || user_access('clear webform results');
+    case 'list':
+      return og_group_access_get_access('access webform results', $group) || og_group_access('access webform submissions') || user_access('access webform results') || user_access('access webform submissions') || (user_access('access own webform submissions')  && $user->uid);
+  }
+}
+
+
+/**
+ * Menu access callback. Ensure a user both access and node 'view' permission.
+ */
+function og_webform_results_access($node, $perm) {
+  $group = isset($node->author_group_nid) ? node_load($node->author_group_nid) : NULL;
+  return node_access('view', $node) && (og_group_access_get_access($perm, $group) || user_access($perm));
+}

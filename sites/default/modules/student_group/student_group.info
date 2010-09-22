@@ -1,0 +1,8 @@
+; $Id$
+
+name = student_group
+description = Student Groups
+package = "NUSL"
+dependencies[] = og
+dependencies[] = views
+core = 6.x

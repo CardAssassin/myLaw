@@ -1,0 +1,220 @@
+<?php
+
+
+/**
+ * Implementation of hook_node_info().
+*/
+function community_node_info(){
+  return array(
+    'community' => array(
+      'name'   => t('Community'),
+      'module' => 'community',
+      'description' => "community group",
+      'has_title'   => TRUE,
+      'title_label' => t('Community group name'),
+      'has_teaser'  => FALSE,
+      'has_body'    => FALSE
+    )
+  );
+}
+
+
+/**
+ *  Implementation of hook_menu().
+*/
+function community_menu(){
+  $items = array();
+
+  
+  return $items;
+}
+
+
+
+
+/**
+ * Implementation of hook_perm
+*/
+function community_perm(){
+  return array('create community', 'view community');
+}
+
+
+/**
+ * Implementation of hook_group_access_view_access_level() of og_group_access
+ */
+function community_group_access_view_access_level($group){
+  return $group->perms['view group'];
+}
+
+
+/**
+ * Implementation of hook_access().
+ */
+function community_access($op, $node) {
+  if ($op == 'create') {
+    return user_access('create communtiy');
+  }
+  if ($op == 'view') {
+    return user_access('view community');
+  }
+}
+
+
+/**
+ * Implementation of hook_form().
+ */
+function community_form(&$node) {
+  $type = node_get_types('type', $node);
+  
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => check_plain($type->title_label),
+    '#required' => TRUE,
+    '#default_value' => $node->title,
+    '#weight' => -5
+  );
+  
+
+ // $form['og_website'] = array();
+
+  $form['og_register'] = array('#type' => 'value', '#value' => 0);
+  $form['og_directory'] = array('#type' => 'value', '#value' => 1);
+
+  $form['og_selective'] = array(
+    '#type' => 'value', 
+    '#value' => $node->og_selective ? $node->og_selective : variable_get('og_content_type_selective_community', OG_INVITE_ONLY), 
+  );
+
+  return $form;
+}
+
+
+/**
+ * Implementation of hook_user
+*/
+function community_user($op, &$edit, &$account, $category = NULL) {
+  global $user;
+
+  switch ($op) {
+    case 'insert':
+      _community_user_insert($account, $edit);
+      break;
+    case 'delete':
+      _community_user_delete($account->uid);
+      break;
+  }
+}
+
+ 
+
+
+
+function _community_user_delete($uid){
+  $community_nid = variable_get('community_nid', 0);
+  if ($community_nid) {
+    og_delete_subscription($community_nid, $uid);
+  }
+}
+
+
+function _community_user_insert($account, $form){ 
+  $community_nid = variable_get('community_nid', 0);
+  if ($community_nid) {
+    og_subscribe_user($community_nid, $account);
+  }
+}
+
+
+
+/**
+ * Implementation of hook_form_alter()
+*/
+function community_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form['#node']) && $form_id == $form['#node']->type .'_node_form') {
+    $node = $form['#node'];
+    if($node->type == 'community'){
+      unset($form['menu']);
+      unset($form['comment_settings']);
+      unset($form['revision_information']);
+      unset($form['author']);
+      $form['author']['name'] = array(
+        '#type'  => 'value',
+        '#value' => $node->name ? $node->name : '',
+      );
+      $form['author']['date'] = array(
+        '#type'  => 'value',
+        '#value' => $node->date ? $node->date : '',
+      );
+      unset($form['options']);
+      $form['options']['status'] = array(
+        '#type'  => 'value',
+        '#value' => $node->status,
+      );
+      $form['options']['promote'] = array(
+        '#type'  => 'value',
+        '#value' => $node->promote,
+      );
+      $form['options']['sticky'] = array(
+        '#type'  => 'value',
+        '#value' => $node->sticky,
+      );
+
+      $form['og_private'] = array('#type' => 'value', '#value' => 0);
+      
+    }//class_year
+  }
+}
+
+
+function community_form_node_type_form_alter(&$form, &$form_state) {
+  if (isset($form['#node_type']) && $form['#node_type']->type == 'community') {  
+    $form['og'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Organic groups'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#access' => user_access('administer organic groups'),
+    );
+    $form['og']['og_content_type_usage'] = array(
+      '#type' => 'value',
+      '#value' => 'group'
+    );
+
+
+    $options = array(
+      t('open - membership requests are accepted immediately.'), 
+      t('moderated - membership requests must be approved.'), 
+      t('invite only - membership must be created by an administrator.'), 
+      t('closed - membership is exclusively managed by an administrator.'),
+    );
+    $form['og']['og_content_type_selective'] = array(
+      '#type' => 'radios', 
+      '#title' => t('Membership requests'), 
+      '#required' => TRUE,
+      '#default_value' => variable_get('og_content_type_selective_community', OG_INVITE_ONLY),
+      '#options' => $options, 
+      '#description' => t('How should membership requests be handled in this group? When you select <em>closed</em>, users will not be able to join <strong>or</strong> leave.')
+    );
+  } 
+}
+
+
+/**
+ * Implementation of hook_insert().
+*/
+function community_insert($node){
+  variable_set('community_nid', $node->nid);
+  
+}
+
+
+/**
+ * Implement hook_enable()
+*/
+function community_enable(){
+  //set community nodes as group type
+  //putting this here, because it is not working in hook_install
+  variable_set('og_content_type_usage_community', 'group');
+}
+

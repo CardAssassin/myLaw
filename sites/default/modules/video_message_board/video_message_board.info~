@@ -1,0 +1,7 @@
+; $Id$
+
+name = Video Message Board
+description = Adds field to node to upload ppt slide to video message board
+package = "NUSL"
+dependencies[] = announcement
+core = 6.x

@@ -1,0 +1,65 @@
+<?php
+
+// $Id$
+
+function evaluation_install(){
+  drupal_install_schema('evaluation');
+
+}
+
+
+function evaluation_schema(){
+  $schema = array();
+
+  $schema['course_evaluations'] = array(
+    'description'     => 'Stores information about each evaluation',
+    'fields'          => array(
+      'evaluation_nid'             => array(
+        'description'     => 'The evaluation\'s {node}.nid',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'exam_nid'     => array(
+        'description'     => 'The exam\'s {node}.nid',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'student_uid'     => array(
+        'description'     => 'The student\'s {users}.uid',
+        'type'            => 'int',
+        'size'          => 'normal',
+        'not null'        => TRUE,
+      ),
+    ),
+    'primary_key'        => array('evaluation_nid')
+  );
+
+  $schema['course_evaluation_grades'] = array(
+    'description'     => 'Grade values and private notes to the student for evaluation revisions',
+    'fields'          => array(
+      'vid'             => array(
+        'description'     => 'The evaluation\'s {node_revisions}.vid',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'grade_value'     => array(
+        'description'     => 'The integer representation of the evaluation\'s grade',
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'notes'     => array(
+        'description'     => 'Unofficial notes to the student',
+        'type'            => 'int',
+        'size'          => 'normal',
+        'not null'        => TRUE,
+      ),
+    ),
+    'primary_key'        => array('vid')
+  );
+  
+  return $schema;
+}
